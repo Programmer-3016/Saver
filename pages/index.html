@@ -25,7 +25,7 @@
     <header
       class="sticky top-0 z-50 bg-[#F9F7F2] dark:bg-slate-950 border-b border-stone-200 dark:border-slate-800"
     >
-      <nav class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+      <nav class="flex justify-between items-center w-full px-4 sm:px-6 py-4 max-w-7xl mx-auto">
         <div class="flex items-center gap-2">
           <span
             class="material-symbols-outlined text-[#0A4D3C] dark:text-emerald-400"
@@ -58,27 +58,46 @@
             >Pricing</a
           >
         </div>
-        <a
-          class="bg-primary-container text-on-primary px-lg py-sm rounded-full font-label-caps text-label-caps hover:opacity-90 transition-opacity"
-          href="register.html"
-        >
-          Get Started
-        </a>
+        <div class="flex items-center gap-3">
+          <a
+            class="hidden sm:inline-flex bg-primary-container text-on-primary px-lg py-sm rounded-full font-label-caps text-label-caps hover:opacity-90 transition-opacity"
+            href="register.html"
+          >
+            Get Started
+          </a>
+          <!-- Hamburger toggle (mobile only) -->
+          <button
+            class="md:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-stone-100 transition-colors"
+            id="mobile-menu-btn"
+            type="button"
+            aria-label="Open menu"
+          >
+            <span class="material-symbols-outlined text-[#0A4D3C]" style="font-size:24px">menu</span>
+          </button>
+        </div>
       </nav>
+      <!-- Mobile nav overlay -->
+      <div class="hidden md:hidden flex-col bg-[#F9F7F2] border-t border-stone-200 px-6 py-4 space-y-3 font-['Plus_Jakarta_Sans'] text-sm font-medium" id="mobile-nav">
+        <a class="block py-2 text-[#0A4D3C] font-semibold" href="#home">Home</a>
+        <a class="block py-2 text-slate-500 hover:text-[#0A4D3C] transition-colors" href="#features">Features</a>
+        <a class="block py-2 text-slate-500 hover:text-[#0A4D3C] transition-colors" href="#testimonials">Testimonials</a>
+        <a class="block py-2 text-slate-500 hover:text-[#0A4D3C] transition-colors" href="#pricing">Pricing</a>
+        <a class="inline-flex mt-2 bg-primary-container text-on-primary px-lg py-sm rounded-full font-label-caps text-label-caps hover:opacity-90 transition-opacity w-fit" href="register.html">Get Started</a>
+      </div>
     </header>
     <main>
       <!-- Hero Section -->
-      <section class="relative pt-xl pb-32 overflow-hidden" id="home">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+      <section class="relative pt-8 sm:pt-xl pb-16 sm:pb-32 overflow-hidden" id="home">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
           <div class="z-10">
             <span
               class="inline-block bg-primary-container/10 text-primary-container px-4 py-1 rounded-full text-label-caps font-label-caps mb-6"
               >FINANCIAL MINDFULNESS</span
             >
-            <h1 class="font-display text-display mb-6 text-primary">
+            <h1 class="font-display text-[28px] sm:text-[36px] lg:text-display mb-4 sm:mb-6 text-primary leading-tight">
               Understand where your money goes. Effortlessly.
             </h1>
-            <p class="font-body-lg text-body-lg text-secondary mb-10 max-w-lg">
+            <p class="font-body-md sm:font-body-lg text-body-md sm:text-body-lg text-secondary mb-6 sm:mb-10 max-w-lg">
               A smart money clarity app designed for your unique income style. Whether you're
               earning a salary, freelancing, or managing an allowance.
             </p>
@@ -191,16 +210,16 @@
         ></div>
       </section>
       <!-- User Modes Section -->
-      <section class="py-xl bg-surface-container-low" id="features">
-        <div class="max-w-7xl mx-auto px-6">
-          <div class="text-center mb-16">
+      <section class="py-12 sm:py-xl bg-surface-container-low" id="features">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+          <div class="text-center mb-8 sm:mb-16">
             <h2 class="font-h1 text-h1 text-primary mb-4">Tailored for your lifestyle</h2>
             <p class="font-body-lg text-body-lg text-secondary max-w-2xl mx-auto">
               Traditional apps assume everyone gets a paycheck on the 1st. We know life is more
               diverse than that.
             </p>
           </div>
-          <div class="grid md:grid-cols-3 gap-8">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
             <!-- Fixed Income -->
             <div
               class="bg-white p-8 rounded-[32px] border border-stone-100 hover:shadow-xl transition-shadow group"
@@ -276,9 +295,9 @@
         </div>
       </section>
       <!-- Recent Transactions + Clarity -->
-      <section class="py-xl" id="demo">
-        <div class="max-w-7xl mx-auto px-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+      <section class="py-12 sm:py-xl" id="demo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 items-center">
             <div class="bg-white rounded-[32px] overflow-hidden border border-stone-100 shadow-lg">
               <div class="bg-primary-container px-8 py-6">
                 <h3 class="font-h2 text-h2 text-on-primary">Recent Transactions</h3>
@@ -404,12 +423,12 @@
         </div>
       </section>
       <!-- Trust / Testimonial Section -->
-      <section class="py-xl bg-background" id="testimonials">
-        <div class="max-w-7xl mx-auto px-6">
+      <section class="py-12 sm:py-xl bg-background" id="testimonials">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
           <div
-            class="bg-white rounded-[40px] p-12 border border-stone-100 shadow-sm relative overflow-hidden"
+            class="bg-white rounded-[24px] sm:rounded-[40px] p-6 sm:p-12 border border-stone-100 shadow-sm relative overflow-hidden"
           >
-            <div class="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+            <div class="relative z-10 grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
               <div>
                 <h2 class="font-h1 text-h1 text-primary mb-6">
                   Financial calm is just a tap away.
@@ -488,9 +507,9 @@
         </div>
       </section>
       <!-- Final CTA -->
-      <section class="py-32" id="pricing">
-        <div class="max-w-4xl mx-auto px-6 text-center">
-          <h2 class="font-display text-display text-primary mb-8">
+      <section class="py-16 sm:py-32" id="pricing">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 class="font-display text-[28px] sm:text-[36px] lg:text-display text-primary mb-6 sm:mb-8 leading-tight">
             Ready to find your financial calm?
           </h2>
           <p class="font-body-lg text-body-lg text-secondary mb-12 max-w-xl mx-auto">
@@ -509,9 +528,9 @@
       </section>
     </main>
     <!-- Footer -->
-    <footer class="bg-surface-container py-16 border-t border-stone-200">
-      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12">
-        <div class="col-span-1 md:col-span-1">
+    <footer class="bg-surface-container py-10 sm:py-16 border-t border-stone-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
+        <div class="col-span-2 md:col-span-1">
           <div class="flex items-center gap-2 mb-6">
             <span
               class="material-symbols-outlined text-[#0A4D3C]"
@@ -578,5 +597,29 @@
         </div>
       </div>
     </footer>
+    <!-- Mobile nav toggle -->
+    <script>
+      (function () {
+        const btn = document.getElementById("mobile-menu-btn");
+        const nav = document.getElementById("mobile-nav");
+        if (!btn || !nav) return;
+
+        btn.addEventListener("click", () => {
+          const isOpen = nav.classList.contains("flex");
+          nav.classList.toggle("hidden", isOpen);
+          nav.classList.toggle("flex", !isOpen);
+          btn.querySelector("span").textContent = isOpen ? "menu" : "close";
+        });
+
+        // Close menu when a link is clicked
+        nav.querySelectorAll("a").forEach((link) => {
+          link.addEventListener("click", () => {
+            nav.classList.add("hidden");
+            nav.classList.remove("flex");
+            btn.querySelector("span").textContent = "menu";
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
