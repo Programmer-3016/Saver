@@ -5,48 +5,33 @@
 const modeConfig = {
   fixed: {
     label: "Fixed Income",
-    note: "Regular monthly salary ya stipend ko ek realistic daily spend number me convert karo.",
-    incomeLabel: "Monthly income",
-    fixedLabel: "Must-pay monthly expenses",
-    reserveLabel: "Monthly savings target",
-    cycle: "monthly",
-    cycleLocked: true,
+    note: "Your salary or stipend will be used to calculate free spending money.",
   },
   irregular: {
     label: "Irregular Income",
-    note: "Jo paisa currently available hai usko runway aur safe daily spend me tod do.",
-    incomeLabel: "Money available right now",
-    fixedLabel: "Committed essentials",
-    reserveLabel: "Reserve / safety buffer",
-    cycle: "weekly",
-    cycleLocked: false,
+    note: "We'll work with whatever money you currently have available.",
   },
   allowance: {
     label: "Allowance",
-    note: "Pocket money ko controlled spending aur small savings habit me badlo.",
-    incomeLabel: "Pocket money amount",
-    fixedLabel: "Expected needs",
-    reserveLabel: "Savings goal for this cycle",
-    cycle: "weekly",
-    cycleLocked: false,
+    note: "Track your pocket money or travel savings clearly and efficiently.",
   },
 };
 
 const stepMeta = {
   1: {
-    title: "How do you usually receive money?",
-    subtitle: "Choose the mode that best describes your income pattern.",
+    title: "How does money come to you?",
+    subtitle: "Choose the mode that best describes your situation.",
   },
   2: {
-    title: "Set up your real money picture",
-    subtitle: "Enter your numbers — we\u2019ll calculate your safe daily spend.",
+    title: "Set your money",
+    subtitle: "Tell us how much you have and how much you want to save.",
   },
   3: {
-    title: "Give your savings a name",
-    subtitle: "Pick a goal and a target amount to start saving toward.",
+    title: "Why do you want to save?",
+    subtitle: "Saving for something specific or building a safety net — your call.",
   },
   4: {
-    title: "You\u2019re all set!",
+    title: "You're all set!",
     subtitle: "",
   },
 };
@@ -54,14 +39,13 @@ const stepMeta = {
 // ── State ─────────────────────────────────────────────────────────
 const state = {
   step: 1,
-  mode: "",
-  cycle: "monthly",
-  income: 0,
-  fixed: 0,
-  reserve: 0,
-  goalName: "Emergency Buffer",
-  goalTarget: 0,
-  goalReason: "",
+  mode: "",           // fixed, irregular, allowance
+  totalMoney: 0,      // how much money is available
+  saveMode: "",       // custom, smart
+  saveAmount: 0,      // how much to save
+  goalType: "",       // specific, safety
+  goalItem: "",       // what to buy (if specific)
+  goalPrice: 0,       // target price (if specific)
 };
 
 // ── DOM refs ──────────────────────────────────────────────────────
@@ -80,26 +64,32 @@ const dom = {
   stepPanels: $$(".step-panel"),
   stepNav: $("#step-nav"),
   modeCards: $$(".mode-card"),
-  incomeLabel: $("#income-label"),
-  fixedLabel: $("#fixed-label"),
-  reserveLabel: $("#reserve-label"),
+  // Step 2
+  totalMoneyInput: $("#total-money-input"),
+  saveModeCards: $$(".save-mode-card"),
+  customSaveSection: $("#custom-save-section"),
+  customSaveInput: $("#custom-save-input"),
+  smartSaveSection: $("#smart-save-section"),
+  smartSaveAmount: $("#smart-save-amount"),
   setupNote: $("#setup-note"),
-  incomeInput: $("#income-input"),
-  fixedInput: $("#fixed-input"),
-  reserveInput: $("#reserve-input"),
-  cycleButtons: $$(".cycle-btn"),
-  goalChips: $$(".goal-chip"),
-  goalTargetInput: $("#goal-target-input"),
-  goalReasonInput: $("#goal-reason-input"),
+  // Step 3
+  goalTypeCards: $$(".goal-type-card"),
+  specificGoalSection: $("#specific-goal-section"),
+  safetyGoalSection: $("#safety-goal-section"),
+  goalItemInput: $("#goal-item-input"),
+  goalPriceInput: $("#goal-price-input"),
+  safetyPlanText: $("#safety-plan-text"),
+  // Nav
   backBtn: $("#back-btn"),
   nextBtn: $("#next-btn"),
-  // Desktop preview
-  previewDaily: $("#preview-daily"),
+  // Preview
+  previewFree: $("#preview-free"),
   previewCaption: $("#preview-caption"),
   previewMode: $("#preview-mode"),
-  previewFreeBudget: $("#preview-free-budget"),
-  previewReserve: $("#preview-reserve"),
-  previewCycle: $("#preview-cycle"),
+  previewTotal: $("#preview-total"),
+  previewSaving: $("#preview-saving"),
+  previewFreeAmount: $("#preview-free-amount"),
+  previewGoalIcon: $("#preview-goal-icon"),
   previewGoalName: $("#preview-goal-name"),
   previewGoalMeta: $("#preview-goal-meta"),
   previewInsight: $("#preview-insight"),
@@ -110,7 +100,7 @@ const dom = {
   mobilePreviewReserve: $("#mobile-preview-reserve"),
   mobilePreviewInsight: $("#mobile-preview-insight"),
   // Completion
-  finalDaily: $("#final-daily"),
+  finalFree: $("#final-free"),
   finalCaption: $("#final-caption"),
   finalSummary: $("#final-summary"),
   startDashboardBtn: $("#start-dashboard-btn"),
@@ -123,38 +113,54 @@ function formatCurrency(value) {
 }
 
 function computePreview() {
-  const freeBudget = Math.max(state.income - state.fixed - state.reserve, 0);
-  const cycleDays = state.cycle === "monthly" ? 30 : 7;
-  const safeDaily = freeBudget / cycleDays;
+  const effectiveSave = state.saveMode === "smart"
+    ? Math.round(state.totalMoney * 0.3)
+    : state.saveAmount;
 
-  let caption = "Choose a money mode to begin.";
-  let insight =
-    "Saver ka core job bas record rakhna nahi hai. Yeh batana hai ki tum aaj kitna safely spend kar sakte ho.";
+  const freeMoney = Math.max(state.totalMoney - effectiveSave, 0);
 
-  if (state.mode) {
-    caption = `${formatCurrency(freeBudget)} flexible money after essentials and reserve.`;
+  let caption = "Enter your available money to get started.";
+  let insight = "Saver shows you clearly how much you can freely spend and how much stays safe.";
 
-    if (freeBudget === 0 && state.income > 0) {
-      insight = "Almost all money is committed. Dashboard will show low-balance guidance.";
-    } else if (safeDaily <= 120 && freeBudget > 0) {
-      insight = "Daily safe spend tight hai — small spends clearly visible honge.";
+  if (state.totalMoney > 0) {
+    caption = `${formatCurrency(effectiveSave)} saved, ${formatCurrency(freeMoney)} free to spend.`;
+
+    if (freeMoney === 0) {
+      insight = "All money is going to savings — keep some flexibility to avoid frustration.";
+    } else if (effectiveSave === 0) {
+      insight = "Nothing is being saved. Even a small amount set aside makes a difference over time.";
     } else if (state.mode === "allowance") {
-      insight = "Weekly rhythm important hai. Dashboard me quick glance aur goal nudges strong rahenge.";
-    } else if (state.mode === "fixed") {
-      insight = "Fixed income ke liye salary cycle framing useful hoti hai. Next-payday clarity dikhayenge.";
+      insight = "Saving from pocket money is tough, but small consistent savings add up fast.";
     } else {
-      insight = "Irregular income ke liye runway clarity sabse important hai.";
+      insight = "Good balance — you can spend comfortably while building your savings.";
     }
   }
 
-  let goalMeta = "Add a target to estimate progress.";
-  if (state.goalTarget > 0 && state.reserve > 0) {
-    const cyclesNeeded = Math.ceil(state.goalTarget / Math.max(state.reserve, 1));
-    const unit = state.cycle === "monthly" ? "month" : "week";
-    goalMeta = `At this pace, ~${cyclesNeeded} ${unit}${cyclesNeeded > 1 ? "s" : ""}.`;
+  let goalName = "Choose your saving goal";
+  let goalMeta = "Pick a goal type in Step 3.";
+  let goalIcon = "savings";
+
+  if (state.goalType === "specific") {
+    goalIcon = "shopping_bag";
+    goalName = state.goalItem || "Specific item";
+    if (state.goalPrice > 0 && effectiveSave > 0) {
+      const cyclesNeeded = Math.ceil(state.goalPrice / effectiveSave);
+      goalMeta = `Save ${formatCurrency(effectiveSave)}/cycle → ~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to reach your goal.`;
+    } else {
+      goalMeta = "Enter the price — Saver will estimate the timeline.";
+    }
+  } else if (state.goalType === "safety") {
+    goalIcon = "shield";
+    goalName = "Safety Buffer";
+    if (effectiveSave > 0) {
+      const monthsFor5k = Math.ceil(5000 / effectiveSave);
+      goalMeta = `${formatCurrency(effectiveSave)}/cycle → ~${monthsFor5k} cycles to build a ₹5,000 buffer.`;
+    } else {
+      goalMeta = "Set a saving amount — Saver will estimate the timeline.";
+    }
   }
 
-  return { freeBudget, safeDaily, caption, insight, goalMeta };
+  return { effectiveSave, freeMoney, caption, insight, goalName, goalMeta, goalIcon };
 }
 
 // ── Sync functions ────────────────────────────────────────────────
@@ -162,24 +168,42 @@ function syncPreview() {
   const config = state.mode ? modeConfig[state.mode] : null;
   const p = computePreview();
 
-  // Desktop
-  if (dom.previewDaily) dom.previewDaily.textContent = formatCurrency(p.safeDaily);
+  // Desktop preview
+  if (dom.previewFree) dom.previewFree.textContent = formatCurrency(p.freeMoney);
   if (dom.previewCaption) dom.previewCaption.textContent = p.caption;
   if (dom.previewMode) dom.previewMode.textContent = config ? config.label : "Not selected";
-  if (dom.previewFreeBudget) dom.previewFreeBudget.textContent = formatCurrency(p.freeBudget);
-  if (dom.previewReserve) dom.previewReserve.textContent = formatCurrency(state.reserve);
-  if (dom.previewCycle)
-    dom.previewCycle.textContent = state.cycle.charAt(0).toUpperCase() + state.cycle.slice(1);
-  if (dom.previewGoalName) dom.previewGoalName.textContent = state.goalName;
+  if (dom.previewTotal) dom.previewTotal.textContent = formatCurrency(state.totalMoney);
+  if (dom.previewSaving) dom.previewSaving.textContent = formatCurrency(p.effectiveSave);
+  if (dom.previewFreeAmount) dom.previewFreeAmount.textContent = formatCurrency(p.freeMoney);
+  if (dom.previewGoalIcon) dom.previewGoalIcon.textContent = p.goalIcon;
+  if (dom.previewGoalName) dom.previewGoalName.textContent = p.goalName;
   if (dom.previewGoalMeta) dom.previewGoalMeta.textContent = p.goalMeta;
   if (dom.previewInsight) dom.previewInsight.textContent = p.insight;
 
-  // Mobile
-  if (dom.mobilePreviewDaily) dom.mobilePreviewDaily.textContent = formatCurrency(p.safeDaily) + "/day";
+  // Mobile preview
+  if (dom.mobilePreviewDaily) dom.mobilePreviewDaily.textContent = formatCurrency(p.freeMoney) + " free";
   if (dom.mobilePreviewMode) dom.mobilePreviewMode.textContent = config ? config.label : "Not selected";
-  if (dom.mobilePreviewFree) dom.mobilePreviewFree.textContent = formatCurrency(p.freeBudget);
-  if (dom.mobilePreviewReserve) dom.mobilePreviewReserve.textContent = formatCurrency(state.reserve);
+  if (dom.mobilePreviewFree) dom.mobilePreviewFree.textContent = formatCurrency(p.freeMoney);
+  if (dom.mobilePreviewReserve) dom.mobilePreviewReserve.textContent = formatCurrency(p.effectiveSave);
   if (dom.mobilePreviewInsight) dom.mobilePreviewInsight.textContent = p.insight;
+
+  // Smart suggestion amount update
+  if (dom.smartSaveAmount && state.totalMoney > 0) {
+    const smartAmount = Math.round(state.totalMoney * 0.3);
+    dom.smartSaveAmount.textContent = `Save ${formatCurrency(smartAmount)}`;
+  }
+
+  // Safety plan text
+  if (dom.safetyPlanText && state.goalType === "safety") {
+    const effectiveSave = state.saveMode === "smart"
+      ? Math.round(state.totalMoney * 0.3)
+      : state.saveAmount;
+    if (effectiveSave > 0) {
+      const months = Math.ceil(5000 / effectiveSave);
+      dom.safetyPlanText.textContent =
+        `Saving ${formatCurrency(effectiveSave)} per cycle builds a ₹5,000 safety net in ~${months} cycles. Saver will track your progress automatically.`;
+    }
+  }
 }
 
 function syncStep() {
@@ -203,56 +227,42 @@ function syncStep() {
   dom.backBtn.disabled = state.step === 1;
   dom.backBtn.hidden = state.step === 4;
 
-  // Next button
+  // Next button logic
   if (state.step === 1) {
     dom.nextBtn.textContent = "Continue";
     dom.nextBtn.disabled = !state.mode;
   } else if (state.step === 2) {
     dom.nextBtn.textContent = "Continue";
-    dom.nextBtn.disabled = state.income <= 0;
+    dom.nextBtn.disabled = state.totalMoney <= 0 || !state.saveMode;
   } else if (state.step === 3) {
     dom.nextBtn.textContent = "Finish Setup";
-    dom.nextBtn.disabled = false;
+    dom.nextBtn.disabled = !state.goalType;
   } else {
     dom.nextBtn.hidden = true;
   }
 
   if (state.step !== 4) {
     dom.nextBtn.hidden = false;
+    // Re-add arrow icon if missing
+    if (!dom.nextBtn.querySelector(".material-symbols-outlined")) {
+      const icon = document.createElement("span");
+      icon.className = "material-symbols-outlined text-lg";
+      icon.textContent = "arrow_forward";
+      dom.nextBtn.appendChild(icon);
+    }
   }
 
   // Hide step nav on completion
   dom.stepNav.style.display = state.step === 4 ? "none" : "";
 }
 
-function applyModeConfig() {
-  const config = state.mode ? modeConfig[state.mode] : null;
-  if (!config) return;
-
-  state.cycle = config.cycle;
-
-  dom.incomeLabel.textContent = config.incomeLabel;
-  dom.fixedLabel.textContent = config.fixedLabel;
-  dom.reserveLabel.textContent = config.reserveLabel;
-  dom.setupNote.textContent = config.note;
-
-  dom.cycleButtons.forEach((btn) => {
-    const locked = config.cycleLocked && btn.dataset.cycle !== config.cycle;
-    btn.disabled = locked;
-    btn.style.opacity = locked ? "0.4" : "1";
-    btn.classList.toggle("is-selected", btn.dataset.cycle === state.cycle);
-  });
-
-  syncPreview();
-}
-
 function syncFinalSummary() {
   const p = computePreview();
-  const modeLabel = state.mode ? modeConfig[state.mode].label : "this mode";
+  const modeLabel = state.mode ? modeConfig[state.mode].label : "your setup";
 
-  dom.finalDaily.textContent = formatCurrency(p.safeDaily);
-  dom.finalCaption.textContent = p.caption;
-  dom.finalSummary.textContent = `${modeLabel} setup ke basis par ${formatCurrency(p.safeDaily)} per day safe spend dikhega. Dashboard me transactions, goals, aur spending insights milenge.`;
+  dom.finalFree.textContent = formatCurrency(p.freeMoney);
+  dom.finalCaption.textContent = `${formatCurrency(p.effectiveSave)} is safely set aside.`;
+  dom.finalSummary.textContent = `Based on your ${modeLabel} setup, you have ${formatCurrency(p.freeMoney)} to spend freely. Saver will help you track spending on your dashboard.`;
 }
 
 // ── Event handlers ────────────────────────────────────────────────
@@ -261,22 +271,54 @@ function setMode(mode) {
   dom.modeCards.forEach((card) => {
     card.classList.toggle("is-selected", card.dataset.mode === mode);
   });
-  applyModeConfig();
+
+  // Update setup note
+  if (dom.setupNote && modeConfig[mode]) {
+    dom.setupNote.textContent = modeConfig[mode].note;
+  }
+
   syncStep();
+  syncPreview();
 }
 
-function updateNumber(input, key) {
-  // Strip non-numeric chars
-  const clean = input.value.replace(/[^0-9]/g, "");
-  input.value = clean;
-  state[key] = Number(clean) || 0;
-  syncPreview();
+function setSaveMode(mode) {
+  state.saveMode = mode;
+  dom.saveModeCards.forEach((card) => {
+    card.classList.toggle("is-selected", card.dataset.saveMode === mode);
+  });
+
+  // Toggle sections
+  dom.customSaveSection.classList.toggle("hidden", mode !== "custom");
+  dom.smartSaveSection.classList.toggle("hidden", mode !== "smart");
+
+  // If smart, auto-calculate
+  if (mode === "smart") {
+    state.saveAmount = Math.round(state.totalMoney * 0.3);
+  }
+
   syncStep();
+  syncPreview();
+}
+
+function setGoalType(type) {
+  state.goalType = type;
+  dom.goalTypeCards.forEach((card) => {
+    card.classList.toggle("is-selected", card.dataset.goalType === type);
+  });
+
+  // Toggle sections
+  dom.specificGoalSection.classList.toggle("hidden", type !== "specific");
+  dom.safetyGoalSection.classList.toggle("hidden", type !== "safety");
+
+  syncStep();
+  syncPreview();
 }
 
 function goNext() {
   if (state.step >= 4) return;
   if (state.step === 1 && !state.mode) return;
+  if (state.step === 2 && (state.totalMoney <= 0 || !state.saveMode)) return;
+  if (state.step === 3 && !state.goalType) return;
 
   state.step += 1;
 
@@ -321,50 +363,57 @@ function loadState() {
 function init() {
   const hadState = loadState();
 
-  // Bind mode cards
+  // Bind mode cards (Step 1)
   dom.modeCards.forEach((card) => {
     card.addEventListener("click", () => setMode(card.dataset.mode));
   });
 
-  // Bind cycle buttons
-  dom.cycleButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const config = state.mode ? modeConfig[state.mode] : null;
-      if (config?.cycleLocked) return;
-
-      state.cycle = btn.dataset.cycle;
-      dom.cycleButtons.forEach((b) => {
-        b.classList.toggle("is-selected", b === btn);
-      });
-      syncPreview();
-    });
+  // Bind save mode cards (Step 2)
+  dom.saveModeCards.forEach((card) => {
+    card.addEventListener("click", () => setSaveMode(card.dataset.saveMode));
   });
 
-  // Bind goal chips
-  dom.goalChips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      state.goalName = chip.dataset.goal;
-      dom.goalChips.forEach((c) => {
-        c.classList.toggle("is-selected", c === chip);
-      });
-      syncPreview();
-    });
+  // Bind total money input
+  dom.totalMoneyInput.addEventListener("input", () => {
+    const clean = dom.totalMoneyInput.value.replace(/[^0-9]/g, "");
+    dom.totalMoneyInput.value = clean;
+    state.totalMoney = Number(clean) || 0;
+
+    // Auto-update smart suggestion
+    if (state.saveMode === "smart") {
+      state.saveAmount = Math.round(state.totalMoney * 0.3);
+    }
+
+    syncPreview();
+    syncStep();
   });
 
-  // Bind number inputs
-  dom.incomeInput.addEventListener("input", () => updateNumber(dom.incomeInput, "income"));
-  dom.fixedInput.addEventListener("input", () => updateNumber(dom.fixedInput, "fixed"));
-  dom.reserveInput.addEventListener("input", () => updateNumber(dom.reserveInput, "reserve"));
+  // Bind custom save input
+  dom.customSaveInput.addEventListener("input", () => {
+    const clean = dom.customSaveInput.value.replace(/[^0-9]/g, "");
+    dom.customSaveInput.value = clean;
+    state.saveAmount = Number(clean) || 0;
+    syncPreview();
+    syncStep();
+  });
 
-  dom.goalTargetInput.addEventListener("input", () => {
-    const clean = dom.goalTargetInput.value.replace(/[^0-9]/g, "");
-    dom.goalTargetInput.value = clean;
-    state.goalTarget = Number(clean) || 0;
+  // Bind goal type cards (Step 3)
+  dom.goalTypeCards.forEach((card) => {
+    card.addEventListener("click", () => setGoalType(card.dataset.goalType));
+  });
+
+  // Bind goal item input
+  dom.goalItemInput.addEventListener("input", () => {
+    state.goalItem = dom.goalItemInput.value.trim();
     syncPreview();
   });
 
-  dom.goalReasonInput.addEventListener("input", () => {
-    state.goalReason = dom.goalReasonInput.value.trim();
+  // Bind goal price input
+  dom.goalPriceInput.addEventListener("input", () => {
+    const clean = dom.goalPriceInput.value.replace(/[^0-9]/g, "");
+    dom.goalPriceInput.value = clean;
+    state.goalPrice = Number(clean) || 0;
+    syncPreview();
   });
 
   // Bind nav
@@ -374,30 +423,30 @@ function init() {
   // Start dashboard button
   dom.startDashboardBtn.addEventListener("click", () => {
     saveState();
-    // Future: switch to dashboard section
-    alert("Dashboard coming soon! Your setup is saved.");
+    alert("Dashboard coming soon! Your setup has been saved.");
   });
 
   // Restore state if saved
   if (hadState && state.mode) {
-    // Restore mode card selection
     dom.modeCards.forEach((card) => {
       card.classList.toggle("is-selected", card.dataset.mode === state.mode);
     });
 
-    // Restore inputs
-    if (state.income) dom.incomeInput.value = state.income;
-    if (state.fixed) dom.fixedInput.value = state.fixed;
-    if (state.reserve) dom.reserveInput.value = state.reserve;
-    if (state.goalTarget) dom.goalTargetInput.value = state.goalTarget;
-    if (state.goalReason) dom.goalReasonInput.value = state.goalReason;
+    if (state.totalMoney) dom.totalMoneyInput.value = state.totalMoney;
+    if (state.saveMode) {
+      setSaveMode(state.saveMode);
+      if (state.saveMode === "custom" && state.saveAmount) {
+        dom.customSaveInput.value = state.saveAmount;
+      }
+    }
 
-    // Restore goal chip
-    dom.goalChips.forEach((c) => {
-      c.classList.toggle("is-selected", c.dataset.goal === state.goalName);
-    });
-
-    applyModeConfig();
+    if (state.goalType) {
+      setGoalType(state.goalType);
+      if (state.goalType === "specific") {
+        if (state.goalItem) dom.goalItemInput.value = state.goalItem;
+        if (state.goalPrice) dom.goalPriceInput.value = state.goalPrice;
+      }
+    }
 
     if (state.step === 4) {
       syncFinalSummary();

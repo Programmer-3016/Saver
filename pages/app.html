@@ -57,8 +57,8 @@
           <div>
             <!-- Step Title -->
             <div class="mb-6 md:mb-8">
-              <h1 class="font-display text-[26px] md:text-[34px] font-bold text-on-surface leading-tight" id="step-title">How do you usually receive money?</h1>
-              <p class="font-body-md text-body-md text-secondary mt-2" id="step-subtitle">Choose the mode that best describes your income pattern.</p>
+              <h1 class="font-display text-[26px] md:text-[34px] font-bold text-on-surface leading-tight" id="step-title">How does money come to you?</h1>
+              <p class="font-body-md text-body-md text-secondary mt-2" id="step-subtitle">Choose the mode that best describes your situation.</p>
             </div>
 
             <!-- ===== STEP 1: Mode Selection ===== -->
@@ -107,89 +107,130 @@
               </div>
             </div>
 
-            <!-- ===== STEP 2: Money Setup ===== -->
+            <!-- ===== STEP 2: Set Your Money ===== -->
             <div class="step-panel" data-step="2">
               <!-- Contextual Note -->
               <div class="insight-box mb-5">
                 <div class="insight-icon">
-                  <span class="material-symbols-outlined text-primary-container" style="font-size:20px">info</span>
+                  <span class="material-symbols-outlined text-primary-container" style="font-size:20px">account_balance_wallet</span>
                 </div>
-                <p class="font-body-sm text-[13px] text-secondary leading-relaxed" id="setup-note">Regular monthly salary ya stipend ko ek realistic daily spend number me convert karo.</p>
+                <p class="font-body-sm text-[13px] text-secondary leading-relaxed" id="setup-note">Just tell us how much you have — Saver handles the rest.</p>
               </div>
 
-              <!-- Form Card -->
-              <div class="form-card space-y-5">
+              <!-- Money Input -->
+              <div class="form-card space-y-6">
                 <div class="space-y-2">
-                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="income-input" id="income-label">Monthly income</label>
+                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="total-money-input">How much money do you have right now?</label>
                   <div class="input-group relative">
                     <span class="input-prefix">&#8377;</span>
-                    <input class="onboarding-input" id="income-input" inputmode="numeric" placeholder="25,000" type="text" />
+                    <input class="onboarding-input" id="total-money-input" inputmode="numeric" placeholder="2,000" type="text" />
                   </div>
                 </div>
 
-                <div class="space-y-2">
-                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="fixed-input" id="fixed-label">Must-pay monthly expenses</label>
-                  <div class="input-group relative">
-                    <span class="input-prefix">&#8377;</span>
-                    <input class="onboarding-input" id="fixed-input" inputmode="numeric" placeholder="5,000" type="text" />
+                <!-- Save Mode Selection -->
+                <div class="space-y-3">
+                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block">How much do you want to save?</label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Custom -->
+                    <button class="save-mode-card group relative text-left p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-save-mode="custom" type="button">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
+                        <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
+                      </div>
+                      <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-primary-container text-xl">edit</span>
+                      </div>
+                      <h3 class="font-h3 text-[15px] font-bold text-on-surface mb-1">I'll set it myself</h3>
+                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed">I know how much I want to save</p>
+                    </button>
+                    <!-- Smart -->
+                    <button class="save-mode-card group relative text-left p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-save-mode="smart" type="button">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
+                        <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
+                      </div>
+                      <div class="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-violet-600 text-xl">auto_awesome</span>
+                      </div>
+                      <h3 class="font-h3 text-[15px] font-bold text-on-surface mb-1">Smart Suggest</h3>
+                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed">Saver will recommend how much to save</p>
+                    </button>
                   </div>
                 </div>
 
-                <div class="space-y-2">
-                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="reserve-input" id="reserve-label">Monthly savings target</label>
+                <!-- Custom Amount Input (hidden by default) -->
+                <div class="space-y-2 hidden" id="custom-save-section">
+                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="custom-save-input">Save amount</label>
                   <div class="input-group relative">
                     <span class="input-prefix">&#8377;</span>
-                    <input class="onboarding-input" id="reserve-input" inputmode="numeric" placeholder="3,000" type="text" />
+                    <input class="onboarding-input" id="custom-save-input" inputmode="numeric" placeholder="500" type="text" />
                   </div>
                 </div>
 
-                <!-- Cycle Toggle -->
-                <div class="space-y-2 pt-2">
-                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block">Spending cycle</label>
-                  <div class="flex bg-stone-100 rounded-full p-1">
-                    <button class="cycle-btn is-selected flex-1 py-2.5 rounded-full font-semibold text-sm transition-all" data-cycle="monthly" type="button">Monthly</button>
-                    <button class="cycle-btn flex-1 py-2.5 rounded-full text-secondary font-semibold text-sm transition-all" data-cycle="weekly" type="button">Weekly</button>
+                <!-- Smart Suggestion (hidden by default) -->
+                <div class="hidden rounded-2xl bg-emerald-50/60 border border-emerald-100 p-4" id="smart-save-section">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1">auto_awesome</span>
+                    <span class="font-body-sm text-[13px] text-primary-container font-semibold">Saver recommends</span>
                   </div>
+                  <p class="font-h3 text-h3 text-primary-container" id="smart-save-amount">Save &#8377;0</p>
+                  <p class="font-body-sm text-[12px] text-secondary mt-1">30% saving — realistic and sustainable</p>
                 </div>
               </div>
             </div>
 
-            <!-- ===== STEP 3: Goal Setup ===== -->
+            <!-- ===== STEP 3: Why Save? ===== -->
             <div class="step-panel" data-step="3">
               <div class="space-y-5">
-                <!-- Goal Type Chips -->
+                <!-- Goal Type Cards -->
                 <div>
-                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-3 block">Goal type</label>
-                  <div class="flex flex-wrap gap-2.5">
-                    <button class="goal-chip is-selected flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-stone-200 bg-white font-semibold text-sm transition-all hover:shadow-sm" data-goal="Emergency Buffer" type="button">
-                      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">security</span>Emergency Buffer
+                  <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-3 block">Why do you want to save?</label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Specific Item -->
+                    <button class="goal-type-card group relative text-left p-5 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-goal-type="specific" type="button">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
+                        <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
+                      </div>
+                      <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-amber-600 text-2xl">shopping_bag</span>
+                      </div>
+                      <h3 class="font-h3 text-[16px] font-bold text-on-surface mb-1">Saving for something specific</h3>
+                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed">I know what I want to buy and how much it costs</p>
                     </button>
-                    <button class="goal-chip flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-stone-200 bg-white text-secondary font-semibold text-sm hover:border-stone-300 hover:shadow-sm transition-all" data-goal="Gadget" type="button">
-                      <span class="material-symbols-outlined" style="font-size:18px">smartphone</span>Gadget
-                    </button>
-                    <button class="goal-chip flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-stone-200 bg-white text-secondary font-semibold text-sm hover:border-stone-300 hover:shadow-sm transition-all" data-goal="Trip" type="button">
-                      <span class="material-symbols-outlined" style="font-size:18px">flight</span>Trip
-                    </button>
-                    <button class="goal-chip flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-stone-200 bg-white text-secondary font-semibold text-sm hover:border-stone-300 hover:shadow-sm transition-all" data-goal="Course Fee" type="button">
-                      <span class="material-symbols-outlined" style="font-size:18px">school</span>Course Fee
+                    <!-- Safety Buffer -->
+                    <button class="goal-type-card group relative text-left p-5 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-goal-type="safety" type="button">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
+                        <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
+                      </div>
+                      <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-blue-600 text-2xl">shield</span>
+                      </div>
+                      <h3 class="font-h3 text-[16px] font-bold text-on-surface mb-1">Just for the future</h3>
+                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed">No specific item — building an emergency safety net</p>
                     </button>
                   </div>
                 </div>
 
-                <!-- Goal Details Card -->
-                <div class="form-card space-y-5">
+                <!-- Specific Item Fields (hidden by default) -->
+                <div class="form-card space-y-5 hidden" id="specific-goal-section">
                   <div class="space-y-2">
-                    <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="goal-target-input">Target amount</label>
+                    <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="goal-item-input">What do you want to buy?</label>
+                    <input class="onboarding-input !pl-4 !font-normal" id="goal-item-input" placeholder="e.g., Monitor Arm, Earphones, Shoes..." type="text" style="padding-left:16px" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="goal-price-input">How much does it cost?</label>
                     <div class="input-group relative">
                       <span class="input-prefix">&#8377;</span>
-                      <input class="onboarding-input" id="goal-target-input" inputmode="numeric" placeholder="50,000" type="text" />
+                      <input class="onboarding-input" id="goal-price-input" inputmode="numeric" placeholder="1,500" type="text" />
                     </div>
                   </div>
+                </div>
 
-                  <div class="space-y-2">
-                    <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="goal-reason-input">Why this goal? <span class="text-stone-400 font-normal normal-case tracking-normal">(optional)</span></label>
-                    <textarea class="onboarding-input !pl-4 !text-base !font-normal resize-none" id="goal-reason-input" placeholder="e.g., Emergency fund for unexpected expenses" rows="3" style="padding-left:16px"></textarea>
+                <!-- Safety Auto Info (hidden by default) -->
+                <div class="hidden rounded-2xl bg-blue-50/60 border border-blue-100 p-4" id="safety-goal-section">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-blue-600" style="font-size:18px;font-variation-settings:'FILL' 1">shield</span>
+                    <span class="font-body-sm text-[13px] text-blue-700 font-semibold">Safety buffer plan</span>
                   </div>
+                  <p class="font-body-sm text-[13px] text-secondary leading-relaxed mt-1" id="safety-plan-text">Saver will automatically track your savings and let you know when your safety net is ready.</p>
                 </div>
               </div>
             </div>
@@ -200,13 +241,13 @@
                 <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-6 completion-check">
                   <span class="material-symbols-outlined text-white text-4xl">check</span>
                 </div>
-                <h2 class="font-display text-h1 text-on-surface mb-3">You're all set!</h2>
-                <p class="font-body-lg text-body-md text-secondary max-w-md mx-auto mb-8" id="final-summary">Your money setup is ready. Saver will now help you track and understand your spending.</p>
+                <h2 class="font-display text-h1 text-on-surface mb-3">All set! 🎉</h2>
+                <p class="font-body-lg text-body-md text-secondary max-w-md mx-auto mb-8" id="final-summary">Your money setup is ready. Saver will now help you track your spending.</p>
 
                 <div class="bg-white rounded-2xl border border-stone-100 p-6 max-w-sm mx-auto mb-8">
-                  <span class="font-label-caps text-label-caps text-secondary">YOUR SAFE DAILY SPEND</span>
-                  <p class="preview-value text-primary-container mt-2" id="final-daily">&#8377;0</p>
-                  <p class="font-body-sm text-body-sm text-secondary mt-2" id="final-caption">Complete setup to see your number.</p>
+                  <span class="font-label-caps text-label-caps text-secondary tracking-widest">FREE TO SPEND</span>
+                  <p class="preview-value text-primary-container mt-2" id="final-free">&#8377;0</p>
+                  <p class="font-body-sm text-body-sm text-secondary mt-2" id="final-caption">The rest is safely set aside.</p>
                 </div>
 
                 <button class="px-8 py-3.5 bg-primary-container text-white font-display font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all" id="start-dashboard-btn" type="button">
@@ -238,9 +279,9 @@
 
               <!-- Main Metric -->
               <div class="mb-6">
-                <p class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-1">Safe to spend per day</p>
-                <p class="preview-value text-primary-container" id="preview-daily">&#8377;0</p>
-                <p class="font-body-sm text-[13px] text-secondary mt-2 leading-relaxed" id="preview-caption">Choose a money mode to begin.</p>
+                <p class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-1">Free to spend</p>
+                <p class="preview-value text-primary-container" id="preview-free">&#8377;0</p>
+                <p class="font-body-sm text-[13px] text-secondary mt-2 leading-relaxed" id="preview-caption">Enter your available money to get started.</p>
               </div>
 
               <!-- Breakdown Grid -->
@@ -250,26 +291,26 @@
                   <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-mode">Not selected</p>
                 </div>
                 <div>
-                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Cycle</p>
-                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-cycle">Monthly</p>
+                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Total Money</p>
+                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-total">&#8377;0</p>
                 </div>
                 <div>
-                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Free budget</p>
-                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-free-budget">&#8377;0</p>
+                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Saving</p>
+                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-saving">&#8377;0</p>
                 </div>
                 <div>
-                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Reserve</p>
-                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-reserve">&#8377;0</p>
+                  <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Free to spend</p>
+                  <p class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-free-amount">&#8377;0</p>
                 </div>
               </div>
 
               <!-- Goal Section -->
               <div class="py-5 border-b border-stone-100/80">
                 <div class="flex items-center gap-2 mb-1.5">
-                  <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1">security</span>
-                  <span class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-goal-name">Emergency Buffer</span>
+                  <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1" id="preview-goal-icon">savings</span>
+                  <span class="font-body-sm text-body-sm text-on-surface font-semibold" id="preview-goal-name">Choose your saving goal</span>
                 </div>
-                <p class="font-body-sm text-[12px] text-secondary ml-7" id="preview-goal-meta">Add a target to estimate progress.</p>
+                <p class="font-body-sm text-[12px] text-secondary ml-7" id="preview-goal-meta">Pick a goal type in Step 3.</p>
               </div>
 
               <!-- Insight Box -->
@@ -277,7 +318,7 @@
                 <div class="insight-icon">
                   <span class="material-symbols-outlined text-primary-container" style="font-size:18px">lightbulb</span>
                 </div>
-                <p class="font-body-sm text-[13px] text-secondary leading-relaxed" id="preview-insight">Saver ka core job bas record rakhna nahi hai. Yeh batana hai ki tum aaj kitna safely spend kar sakte ho.</p>
+                <p class="font-body-sm text-[13px] text-secondary leading-relaxed" id="preview-insight">Saver shows you clearly how much you can freely spend and how much stays safe.</p>
               </div>
             </div>
           </aside>
