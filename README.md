@@ -1,40 +1,61 @@
 # Saver
 
-Saver is a static prototype for a student-friendly money clarity app.
+A personal money clarity app that helps you understand how much you can freely spend and how much stays safe.
 
-## Current Flow
+## Features
 
-Landing page -> Register/Login -> Verify -> Onboarding -> Dashboard.
+- **3-Step Onboarding** — Quick setup: money mode → set your money → saving goal
+- **Smart Suggest** — Auto-recommends a sustainable saving amount (30%)
+- **Live Preview** — Real-time calculations update as you enter data
+- **Responsive Design** — Works on mobile, tablet, and desktop
+- **Offline-Ready** — Built as a Progressive Web App (PWA)
 
-## Folder Structure
+## Tech Stack
 
-- `index.html`: Compatibility redirect to `pages/index.html` for local preview/static hosting.
-- `pages/`: HTML pages and route-level screens.
-- `pages/index.html`: Public landing page and product story.
-- `pages/login.html`: Login screen using the shared auth visual system.
-- `pages/register.html`: Register screen using the shared auth visual system.
-- `pages/verify.html`: Verification step after login/register.
-- `pages/app.html`: Single-page authenticated app (onboarding, dashboard, transactions, goals, profile).
-- `styles/design-system.css`: CSS variables for colors, spacing, typography (marketing + auth + app modes).
-- `styles/components.css`: Shared component styles, animations, and auth layout helpers.
-- `scripts/tailwind-theme.js`: CSS-var-driven Tailwind config loaded by all pages.
-- `scripts/components.js`: JS-rendered shared UI components (headers, footers, auth visuals).
-- `scripts/auth.js`: Shared static validation and prototype redirects for auth pages.
-- `scripts/app.js`: App shell logic — onboarding wizard, state management, live preview.
-- `assets/`: Images, icons, and generated visual assets.
+- HTML5, Vanilla JS, CSS
+- Tailwind CSS (CDN)
+- Google Material Symbols
+- Plus Jakarta Sans + Inter typography
 
-## Code Readability Rules
+## Project Structure
 
-- Keep page sections separated with short HTML comments.
-- Keep form behavior in shared JS files, not inline `onsubmit` handlers.
-- Use `data-*` hooks for JavaScript behavior so styling classes stay visual-only.
-- Avoid comments that explain obvious HTML; comment only file purpose, sections, or tricky behavior.
-- Run Prettier before pushing changes.
-
-## Formatting
-
-Use the repo Prettier config:
-
-```bash
-npx prettier --write index.html pages/**/*.html scripts/**/*.js styles/**/*.css
 ```
+Saver/
+├── index.html              # Root redirect to pages/index.html
+├── architecture.md         # Technical architecture document
+├── pages/
+│   ├── index.html          # Landing page (marketing)
+│   ├── login.html          # User login
+│   ├── register.html       # User registration
+│   ├── verify.html         # Email/OTP verification
+│   └── app.html            # App shell (onboarding + dashboard)
+├── scripts/
+│   ├── app.js              # Onboarding wizard logic
+│   ├── auth.js             # Auth form validation
+│   ├── components.js       # Shared UI component renderers
+│   └── tailwind-theme.js   # Tailwind design tokens
+└── styles/
+    ├── design-system.css   # CSS variables and base tokens
+    └── components.css      # Reusable component styles
+```
+
+## Getting Started
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/Programmer-3016/Saver.git
+   ```
+2. Open `index.html` in a browser or start a local server:
+   ```bash
+   npx serve .
+   ```
+
+## Onboarding Flow
+
+1. **Money Mode** — Fixed Income / Irregular / Allowance
+2. **Set Your Money** — Enter available money + choose saving method (Custom or Smart Suggest)
+3. **Why Save?** — Saving for something specific (item + price) or building a safety buffer
+
+## License
+
+MIT

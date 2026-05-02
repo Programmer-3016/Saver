@@ -109,21 +109,6 @@
   box-shadow: 0 4px 24px -4px rgb(10 77 60 / 0.12), 0 0 0 1px rgb(10 77 60 / 0.05);
 }
 
-/* ========================
-   Cycle & Goal Chips
-   ======================== */
-
-.cycle-btn.is-selected {
-  border-color: rgb(10 77 60);
-  background-color: rgb(10 77 60 / 0.06);
-  color: rgb(10 77 60);
-}
-
-.goal-chip.is-selected {
-  border-color: rgb(10 77 60);
-  background-color: rgb(10 77 60 / 0.08);
-  color: rgb(10 77 60);
-}
 
 /* ========================
    Completion Animation
@@ -292,10 +277,6 @@
     padding: 16px !important;
   }
 
-  .goal-chip {
-    padding: 8px 14px !important;
-    font-size: 13px !important;
-  }
 }
 
 /* ========================

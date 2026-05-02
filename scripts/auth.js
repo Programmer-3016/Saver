@@ -128,8 +128,9 @@
     }
 
     setStatus("Looks good. Taking you to verification...");
+    const destination = formType === "register" ? "verify.html" : "app.html";
     window.setTimeout(() => {
-      window.location.href = "app.html";
+      window.location.href = destination;
     }, 650);
   });
 
