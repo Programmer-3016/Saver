@@ -112,6 +112,27 @@ function formatCurrency(value) {
   return "\u20B9" + new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(num);
 }
 
+// Animates a text update with a pop effect
+function animateValue(el, text) {
+  if (!el || el.textContent === text) return;
+  el.textContent = text;
+  el.classList.remove("number-updated");
+  // Trigger reflow to restart animation
+  void el.offsetWidth;
+  el.classList.add("number-updated");
+}
+
+// Updates the step dot indicator in the header
+function syncStepDots(step) {
+  const dots = document.querySelectorAll(".step-dot");
+  dots.forEach((dot, i) => {
+    const dotNum = i + 1;
+    dot.classList.remove("step-dot--active", "step-dot--done");
+    if (dotNum === step) dot.classList.add("step-dot--active");
+    else if (dotNum < step) dot.classList.add("step-dot--done");
+  });
+}
+
 function computePreview() {
   const effectiveSave = state.saveMode === "smart"
     ? Math.round(state.totalMoney * 0.3)
@@ -169,12 +190,12 @@ function syncPreview() {
   const p = computePreview();
 
   // Desktop preview
-  if (dom.previewFree) dom.previewFree.textContent = formatCurrency(p.freeMoney);
+  if (dom.previewFree) animateValue(dom.previewFree, formatCurrency(p.freeMoney));
   if (dom.previewCaption) dom.previewCaption.textContent = p.caption;
   if (dom.previewMode) dom.previewMode.textContent = config ? config.label : "Not selected";
-  if (dom.previewTotal) dom.previewTotal.textContent = formatCurrency(state.totalMoney);
-  if (dom.previewSaving) dom.previewSaving.textContent = formatCurrency(p.effectiveSave);
-  if (dom.previewFreeAmount) dom.previewFreeAmount.textContent = formatCurrency(p.freeMoney);
+  if (dom.previewTotal) animateValue(dom.previewTotal, formatCurrency(state.totalMoney));
+  if (dom.previewSaving) animateValue(dom.previewSaving, formatCurrency(p.effectiveSave));
+  if (dom.previewFreeAmount) animateValue(dom.previewFreeAmount, formatCurrency(p.freeMoney));
   if (dom.previewGoalIcon) dom.previewGoalIcon.textContent = p.goalIcon;
   if (dom.previewGoalName) dom.previewGoalName.textContent = p.goalName;
   if (dom.previewGoalMeta) dom.previewGoalMeta.textContent = p.goalMeta;
@@ -218,6 +239,9 @@ function syncStep() {
   dom.stepCount.textContent = String(Math.min(state.step, 3));
   dom.stepTitle.textContent = meta.title;
   dom.stepSubtitle.textContent = meta.subtitle;
+
+  // Step dot indicator
+  syncStepDots(Math.min(state.step, 3));
 
   // Progress bar
   const pct = state.step === 4 ? 100 : (state.step / 3) * 100;
