@@ -1,0 +1,11 @@
+# Stitch temp files
+stitch_step2.html
+stitch_step3.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

@@ -1,0 +1,323 @@
+/*
+  Shared component-level styles.
+  These classes support reusable auth visuals and shell behavior without changing the page logic.
+*/
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 230, 225, 0.5);
+}
+
+.soft-glow {
+  box-shadow: 0 0 40px -10px rgba(27, 67, 50, 0.1);
+}
+
+.savings-ring {
+  background: conic-gradient(#1b4332 75%, #eae6e1 0);
+  mask: radial-gradient(transparent 62%, white 63%);
+  -webkit-mask: radial-gradient(transparent 62%, white 63%);
+}
+
+.floating-card {
+  animation: card-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.floating-card-delay {
+  animation-delay: -3.5s;
+}
+
+.animated-ring {
+  animation: ring-pulse 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animated-orb {
+  animation: orb-drift 14s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animated-orb-delay {
+  animation-delay: -6s;
+}
+
+@keyframes card-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
+}
+
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes orb-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(28px, -22px, 0); }
+}
+
+/* ========================
+   Auth responsive
+   ======================== */
+@media (max-width: 767px) {
+  body[data-ui="auth"] {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  body[data-ui="auth"] main {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .auth-form-content {
+    width: min(100%, 342px) !important;
+  }
+  .auth-panel {
+    align-items: flex-start !important;
+  }
+}
+
+/* ========================
+   Onboarding — Step Panels
+   ======================== */
+
+.step-panel {
+  display: none;
+  animation: step-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.step-panel.is-active {
+  display: block;
+}
+
+@keyframes step-fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================
+   Mode Cards
+   ======================== */
+
+.mode-card {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mode-card.is-selected {
+  border-color: rgb(10 77 60) !important;
+  background: linear-gradient(135deg, rgba(10,77,60,0.03), rgba(178,239,216,0.08));
+  box-shadow: 0 4px 24px -4px rgb(10 77 60 / 0.12), 0 0 0 1px rgb(10 77 60 / 0.05);
+}
+
+/* ========================
+   Cycle & Goal Chips
+   ======================== */
+
+.cycle-btn.is-selected {
+  border-color: rgb(10 77 60);
+  background-color: rgb(10 77 60 / 0.06);
+  color: rgb(10 77 60);
+}
+
+.goal-chip.is-selected {
+  border-color: rgb(10 77 60);
+  background-color: rgb(10 77 60 / 0.08);
+  color: rgb(10 77 60);
+}
+
+/* ========================
+   Completion Animation
+   ======================== */
+
+.completion-check {
+  animation: check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+@keyframes check-pop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ========================
+   Preview Card — Premium
+   ======================== */
+
+.preview-card {
+  background: white;
+  border: 1px solid rgb(228 226 221 / 0.5);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(178,239,216,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.preview-value {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Desktop preview sticky */
+@media (min-width: 1024px) {
+  .onboarding-preview {
+    position: sticky;
+    top: 100px;
+  }
+}
+
+/* ========================
+   Onboarding Input Fields — Premium
+   ======================== */
+
+.onboarding-input {
+  width: 100%;
+  padding: 14px 16px 14px 40px;
+  border-radius: 12px;
+  background: #faf9f6;
+  border: 1.5px solid #e4e2dd;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1b1c19;
+  transition: all 0.2s ease;
+}
+
+.onboarding-input:focus {
+  outline: none;
+  border-color: #0a4d3c;
+  box-shadow: 0 0 0 3px rgba(10,77,60,0.08);
+  background: #fff;
+}
+
+.onboarding-input::placeholder {
+  color: #bfc9c3;
+  font-weight: 400;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #707974;
+  transition: color 0.2s;
+}
+
+.input-group:focus-within .input-prefix {
+  color: #0a4d3c;
+}
+
+/* ========================
+   Onboarding Form Card
+   ======================== */
+
+.form-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid rgba(228,226,221,0.5);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+/* ========================
+   Insight Box
+   ======================== */
+
+.insight-box {
+  background: rgba(178,239,216,0.08);
+  border: 1px solid rgba(178,239,216,0.2);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.insight-box .insight-icon {
+  background: rgba(150,211,188,0.2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ========================
+   Responsive: MOBILE (< 640px)
+   ======================== */
+
+@media (max-width: 639px) {
+  body[data-ui="app"] {
+    font-size: 14px;
+  }
+
+  .preview-value {
+    font-size: 2rem;
+  }
+
+  .form-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .onboarding-input {
+    padding: 12px 14px 12px 36px;
+    font-size: 1rem;
+  }
+
+  .input-prefix {
+    font-size: 1rem;
+    left: 12px;
+  }
+
+  .mode-card {
+    padding: 16px !important;
+  }
+
+  .goal-chip {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ========================
+   Responsive: TABLET (640px - 1023px)
+   ======================== */
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .preview-value {
+    font-size: 2.25rem;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+}
+
+/* ========================
+   Responsive: DESKTOP (>= 1024px)
+   ======================== */
+
+@media (min-width: 1024px) {
+  .form-card {
+    padding: 28px;
+  }
+}

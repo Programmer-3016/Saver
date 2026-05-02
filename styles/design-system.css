@@ -1,0 +1,248 @@
+/*
+  Shared design tokens for the static Saver prototype.
+  Tailwind utilities read these variables through scripts/tailwind-theme.js.
+*/
+:root {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+
+  --radius-default: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-base: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-gutter: 16px;
+  --space-margin-mobile: 20px;
+  --space-margin-desktop: 64px;
+  --space-unit: 8px;
+  --space-stack-sm: 8px;
+  --space-stack-md: 16px;
+  --space-stack-lg: 32px;
+  --space-section-gap: 64px;
+  --space-container-padding: 32px;
+
+  --font-size-label-caps: 12px;
+  --line-height-label-caps: 1;
+  --tracking-label-caps: 0.05em;
+  --font-weight-label-caps: 600;
+  --font-size-display: 40px;
+  --line-height-display: 1.2;
+  --tracking-display: -0.02em;
+  --font-weight-display: 700;
+  --font-size-h1: 32px;
+  --line-height-h1: 1.25;
+  --tracking-h1: -0.01em;
+  --font-weight-h1: 700;
+  --font-size-h2: 24px;
+  --line-height-h2: 1.3;
+  --font-weight-h2: 600;
+  --font-size-h3: 20px;
+  --line-height-h3: 1.4;
+  --font-weight-h3: 600;
+  --font-size-body-lg: 18px;
+  --line-height-body-lg: 1.6;
+  --font-weight-body-lg: 400;
+  --font-size-body-md: 16px;
+  --line-height-body-md: 1.5;
+  --font-weight-body-md: 400;
+  --font-size-body-sm: 14px;
+  --line-height-body-sm: 1.5;
+  --font-weight-body-sm: 400;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-h1,
+.font-h2,
+.font-h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+body[data-ui="marketing"] {
+  background-color: rgb(var(--color-background));
+}
+
+body[data-ui="auth"] {
+  background-color: #fdfcfb;
+}
+
+body[data-ui="app"] {
+  background-color: #f7f7f5;
+}
+
+/*
+  Marketing mode keeps the original landing/verify scale and palette.
+*/
+[data-ui="marketing"] {
+  --color-primary-container: 10 77 60;
+  --color-on-primary-container: 129 189 167;
+  --color-on-primary: 255 255 255;
+  --color-on-primary-fixed-variant: 16 80 63;
+  --color-inverse-surface: 48 49 46;
+  --color-surface-container-highest: 228 226 221;
+  --color-on-tertiary-fixed: 61 6 0;
+  --color-background: 251 249 244;
+  --color-tertiary-fixed-dim: 255 180 163;
+  --color-on-secondary-container: 88 99 119;
+  --color-surface-bright: 251 249 244;
+  --color-on-tertiary: 255 255 255;
+  --color-surface-container: 240 238 233;
+  --color-tertiary: 94 14 0;
+  --color-error-container: 255 218 214;
+  --color-on-background: 27 28 25;
+  --color-outline: 112 121 116;
+  --color-outline-variant: 191 201 195;
+  --color-on-surface-variant: 64 73 69;
+  --color-on-tertiary-container: 255 148 123;
+  --color-inverse-on-surface: 242 241 236;
+  --color-surface-container-lowest: 255 255 255;
+  --color-secondary-fixed: 216 227 250;
+  --color-on-error: 255 255 255;
+  --color-secondary-container: 213 224 247;
+  --color-surface-container-low: 245 243 238;
+  --color-primary-fixed: 178 239 216;
+  --color-primary: 0 53 40;
+  --color-error: 186 26 26;
+  --color-on-secondary: 255 255 255;
+  --color-primary-fixed-dim: 150 211 188;
+  --color-on-primary-fixed: 0 33 23;
+  --color-on-tertiary-fixed-variant: 140 25 0;
+  --color-surface-container-high: 234 232 227;
+  --color-surface-dim: 219 218 213;
+  --color-on-error-container: 147 0 10;
+  --color-tertiary-fixed: 255 218 210;
+  --color-surface-variant: 228 226 221;
+  --color-secondary: 84 95 114;
+  --color-surface: 251 249 244;
+  --color-tertiary-container: 134 24 0;
+  --color-surface-tint: 45 105 86;
+  --color-on-secondary-fixed: 17 28 44;
+  --color-on-surface: 27 28 25;
+  --color-on-secondary-fixed-variant: 60 71 90;
+  --color-inverse-primary: 150 211 188;
+  --color-secondary-fixed-dim: 188 199 221;
+
+  --radius-default: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-base: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-gutter: 16px;
+  --space-margin-mobile: 20px;
+  --space-margin-desktop: 64px;
+
+  --font-size-display: 40px;
+  --line-height-display: 1.2;
+  --font-size-h1: 32px;
+  --line-height-h1: 1.25;
+  --tracking-h1: -0.01em;
+}
+
+/*
+  Auth and App modes share the denser spacing and softer palette.
+*/
+[data-ui="auth"],
+[data-ui="app"] {
+  --color-primary-container: 27 67 50;
+  --color-on-primary-container: 134 175 153;
+  --color-on-primary: 255 255 255;
+  --color-on-primary-fixed-variant: 39 78 61;
+  --color-inverse-surface: 47 49 47;
+  --color-surface-container-highest: 226 227 224;
+  --color-on-tertiary-fixed: 28 28 25;
+  --color-background: 249 250 246;
+  --color-tertiary-fixed-dim: 201 198 193;
+  --color-on-secondary-container: 99 98 96;
+  --color-surface-bright: 249 250 246;
+  --color-on-tertiary: 255 255 255;
+  --color-surface-container: 238 238 235;
+  --color-tertiary: 39 38 35;
+  --color-error-container: 255 218 214;
+  --color-on-background: 26 28 26;
+  --color-outline: 113 121 115;
+  --color-outline-variant: 193 200 194;
+  --color-on-surface-variant: 65 72 68;
+  --color-on-tertiary-container: 169 166 162;
+  --color-inverse-on-surface: 240 241 238;
+  --color-surface-container-lowest: 255 255 255;
+  --color-secondary-fixed: 229 226 222;
+  --color-on-error: 255 255 255;
+  --color-secondary-container: 226 223 219;
+  --color-surface-container-low: 243 244 241;
+  --color-primary-fixed: 193 236 212;
+  --color-primary: 1 45 29;
+  --color-error: 186 26 26;
+  --color-on-secondary: 255 255 255;
+  --color-primary-fixed-dim: 165 208 185;
+  --color-on-primary-fixed: 0 33 20;
+  --color-on-tertiary-fixed-variant: 72 71 67;
+  --color-surface-container-high: 232 232 229;
+  --color-surface-dim: 218 218 215;
+  --color-on-error-container: 147 0 10;
+  --color-tertiary-fixed: 230 226 221;
+  --color-surface-variant: 226 227 224;
+  --color-secondary: 95 94 91;
+  --color-surface: 249 250 246;
+  --color-tertiary-container: 61 60 57;
+  --color-surface-tint: 63 102 83;
+  --color-on-secondary-fixed: 28 28 26;
+  --color-on-surface: 26 28 26;
+  --color-on-secondary-fixed-variant: 71 71 68;
+  --color-inverse-primary: 165 208 185;
+  --color-secondary-fixed-dim: 200 198 194;
+
+  --radius-default: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --radius-full: 9999px;
+
+  --space-gutter: 24px;
+  --space-unit: 8px;
+  --space-stack-sm: 8px;
+  --space-stack-md: 16px;
+  --space-stack-lg: 32px;
+  --space-container-padding: 32px;
+  --space-section-gap: 64px;
+
+  --font-size-display: 48px;
+  --line-height-display: 1.1;
+  --font-weight-display: 700;
+  --font-size-h1: 32px;
+  --line-height-h1: 1.2;
+  --font-weight-h1: 600;
+  --font-size-h2: 24px;
+  --line-height-h2: 1.3;
+  --font-weight-h2: 600;
+  --font-size-h3: 20px;
+  --line-height-h3: 1.4;
+  --font-weight-h3: 600;
+}
