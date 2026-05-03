@@ -365,8 +365,6 @@ function goNext() {
   if (state.step === 4) {
     syncFinalSummary();
     saveState();
-    // Trigger confetti celebration after a short delay
-    setTimeout(launchConfetti, 400);
   }
 
   syncStep();

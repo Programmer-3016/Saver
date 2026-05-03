@@ -2,6 +2,18 @@
   Shared design tokens for the static Saver prototype.
   Tailwind utilities read these variables through scripts/tailwind-theme.js.
 */
+
+/* ── FOUC Prevention ──
+   Hide page until fonts + Tailwind load to prevent
+   raw icon text and unstyled layout flash. */
+body:not(.is-ready) {
+  opacity: 0;
+}
+body.is-ready {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
 :root {
   --font-sans: "Inter", sans-serif;
   --font-display: "Plus Jakarta Sans", sans-serif;
