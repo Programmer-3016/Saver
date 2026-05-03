@@ -82,14 +82,36 @@
 
 .step-panel {
   display: none;
-  animation: step-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .step-panel.is-active {
   display: block;
+  animation: step-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes step-fade-in {
+/* Direction-aware animations: set data-direction on parent */
+[data-direction="forward"] .step-panel.is-active {
+  animation-name: step-slide-left;
+}
+
+[data-direction="backward"] .step-panel.is-active {
+  animation-name: step-slide-right;
+}
+
+/* Default: slide in from right (forward) */
+@keyframes step-slide-left {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Slide in from left (backward) */
+@keyframes step-slide-right {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Fallback fade */
+@keyframes step-slide-in {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }

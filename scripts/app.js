@@ -357,11 +357,16 @@ function goNext() {
   if (state.step === 2 && (state.totalMoney <= 0 || !state.saveMode)) return;
   if (state.step === 3 && !state.goalType) return;
 
+  // Set slide direction for animation
+  dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "forward");
+
   state.step += 1;
 
   if (state.step === 4) {
     syncFinalSummary();
     saveState();
+    // Trigger confetti celebration after a short delay
+    setTimeout(launchConfetti, 400);
   }
 
   syncStep();
@@ -371,10 +376,89 @@ function goNext() {
 
 function goBack() {
   if (state.step <= 1) return;
+
+  // Set slide direction for animation
+  dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "backward");
+
   state.step -= 1;
   syncStep();
   syncPreview();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/**
+ * Lightweight canvas confetti burst for the completion step.
+ * Creates colorful particles that fall with gravity and fade out.
+ */
+function launchConfetti() {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;z-index:9999;pointer-events:none;";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  const colors = ["#0a4d3c", "#16a34a", "#f59e0b", "#3b82f6", "#ec4899", "#8b5cf6", "#ef4444"];
+  const particles = [];
+
+  // Create particles from multiple burst points
+  for (let i = 0; i < 120; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 8;
+    particles.push({
+      x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+      y: canvas.height * 0.35,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      size: 4 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 12,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.008,
+      shape: Math.random() > 0.5 ? "rect" : "circle",
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+
+    particles.forEach((p) => {
+      if (p.life <= 0) return;
+      alive = true;
+
+      p.x += p.vx;
+      p.vy += 0.18; // gravity
+      p.y += p.vy;
+      p.vx *= 0.99; // air resistance
+      p.rotation += p.rotationSpeed;
+      p.life -= p.decay;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(p.life, 0);
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === "rect") {
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    if (alive) {
+      requestAnimationFrame(animate);
+    } else {
+      canvas.remove();
+    }
+  }
+
+  requestAnimationFrame(animate);
 }
 
 // ── Persistence ───────────────────────────────────────────────────
