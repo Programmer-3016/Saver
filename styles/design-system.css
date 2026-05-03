@@ -1,11 +1,13 @@
 /*
   Shared design tokens for the static Saver prototype.
   Tailwind utilities read these variables through scripts/tailwind-theme.js.
+
 */
 
 /* ── FOUC Prevention ──
    Hide page until fonts + Tailwind load to prevent
    raw icon text and unstyled layout flash. */
+
 body:not(.is-ready) {
   opacity: 0;
 }
@@ -107,7 +109,9 @@ body[data-ui="app"] {
 
 /*
   Marketing mode keeps the original landing/verify scale and palette.
+
 */
+
 [data-ui="marketing"] {
   --color-primary-container: 10 77 60;
   --color-on-primary-container: 129 189 167;
@@ -181,7 +185,9 @@ body[data-ui="app"] {
 
 /*
   Auth and App modes share the denser spacing and softer palette.
+
 */
+
 [data-ui="auth"],
 [data-ui="app"] {
   --color-primary-container: 27 67 50;

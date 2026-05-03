@@ -4,6 +4,7 @@
   Saver landing page.
   Keep section IDs stable because navbar/footer links scroll to these anchors.
 -->
+
 <html class="light" lang="en">
   <head>
     <meta charset="utf-8" />
@@ -21,7 +22,9 @@
     <script src="../scripts/tailwind-theme.js"></script>
   </head>
   <body data-ui="marketing" class="bg-background text-on-background">
+
     <!-- TopAppBar -->
+
     <header
       class="sticky top-0 z-50 bg-[#F9F7F2] dark:bg-slate-950 border-b border-stone-200 dark:border-slate-800"
     >
@@ -61,7 +64,9 @@
           >
             Get Started
           </a>
+
           <!-- Hamburger toggle (mobile only) -->
+
           <button
             class="md:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-stone-100 transition-colors"
             id="mobile-menu-btn"
@@ -72,7 +77,9 @@
           </button>
         </div>
       </nav>
+
       <!-- Mobile nav overlay (fixed, slides down from under header) -->
+
       <div class="fixed inset-x-0 top-[65px] z-40 bg-[#F9F7F2]/98 backdrop-blur-lg border-b border-stone-200 shadow-lg px-6 py-5 space-y-2 font-['Plus_Jakarta_Sans'] text-sm font-medium md:hidden" id="mobile-nav" style="display:none; transform:translateY(-100%); opacity:0; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;">
         <a class="block py-2.5 px-2 rounded-lg text-[#0A4D3C] font-semibold hover:bg-stone-100 transition-colors" href="#home">Home</a>
         <a class="block py-2.5 px-2 rounded-lg text-slate-500 hover:text-[#0A4D3C] hover:bg-stone-100 transition-colors" href="#features">Features</a>
@@ -84,7 +91,9 @@
       </div>
     </header>
     <main>
+
       <!-- Hero Section -->
+
       <section class="relative pt-8 sm:pt-xl pb-16 sm:pb-32 overflow-hidden" id="home">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
           <div class="z-10">
@@ -134,7 +143,9 @@
             </div>
           </div>
           <div class="relative">
+
             <!-- Layered Card Illustrations -->
+
             <div
               class="relative z-10 bg-white p-6 rounded-[32px] shadow-xl border border-stone-100 transform -rotate-3 hover:rotate-0 transition-transform duration-500"
             >
@@ -180,7 +191,9 @@
                 </div>
               </div>
             </div>
+
             <!-- Secondary floating cards -->
+
             <div
               class="absolute top-12 -right-8 z-0 bg-white/80 backdrop-blur-md p-6 rounded-[32px] shadow-lg border border-stone-100 w-64 transform rotate-6 hidden lg:block"
             >
@@ -195,7 +208,9 @@
             </div>
           </div>
         </div>
+
         <!-- Abstract Background Shapes -->
+
         <div
           class="absolute top-0 right-0 -z-10 w-1/3 h-full bg-primary-container/5 rounded-l-[100px]"
         ></div>
@@ -203,7 +218,9 @@
           class="absolute bottom-10 left-10 -z-10 w-24 h-24 bg-tertiary-container/10 rounded-full blur-3xl"
         ></div>
       </section>
+
       <!-- User Modes Section -->
+
       <section class="py-12 sm:py-xl bg-surface-container-low" id="features">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
           <div class="text-center mb-8 sm:mb-16">
@@ -214,7 +231,9 @@
             </p>
           </div>
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
+
             <!-- Fixed Income -->
+
             <div
               class="bg-white p-8 rounded-[32px] border border-stone-100 hover:shadow-xl transition-shadow group"
             >
@@ -239,7 +258,9 @@
                 ></span
               >
             </div>
+
             <!-- Irregular Income -->
+
             <div
               class="bg-white p-8 rounded-[32px] border border-stone-100 hover:shadow-xl transition-shadow group"
             >
@@ -262,7 +283,9 @@
                 ></span
               >
             </div>
+
             <!-- Allowance -->
+
             <div
               class="bg-white p-8 rounded-[32px] border border-stone-100 hover:shadow-xl transition-shadow group"
             >
@@ -288,7 +311,9 @@
           </div>
         </div>
       </section>
+
       <!-- Recent Transactions + Clarity -->
+
       <section class="py-12 sm:py-xl" id="demo">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 items-center">
@@ -416,7 +441,9 @@
           </div>
         </div>
       </section>
+
       <!-- Trust / Testimonial Section -->
+
       <section class="py-12 sm:py-xl bg-background" id="testimonials">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
           <div
@@ -500,7 +527,9 @@
           </div>
         </div>
       </section>
+
       <!-- Final CTA -->
+
       <section class="py-16 sm:py-32" id="cta">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <h2 class="font-display text-[28px] sm:text-[36px] lg:text-display font-extrabold text-primary mb-6 sm:mb-8 leading-tight">
@@ -521,7 +550,9 @@
         </div>
       </section>
     </main>
+
     <!-- Footer -->
+
     <footer class="bg-surface-container py-10 sm:py-16 border-t border-stone-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
         <div class="col-span-2 md:col-span-1">
@@ -591,7 +622,9 @@
         </div>
       </div>
     </footer>
+
     <!-- Mobile nav toggle -->
+
     <script>
       (function () {
         const btn = document.getElementById("mobile-menu-btn");
@@ -602,6 +635,7 @@
         function openMenu() {
           nav.style.display = "flex";
           nav.style.flexDirection = "column";
+
           // Trigger reflow so the transition plays
           void nav.offsetHeight;
           nav.style.transform = "translateY(0)";
@@ -615,6 +649,7 @@
           nav.style.opacity = "0";
           btn.querySelector("span").textContent = "menu";
           isOpen = false;
+
           // Hide after animation completes
           setTimeout(() => { nav.style.display = "none"; }, 300);
         }

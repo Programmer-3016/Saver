@@ -4,6 +4,7 @@
   Login page.
   Form validation and prototype redirects live in auth.js via data-auth-form hooks.
 -->
+
 <html class="light" lang="en">
   <head>
     <meta charset="utf-8" />
@@ -22,12 +23,16 @@
   </head>
   <body data-ui="auth" class="min-h-screen overflow-hidden selection:bg-primary-container selection:text-white">
     <main class="flex min-h-screen lg:h-screen w-full overflow-hidden">
+
       <!-- Right Side: Login Form (Mobile First) -->
+
       <section
         class="auth-panel w-full min-w-0 flex-1 flex flex-col justify-center items-center px-gutter py-6 lg:py-10 bg-surface min-h-screen lg:min-h-0 lg:h-screen overflow-y-auto lg:overflow-hidden"
       >
         <div class="auth-form-content w-full max-w-[440px] space-y-6 md:space-y-6">
+
           <!-- Brand Anchor -->
+
           <div class="md:absolute top-12 left-12 mb-4 md:mb-0">
             <a
               class="font-display text-h2 font-bold tracking-tighter text-primary-container"
@@ -142,11 +147,15 @@
           </p>
         </div>
       </section>
+
       <!-- Left Side: Product Preview Section -->
+
       <section
         class="hidden lg:block lg:w-[55%] relative overflow-hidden bg-[#F1EFE9] lg:min-h-screen lg:h-screen"
       >
+
         <!-- Decorative Gradients -->
+
         <div class="absolute inset-0 opacity-40">
           <div
             class="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-fixed blur-[120px] rounded-full animated-orb"
@@ -155,12 +164,16 @@
             class="absolute bottom-[-5%] left-[-5%] w-[500px] h-[500px] bg-secondary-container blur-[100px] rounded-full animated-orb animated-orb-delay"
           ></div>
         </div>
+
         <!-- Visual Content Canvas -->
+
         <div
           class="relative w-full h-full flex flex-col justify-center items-center p-gutter lg:p-16"
         >
           <div class="relative w-full max-w-lg aspect-square">
+
             <!-- Main Savings Ring -->
+
             <div class="absolute inset-0 flex items-center justify-center">
               <div
                 class="relative w-72 h-72 md:w-96 md:h-96 rounded-full flex items-center justify-center bg-white/30 backdrop-blur-md soft-glow animated-ring"
@@ -180,7 +193,9 @@
                 </div>
               </div>
             </div>
+
             <!-- Floating Safe-to-Spend Card -->
+
             <div
               class="absolute top-10 -left-4 md:-left-12 glass-card rounded-lg p-6 w-56 md:w-64 soft-glow floating-card"
             >
@@ -205,7 +220,9 @@
                 </div>
               </div>
             </div>
+
             <!-- Layered Details Card -->
+
             <div
               class="absolute bottom-12 -right-4 md:-right-8 glass-card rounded-lg p-6 w-64 md:w-72 soft-glow floating-card floating-card-delay"
             >
@@ -241,20 +258,26 @@
               </div>
             </div>
           </div>
+
           <!-- Descriptive Text for Visual Section -->
+
           <div class="mt-16 text-center max-w-sm hidden md:block">
             <p class="font-body-lg text-body-md text-primary-container/80 italic font-medium">
               "Finally, a space where my wealth feels organized and my mind feels at ease."
             </p>
           </div>
         </div>
+
         <!-- Background Texture Simulation -->
+
         <div
           class="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"
         ></div>
       </section>
     </main>
+
     <!-- Simple Transactional Footer (Bottom bar mobile) -->
+
     <footer class="hidden">
       <div class="flex flex-wrap justify-center gap-6 font-label-caps text-label-caps text-outline">
         <a class="hover:text-primary-container transition-colors" href="index.html">Privacy</a>

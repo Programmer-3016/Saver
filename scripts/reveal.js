@@ -6,6 +6,7 @@
  *  1. Document readyState to be 'complete' (all resources loaded), OR
  *  2. A 1.5s timeout (failsafe so page never stays invisible)
  */
+
 (function () {
   function reveal() {
     document.body.classList.add("is-ready");
@@ -15,6 +16,7 @@
     reveal();
   } else {
     window.addEventListener("load", reveal);
+
     // Failsafe: never stay invisible longer than 1.5s
     setTimeout(reveal, 1500);
   }

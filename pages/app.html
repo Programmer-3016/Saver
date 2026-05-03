@@ -1,9 +1,11 @@
 <!doctype html>
+
 <!--
   Saver App Shell.
   Single-page authenticated experience: onboarding, dashboard, transactions, goals, profile.
   Sections are toggled via JavaScript — no page reloads inside the app.
 -->
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -25,9 +27,11 @@
     <!-- ============================================================
          ONBOARDING SECTION
          ============================================================ -->
+
     <div id="onboarding-section">
 
       <!-- Header -->
+
       <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-100">
         <div class="flex justify-between items-center max-w-6xl mx-auto px-5 md:px-8 py-4">
           <a class="flex items-center gap-2" href="index.html">
@@ -42,26 +46,38 @@
       </header>
 
       <!-- Main Content -->
+
       <main class="max-w-6xl mx-auto px-5 md:px-8 py-6 md:py-10">
 
         <!-- Segmented Step Progress -->
+
         <div class="mb-6 md:mb-10" id="step-progress">
           <div class="flex items-center justify-between max-w-md">
+
             <!-- Step 1 -->
+
             <div class="flex items-center gap-2 step-node is-active" data-step-node="1">
               <div class="step-circle"><span class="step-num">1</span><span class="step-check material-symbols-outlined">check</span></div>
               <span class="step-label">Mode</span>
             </div>
+
             <!-- Connector 1→2 -->
+
             <div class="step-connector flex-1 mx-2"><div class="step-connector-fill"></div></div>
+
             <!-- Step 2 -->
+
             <div class="flex items-center gap-2 step-node" data-step-node="2">
               <div class="step-circle"><span class="step-num">2</span><span class="step-check material-symbols-outlined">check</span></div>
               <span class="step-label">Money</span>
             </div>
+
             <!-- Connector 2→3 -->
+
             <div class="step-connector flex-1 mx-2"><div class="step-connector-fill"></div></div>
+
             <!-- Step 3 -->
+
             <div class="flex items-center gap-2 step-node" data-step-node="3">
               <div class="step-circle"><span class="step-num">3</span><span class="step-check material-symbols-outlined">check</span></div>
               <span class="step-label">Goal</span>
@@ -72,18 +88,23 @@
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 lg:gap-14 items-start">
 
           <!-- LEFT: Form Content -->
+
           <div>
+
             <!-- Step Title -->
+
             <div class="mb-6 md:mb-8">
               <h1 class="font-display text-[26px] md:text-[34px] font-bold text-on-surface leading-tight" id="step-title">How does money come to you?</h1>
               <p class="font-body-md text-body-md text-secondary mt-2" id="step-subtitle">Choose the mode that best describes your situation.</p>
             </div>
 
             <!-- ===== STEP 1: Mode Selection ===== -->
+
             <div class="step-panel is-active" data-step="1">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                 <!-- Fixed Income -->
+
                 <button class="mode-card group relative text-left p-6 md:p-7 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-250 cursor-pointer" data-mode="fixed" type="button">
                   <div class="absolute top-4 right-4 w-6 h-6 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all duration-200">
                     <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:16px">check</span>
@@ -97,6 +118,7 @@
                 </button>
 
                 <!-- Irregular Income -->
+
                 <button class="mode-card group relative text-left p-6 md:p-7 rounded-2xl border-2 border-stone-200 bg-white hover:border-amber-300/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-250 cursor-pointer" data-mode="irregular" type="button">
                   <div class="absolute top-4 right-4 w-6 h-6 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all duration-200">
                     <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:16px">check</span>
@@ -110,6 +132,7 @@
                 </button>
 
                 <!-- Allowance -->
+
                 <button class="mode-card group relative text-left p-6 md:p-7 rounded-2xl border-2 border-stone-200 bg-white hover:border-violet-300/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-250 cursor-pointer" data-mode="allowance" type="button">
                   <div class="absolute top-4 right-4 w-6 h-6 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all duration-200">
                     <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:16px">check</span>
@@ -126,8 +149,11 @@
             </div>
 
             <!-- ===== STEP 2: Set Your Money ===== -->
+
             <div class="step-panel" data-step="2">
+
               <!-- Contextual Note -->
+
               <div class="insight-box mb-5">
                 <div class="insight-icon">
                   <span class="material-symbols-outlined text-primary-container" style="font-size:20px">account_balance_wallet</span>
@@ -136,6 +162,7 @@
               </div>
 
               <!-- Money Input -->
+
               <div class="form-card space-y-6">
                 <div class="space-y-2">
                   <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="total-money-input">How much money do you have right now?</label>
@@ -146,10 +173,13 @@
                 </div>
 
                 <!-- Save Mode Selection -->
+
                 <div class="space-y-3">
                   <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block">How much do you want to save?</label>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                     <!-- Custom -->
+
                     <button class="save-mode-card group relative text-left p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-save-mode="custom" type="button">
                       <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
                         <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
@@ -160,7 +190,9 @@
                       <h3 class="font-h3 text-[15px] font-bold text-on-surface mb-1">I'll set it myself</h3>
                       <p class="font-body-sm text-[12px] text-secondary leading-relaxed">I know how much I want to save</p>
                     </button>
+
                     <!-- Smart -->
+
                     <button class="save-mode-card group relative text-left p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-save-mode="smart" type="button">
                       <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
                         <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
@@ -175,6 +207,7 @@
                 </div>
 
                 <!-- Custom Amount Input (hidden by default) -->
+
                 <div class="space-y-2 hidden" id="custom-save-section">
                   <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="custom-save-input">Save amount</label>
                   <div class="input-group">
@@ -184,6 +217,7 @@
                 </div>
 
                 <!-- Smart Suggestion (hidden by default) -->
+
                 <div class="hidden rounded-2xl bg-emerald-50/60 border border-emerald-100 p-4" id="smart-save-section">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1">auto_awesome</span>
@@ -196,13 +230,18 @@
             </div>
 
             <!-- ===== STEP 3: Why Save? ===== -->
+
             <div class="step-panel" data-step="3">
               <div class="space-y-5">
+
                 <!-- Goal Type Cards -->
+
                 <div>
                   <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-3 block">Why do you want to save?</label>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                     <!-- Specific Item -->
+
                     <button class="goal-type-card group relative text-left p-5 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-goal-type="specific" type="button">
                       <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
                         <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
@@ -213,7 +252,9 @@
                       <h3 class="font-h3 text-[16px] font-bold text-on-surface mb-1">Saving for something specific</h3>
                       <p class="font-body-sm text-[12px] text-secondary leading-relaxed">I know what I want to buy and how much it costs</p>
                     </button>
+
                     <!-- Safety Buffer -->
+
                     <button class="goal-type-card group relative text-left p-5 rounded-2xl border-2 border-stone-200 bg-white hover:border-primary-container/40 hover:shadow-md transition-all cursor-pointer" data-goal-type="safety" type="button">
                       <div class="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-stone-300 group-[.is-selected]:bg-primary-container group-[.is-selected]:border-primary-container flex items-center justify-center transition-all">
                         <span class="material-symbols-outlined text-white opacity-0 group-[.is-selected]:opacity-100 transition-opacity" style="font-size:14px">check</span>
@@ -228,6 +269,7 @@
                 </div>
 
                 <!-- Specific Item Fields (hidden by default) -->
+
                 <div class="form-card space-y-5 hidden" id="specific-goal-section">
                   <div class="space-y-2">
                     <label class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block" for="goal-item-input">What do you want to buy?</label>
@@ -245,6 +287,7 @@
                 </div>
 
                 <!-- Safety Auto Info (hidden by default) -->
+
                 <div class="hidden rounded-2xl bg-blue-50/60 border border-blue-100 p-4" id="safety-goal-section">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="material-symbols-outlined text-blue-600" style="font-size:18px;font-variation-settings:'FILL' 1">shield</span>
@@ -256,6 +299,7 @@
             </div>
 
             <!-- ===== STEP 4: Completion ===== -->
+
             <div class="step-panel" data-step="4">
               <div class="text-center py-6 md:py-10">
                 <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-6 completion-check">
@@ -277,6 +321,7 @@
             </div>
 
             <!-- Navigation Buttons -->
+
             <div class="flex justify-between items-center mt-10 pt-6 border-t border-stone-100" id="step-nav">
               <button class="group flex items-center gap-2 px-5 py-3 rounded-full text-stone-500 font-semibold text-sm hover:bg-stone-100 hover:text-stone-700 transition-all disabled:opacity-25 disabled:pointer-events-none" disabled id="back-btn" type="button">
                 <span class="material-symbols-outlined text-lg group-hover:-translate-x-0.5 transition-transform">arrow_back</span> Back
@@ -289,17 +334,23 @@
           </div>
 
           <!-- RIGHT: Live Preview Panel -->
+
           <aside class="onboarding-preview hidden lg:block">
+
             <!-- Soft ambient column background -->
+
             <div class="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-b from-stone-50/80 to-transparent pointer-events-none" aria-hidden="true"></div>
             <div class="preview-card p-7">
+
               <!-- Header -->
+
               <div class="flex items-center gap-2 mb-6">
                 <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1">auto_awesome</span>
                 <span class="font-label-caps text-label-caps text-secondary tracking-widest">LIVE PREVIEW</span>
               </div>
 
               <!-- Main Metric -->
+
               <div class="mb-6">
                 <p class="font-label-caps text-label-caps text-secondary tracking-widest uppercase mb-1">Free to spend</p>
                 <p class="preview-value text-primary-container" id="preview-free">&#8377;0</p>
@@ -307,6 +358,7 @@
               </div>
 
               <!-- Breakdown Grid -->
+
               <div class="grid grid-cols-2 gap-y-4 gap-x-4 py-5 border-y border-stone-100/80">
                 <div>
                   <p class="font-label-caps text-[10px] text-secondary tracking-widest uppercase mb-0.5">Mode</p>
@@ -327,6 +379,7 @@
               </div>
 
               <!-- Goal Section -->
+
               <div class="py-5 border-b border-stone-100/80">
                 <div class="flex items-center gap-2 mb-1.5">
                   <span class="material-symbols-outlined text-primary-container" style="font-size:18px;font-variation-settings:'FILL' 1" id="preview-goal-icon">savings</span>
@@ -336,6 +389,7 @@
               </div>
 
               <!-- Insight Box -->
+
               <div class="insight-box mt-5">
                 <div class="insight-icon">
                   <span class="material-symbols-outlined text-primary-container" style="font-size:18px">lightbulb</span>
@@ -346,6 +400,7 @@
           </aside>
 
           <!-- MOBILE Preview (inline, shown below form on small screens) -->
+
           <div class="lg:hidden" id="mobile-preview">
             <details class="bg-white rounded-2xl border border-stone-100 overflow-hidden">
               <summary class="flex items-center justify-between p-4 cursor-pointer select-none">
@@ -385,6 +440,7 @@
     <!-- ============================================================
          DASHBOARD SECTION (future — placeholder)
          ============================================================ -->
+
     <div id="dashboard-section" class="hidden">
       <p class="text-center py-20 text-secondary">Dashboard coming soon.</p>
     </div>

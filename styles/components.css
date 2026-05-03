@@ -1,7 +1,9 @@
 /*
   Shared component-level styles.
   These classes support reusable auth visuals and shell behavior without changing the page logic.
+
 */
+
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
@@ -59,6 +61,7 @@
 /* ========================
    Auth responsive
    ======================== */
+
 @media (max-width: 767px) {
   body[data-ui="auth"] {
     overflow-x: hidden;
@@ -90,6 +93,7 @@
 }
 
 /* Direction-aware animations: set data-direction on parent */
+
 [data-direction="forward"] .step-panel.is-active {
   animation-name: step-slide-left;
 }
@@ -99,18 +103,21 @@
 }
 
 /* Default: slide in from right (forward) */
+
 @keyframes step-slide-left {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 /* Slide in from left (backward) */
+
 @keyframes step-slide-right {
   from { opacity: 0; transform: translateX(-40px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 /* Fallback fade */
+
 @keyframes step-slide-in {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
@@ -121,6 +128,7 @@
    ======================== */
 
 /* Step node — wrapper for circle + label */
+
 .step-node {
   display: flex;
   align-items: center;
@@ -129,6 +137,7 @@
 }
 
 /* Numbered circle */
+
 .step-circle {
   width: 32px;
   height: 32px;
@@ -159,6 +168,7 @@
 }
 
 /* Step label text */
+
 .step-label {
   font-family: "Inter", sans-serif;
   font-size: 13px;
@@ -168,6 +178,7 @@
 }
 
 /* Connector line between steps */
+
 .step-connector {
   height: 2px;
   background: #e4e0d8;
@@ -185,6 +196,7 @@
 }
 
 /* ── Active step ── */
+
 .step-node.is-active .step-circle {
   background: #0a4d3c;
   border-color: #0a4d3c;
@@ -202,6 +214,7 @@
 }
 
 /* ── Completed step ── */
+
 .step-node.is-done .step-circle {
   background: #0a4d3c;
   border-color: #0a4d3c;
@@ -222,6 +235,7 @@
 }
 
 /* Filled connector (between completed steps) */
+
 .step-connector.is-filled .step-connector-fill {
   width: 100%;
 }
@@ -303,6 +317,7 @@
 }
 
 /* Desktop preview sticky */
+
 @media (min-width: 1024px) {
   .onboarding-preview {
     position: sticky;
@@ -315,6 +330,7 @@
    ======================== */
 
 /* The input-group is now a flex row — no absolute positioning needed */
+
 .input-group {
   display: flex;
   align-items: center;
@@ -376,6 +392,7 @@
 }
 
 /* When input is the only child (no ₹ prefix), restore left padding */
+
 .input-group > .onboarding-input:first-child {
   padding-left: 14px;
 }
