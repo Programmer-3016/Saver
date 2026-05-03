@@ -80,7 +80,7 @@ Both share a unified design system but serve different UX goals.
 
 ### Landing Page
 
-Header displays: Logo, Features, Testimonials, Pricing, Login, Get Started.
+Header displays: Logo, Features, Testimonials, Login, Get Started.
 No bottom app navigation on the landing page.
 
 ### Auth Pages (Login/Register)

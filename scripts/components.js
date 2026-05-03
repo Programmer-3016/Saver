@@ -5,7 +5,6 @@
     { key: "home", label: "Home", href: "#home" },
     { key: "features", label: "Features", href: "#features" },
     { key: "testimonials", label: "Testimonials", href: "#testimonials" },
-    { key: "pricing", label: "Pricing", href: "#pricing" },
   ];
 
   const transactionFeed = [
@@ -217,7 +216,7 @@
             <h4 class="font-h3 text-h3 text-primary text-base mb-6">Product</h4>
             <ul class="space-y-4 font-body-sm text-body-sm text-secondary">
               <li><a class="hover:text-primary transition-colors" href="#features">Features</a></li>
-              <li><a class="hover:text-primary transition-colors" href="#pricing">Pricing</a></li>
+              <li><a class="hover:text-primary transition-colors" href="#cta">Get Started</a></li>
               <li><a class="hover:text-primary transition-colors" href="#testimonials">Security</a></li>
             </ul>
           </div>
