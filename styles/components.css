@@ -95,37 +95,113 @@
 }
 
 /* ========================
-   Step Dot Indicator
+   Segmented Step Progress
    ======================== */
 
-.step-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+/* Step node — wrapper for circle + label */
+.step-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Numbered circle */
+.step-circle {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #d4d0c8;
-  transition: background 0.4s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease;
+  background: #f0ede6;
+  border: 2px solid #d4d0c8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.4s ease, border-color 0.4s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
 }
 
-.step-dot--active {
-  background: #0a4d3c;
-  width: 24px;
-  border-radius: 4px;
-  transform: scale(1);
+.step-num {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9c9789;
+  transition: color 0.3s ease, opacity 0.3s ease;
 }
 
-.step-dot--done {
-  background: rgba(10, 77, 60, 0.35);
+.step-check {
+  position: absolute;
+  font-size: 16px;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.step-dot-line {
-  display: inline-block;
-  width: 18px;
-  height: 1.5px;
+/* Step label text */
+.step-label {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9c9789;
+  transition: color 0.3s ease, font-weight 0.3s ease;
+}
+
+/* Connector line between steps */
+.step-connector {
+  height: 2px;
   background: #e4e0d8;
   border-radius: 2px;
-  margin: 0 1px;
-  vertical-align: middle;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-connector-fill {
+  height: 100%;
+  width: 0%;
+  background: #0a4d3c;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Active step ── */
+.step-node.is-active .step-circle {
+  background: #0a4d3c;
+  border-color: #0a4d3c;
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4px rgba(10, 77, 60, 0.12);
+}
+
+.step-node.is-active .step-num {
+  color: white;
+}
+
+.step-node.is-active .step-label {
+  color: #0a4d3c;
+  font-weight: 600;
+}
+
+/* ── Completed step ── */
+.step-node.is-done .step-circle {
+  background: #0a4d3c;
+  border-color: #0a4d3c;
+  transform: scale(1);
+  box-shadow: none;
+}
+
+.step-node.is-done .step-num {
+  opacity: 0;
+}
+
+.step-node.is-done .step-check {
+  opacity: 1;
+}
+
+.step-node.is-done .step-label {
+  color: #5a7d6f;
+}
+
+/* Filled connector (between completed steps) */
+.step-connector.is-filled .step-connector-fill {
+  width: 100%;
 }
 
 /* ========================

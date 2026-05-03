@@ -57,10 +57,11 @@ function $$(sel) {
 }
 
 const dom = {
-  stepCount: $("#step-count"),
+  stepLabelText: $("#step-label-text"),
   stepTitle: $("#step-title"),
   stepSubtitle: $("#step-subtitle"),
-  progressFill: $("#progress-fill"),
+  stepNodes: $$("[data-step-node]"),
+  stepConnectors: $$(".step-connector"),
   stepPanels: $$(".step-panel"),
   stepNav: $("#step-nav"),
   modeCards: $$(".mode-card"),
@@ -122,15 +123,32 @@ function animateValue(el, text) {
   el.classList.add("number-updated");
 }
 
-// Updates the step dot indicator in the header
-function syncStepDots(step) {
-  const dots = document.querySelectorAll(".step-dot");
-  dots.forEach((dot, i) => {
-    const dotNum = i + 1;
-    dot.classList.remove("step-dot--active", "step-dot--done");
-    if (dotNum === step) dot.classList.add("step-dot--active");
-    else if (dotNum < step) dot.classList.add("step-dot--done");
+/**
+ * Updates the segmented step progress indicator.
+ * Each step node gets is-active (current) or is-done (completed).
+ * Connectors between completed steps get filled.
+ */
+function syncStepProgress(step) {
+  const clampedStep = Math.min(step, 3);
+
+  // Update step nodes
+  dom.stepNodes.forEach((node) => {
+    const num = Number(node.dataset.stepNode);
+    node.classList.remove("is-active", "is-done");
+    if (num === clampedStep) node.classList.add("is-active");
+    else if (num < clampedStep) node.classList.add("is-done");
   });
+
+  // Update connectors: connector[0] is between step 1→2, connector[1] is between step 2→3
+  dom.stepConnectors.forEach((conn, i) => {
+    const afterStep = i + 1; // connector after step 1, 2...
+    conn.classList.toggle("is-filled", clampedStep > afterStep);
+  });
+
+  // Update header label
+  if (dom.stepLabelText) {
+    dom.stepLabelText.textContent = step >= 4 ? "Complete!" : `Step ${clampedStep} of 3`;
+  }
 }
 
 function computePreview() {
@@ -236,16 +254,11 @@ function syncStep() {
 
   // Header
   const meta = stepMeta[state.step];
-  dom.stepCount.textContent = String(Math.min(state.step, 3));
   dom.stepTitle.textContent = meta.title;
   dom.stepSubtitle.textContent = meta.subtitle;
 
-  // Step dot indicator
-  syncStepDots(Math.min(state.step, 3));
-
-  // Progress bar
-  const pct = state.step === 4 ? 100 : (state.step / 3) * 100;
-  dom.progressFill.style.width = pct + "%";
+  // Step progress indicator
+  syncStepProgress(state.step);
 
   // Back button
   dom.backBtn.disabled = state.step === 1;

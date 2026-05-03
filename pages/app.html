@@ -34,16 +34,8 @@
             <span class="material-symbols-outlined text-primary-container">account_balance_wallet</span>
             <span class="text-xl font-bold text-primary-container font-display">Saver</span>
           </a>
-          <div class="flex items-center gap-4">
-            <!-- Step dots indicator -->
-            <div class="hidden sm:flex items-center gap-1.5" id="step-indicator" aria-label="Step progress">
-              <span class="step-dot step-dot--active" data-dot="1"></span>
-              <span class="step-dot-line"></span>
-              <span class="step-dot" data-dot="2"></span>
-              <span class="step-dot-line"></span>
-              <span class="step-dot" data-dot="3"></span>
-              <span class="sr-only">Step <span id="step-count">1</span> of 3</span>
-            </div>
+          <div class="flex items-center gap-3">
+            <span class="font-body-sm text-body-sm text-secondary hidden sm:inline" id="step-label-text">Step 1 of 3</span>
             <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-white text-sm font-bold shadow-sm">S</div>
           </div>
         </div>
@@ -52,10 +44,28 @@
       <!-- Main Content -->
       <main class="max-w-6xl mx-auto px-5 md:px-8 py-6 md:py-10">
 
-        <!-- Progress Bar -->
-        <div class="mb-6 md:mb-10">
-          <div class="h-1 bg-stone-200 rounded-full overflow-hidden max-w-md">
-            <div class="h-full bg-primary-container rounded-full transition-all duration-500 ease-out" id="progress-fill" style="width: 33%"></div>
+        <!-- Segmented Step Progress -->
+        <div class="mb-6 md:mb-10" id="step-progress">
+          <div class="flex items-center justify-between max-w-md">
+            <!-- Step 1 -->
+            <div class="flex items-center gap-2 step-node is-active" data-step-node="1">
+              <div class="step-circle"><span class="step-num">1</span><span class="step-check material-symbols-outlined">check</span></div>
+              <span class="step-label">Mode</span>
+            </div>
+            <!-- Connector 1→2 -->
+            <div class="step-connector flex-1 mx-2"><div class="step-connector-fill"></div></div>
+            <!-- Step 2 -->
+            <div class="flex items-center gap-2 step-node" data-step-node="2">
+              <div class="step-circle"><span class="step-num">2</span><span class="step-check material-symbols-outlined">check</span></div>
+              <span class="step-label">Money</span>
+            </div>
+            <!-- Connector 2→3 -->
+            <div class="step-connector flex-1 mx-2"><div class="step-connector-fill"></div></div>
+            <!-- Step 3 -->
+            <div class="flex items-center gap-2 step-node" data-step-node="3">
+              <div class="step-circle"><span class="step-num">3</span><span class="step-check material-symbols-outlined">check</span></div>
+              <span class="step-label">Goal</span>
+            </div>
           </div>
         </div>
 
