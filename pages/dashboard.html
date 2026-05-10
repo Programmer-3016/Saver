@@ -1,0 +1,555 @@
+<!doctype html>
+
+<!--
+  Saver — Dashboard.
+  Premium bento-grid dashboard with hero stats, spending chart,
+  budget pulse, quick log, category breakdown, and expense modal.
+  Redirects to onboarding.html if setup is not complete.
+-->
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Saver — Dashboard</title>
+    <meta
+      name="description"
+      content="Your personal money clarity dashboard. Track spending, set goals, and understand your finances."
+    />
+    <meta name="theme-color" content="#1b4332" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="../styles/design-system.css" rel="stylesheet" />
+    <link href="../styles/shared.css" rel="stylesheet" />
+    <link href="../styles/dashboard.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="../scripts/tailwind-theme.js"></script>
+  </head>
+  <body
+    data-ui="app"
+    class="bg-background text-on-background antialiased min-h-screen font-body-md text-body-md flex flex-col items-center"
+  >
+
+    <!-- Top App Bar -->
+
+    <header
+      class="bg-white/90 backdrop-blur-md shadow-soft-green sticky top-0 border-b border-emerald-50 z-50 w-full"
+    >
+      <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+
+        <!-- Logo -->
+
+        <a
+          class="text-2xl font-bold text-primary-container flex items-center gap-2 font-display tracking-tight"
+          href="index.html"
+        >
+          <span
+            class="material-symbols-outlined text-primary-container fill-icon"
+          >savings</span>
+          Saver
+        </a>
+
+        <!-- Nav Pills (desktop) -->
+
+        <nav
+          class="hidden md:flex items-center gap-1 bg-surface-container-low rounded-full p-1"
+          id="dash-nav"
+        >
+          <button
+            class="nav-pill is-active font-label-pill text-label-pill"
+            data-tab="overview"
+          >Overview</button>
+          <button
+            class="nav-pill text-gray-500 font-label-pill text-label-pill"
+            data-tab="transactions"
+          >Transactions</button>
+          <button
+            class="nav-pill text-gray-500 font-label-pill text-label-pill"
+            data-tab="goals"
+          >Goals</button>
+        </nav>
+
+        <!-- Right Actions -->
+
+        <div class="flex items-center gap-4">
+          <button
+            class="text-on-surface-variant hover:text-primary-container transition-colors p-2 rounded-full hover:bg-surface-container"
+          >
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <div
+            class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-body-lg text-body-lg font-bold cursor-pointer"
+            id="dash-avatar"
+          >S</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Canvas -->
+
+    <main class="w-full max-w-7xl mx-auto flex-1 pb-24">
+
+      <!-- ═══════════════════════════════════════════════════════════
+           OVERVIEW PANEL
+           ═══════════════════════════════════════════════════════════ -->
+
+      <div class="dash-panel is-active" data-panel="overview">
+
+        <!-- Hero Section -->
+
+        <section class="relative w-full flex items-end pb-8 px-6 h-auto md:h-[320px] mt-2 pt-8 md:pt-0">
+
+          <!-- Decorative Gradient -->
+
+          <div class="absolute inset-0 hero-gradient rounded-3xl overflow-hidden -z-10">
+            <svg
+              class="absolute top-0 left-0 w-full h-full opacity-20"
+              preserveAspectRatio="none"
+              viewBox="0 0 1200 400"
+            >
+              <path
+                class="text-primary-container"
+                d="M0,200 C300,100 600,300 1200,150 L1200,0 L0,0 Z"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </div>
+
+          <!-- Glassmorphic Stats Row -->
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full relative z-10">
+
+            <!-- Card 1: Today's Limit -->
+
+            <div class="glass-panel flex flex-col gap-2">
+              <div class="flex items-center justify-between text-on-surface-variant">
+                <span class="font-label-pill text-label-pill uppercase tracking-wider">Today's Limit</span>
+                <span class="material-symbols-outlined text-xl">account_balance_wallet</span>
+              </div>
+              <div
+                class="font-currency-display text-currency-display text-on-background mt-2"
+                id="hero-daily-limit"
+              >₹0</div>
+              <div class="flex items-center gap-2 mt-auto pt-2 text-on-surface-variant text-sm">
+                <div class="w-2 h-2 rounded-full bg-error"></div>
+                <span id="hero-spent">₹0 spent</span>
+                <span class="text-outline-variant">•</span>
+                <div class="w-2 h-2 rounded-full bg-primary-container"></div>
+                <span id="hero-left">₹0 left</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Free to Spend -->
+
+            <div class="glass-panel flex flex-col gap-2">
+              <div class="flex items-center justify-between text-on-surface-variant">
+                <span class="font-label-pill text-label-pill uppercase tracking-wider">Free to Spend</span>
+                <span class="material-symbols-outlined text-xl">payments</span>
+              </div>
+              <div
+                class="font-currency-display text-currency-display text-on-background mt-2"
+                id="hero-free-to-spend"
+              >₹0</div>
+              <div class="mt-auto pt-2 text-on-surface-variant text-sm">
+                Available after savings
+              </div>
+            </div>
+
+            <!-- Card 3: Days Left -->
+
+            <div class="glass-panel flex flex-col gap-2 justify-between">
+              <div class="flex items-center justify-between text-on-surface-variant">
+                <span class="font-label-pill text-label-pill uppercase tracking-wider">Days Left</span>
+                <span class="material-symbols-outlined text-xl">calendar_today</span>
+              </div>
+              <div>
+                <div class="font-h2 text-h2 text-on-background mb-3" id="hero-days-text">
+                  0 of 30
+                </div>
+                <div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-primary-container rounded-full transition-all duration-500"
+                    id="hero-days-bar"
+                    style="width: 0%;"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bento Grid -->
+
+        <section class="px-6 grid grid-cols-1 md:grid-cols-12 gap-4 mt-1">
+
+          <!-- Spending Trend (8-col) -->
+
+          <div class="bento-card md:col-span-8 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="font-h3 text-h3 text-on-background">Spending Trend</h2>
+              <span class="text-sm text-on-surface-variant">This Week</span>
+            </div>
+
+            <!-- Chart Area -->
+
+            <div class="flex-1 relative min-h-[200px] flex items-end gap-3" id="spending-chart">
+
+              <!-- Daily Limit Line -->
+
+              <div class="absolute top-1/3 left-0 w-full border-t border-dashed border-outline-variant flex items-center">
+                <span class="absolute right-0 -top-6 text-xs text-on-surface-variant bg-white px-2">Daily Limit</span>
+              </div>
+
+              <!-- Bars populated by JS -->
+
+            </div>
+
+            <!-- X-Axis -->
+
+            <div
+              class="flex justify-between mt-4 text-xs text-on-surface-variant border-t border-surface-container pt-2"
+              id="spending-chart-labels"
+            >
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+          </div>
+
+          <!-- Budget Pulse (4-col, Accent) -->
+
+          <div
+            class="bg-primary-container rounded-2xl shadow-soft-green md:col-span-4 flex flex-col justify-between text-on-primary relative overflow-hidden p-5"
+          >
+
+            <!-- Decorative blur -->
+
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+
+            <div>
+              <div class="flex items-center gap-2 mb-2 text-primary-fixed-dim">
+                <span class="material-symbols-outlined text-sm">favorite</span>
+                <span class="font-label-pill text-label-pill uppercase tracking-wider">Budget Pulse</span>
+              </div>
+              <h2 class="font-h2 text-h2 mt-4 text-white" id="budget-pulse-status">
+                Calculating…
+              </h2>
+              <p class="font-body-lg text-body-lg text-primary-fixed-dim mt-2" id="budget-pulse-streak"></p>
+            </div>
+
+            <div class="mt-8 flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+              <span class="material-symbols-outlined fill-icon text-primary-fixed text-3xl">local_fire_department</span>
+              <div class="text-sm text-white/90" id="budget-pulse-tip">
+                Start logging expenses to see your streak!
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Log (4-col) -->
+
+          <div class="bento-card md:col-span-4 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="font-h3 text-h3 text-on-background">Quick Log</h2>
+            </div>
+            <div class="grid grid-cols-3 gap-4 flex-1 content-center" id="quick-log-grid">
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+                data-quick-cat="food"
+              >
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">restaurant</span>
+                </div>
+                <span class="text-xs font-medium text-on-surface-variant">Food</span>
+              </button>
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+                data-quick-cat="transport"
+              >
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">commute</span>
+                </div>
+                <span class="text-xs font-medium text-on-surface-variant">Transport</span>
+              </button>
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+                data-quick-cat="shopping"
+              >
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">shopping_bag</span>
+                </div>
+                <span class="text-xs font-medium text-on-surface-variant">Shopping</span>
+              </button>
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+                data-quick-cat="bills"
+              >
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">bolt</span>
+                </div>
+                <span class="text-xs font-medium text-on-surface-variant">Bills</span>
+              </button>
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+                data-quick-cat="entertainment"
+              >
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">local_cafe</span>
+                </div>
+                <span class="text-xs font-medium text-on-surface-variant">Coffee</span>
+              </button>
+              <button
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform border border-dashed border-outline-variant rounded-full p-1"
+                data-quick-cat="other"
+              >
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant">
+                  <span class="material-symbols-outlined">add</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Where Your Money Goes (8-col) -->
+
+          <div class="bento-card md:col-span-8 flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="font-h3 text-h3 text-on-background">Where Your Money Goes</h2>
+              <span class="text-sm text-on-surface-variant">This Month</span>
+            </div>
+
+            <!-- Stacked Bar -->
+
+            <div
+              class="w-full h-4 rounded-full overflow-hidden flex mb-6 shadow-sm"
+              id="category-stacked-bar"
+            >
+              <div class="bg-surface-container-high h-full w-full"></div>
+            </div>
+
+            <!-- Category Chips -->
+
+            <div class="flex flex-wrap gap-3" id="category-chips"></div>
+          </div>
+
+          <!-- Awareness Nudge (full-width) -->
+
+          <div
+            class="bento-card md:col-span-12 bg-primary-fixed/20 border border-primary-fixed/30 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 px-6 mt-2 gap-4"
+          >
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined">trending_down</span>
+              </div>
+              <div>
+                <h3 class="font-body-lg text-body-lg font-semibold text-primary-container" id="nudge-title">
+                  Getting started
+                </h3>
+                <p class="text-sm text-on-surface-variant" id="nudge-text">
+                  Add your first expense to start tracking!
+                </p>
+              </div>
+            </div>
+            <button
+              class="bg-white border border-outline-variant px-4 py-2 rounded-full text-sm font-medium hover:bg-surface-container transition-colors text-on-background shrink-0"
+              data-tab="goals"
+            >
+              Review Goals
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           TRANSACTIONS PANEL
+           ═══════════════════════════════════════════════════════════ -->
+
+      <div class="dash-panel" data-panel="transactions">
+        <section class="px-6 pt-8 max-w-2xl mx-auto">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="font-h2 text-h2 text-on-background">All Transactions</h2>
+            <button
+              class="bg-primary-container text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+              id="add-expense-btn-alt"
+            >
+              <span class="material-symbols-outlined text-lg">add</span>
+              Add Expense
+            </button>
+          </div>
+          <div id="all-transactions-list"></div>
+        </section>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           GOALS PANEL
+           ═══════════════════════════════════════════════════════════ -->
+
+      <div class="dash-panel" data-panel="goals">
+        <section class="px-6 pt-8 max-w-2xl mx-auto">
+
+          <!-- Goal Card -->
+
+          <div class="bento-card max-w-xl">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-primary-container/10 flex items-center justify-center text-primary-container">
+                <span class="material-symbols-outlined text-3xl" id="goals-tab-icon">savings</span>
+              </div>
+              <div>
+                <h3 class="font-h3 text-h3 text-primary-container" id="goals-tab-name">Your Goal</h3>
+                <span
+                  class="text-xs font-semibold tracking-wider text-on-surface-variant uppercase"
+                  id="goals-tab-type"
+                >SET YOUR GOAL</span>
+              </div>
+            </div>
+
+            <p class="text-sm text-on-surface-variant mb-3" id="goals-tab-progress">
+              Complete onboarding to set your saving goal.
+            </p>
+
+            <div class="flex items-center gap-3 mb-2">
+              <div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary-container rounded-full transition-all duration-500"
+                  id="goals-tab-bar"
+                  style="width: 0%;"
+                ></div>
+              </div>
+              <span class="text-sm font-bold text-primary-container" id="goals-tab-percent">0%</span>
+            </div>
+
+            <p class="text-sm text-on-surface-variant mt-4 leading-relaxed" id="goals-tab-meta">
+              Complete onboarding to set your saving goal.
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Floating Action Button -->
+
+    <button
+      class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 z-50"
+      id="fab-add-expense"
+    >
+      <span class="material-symbols-outlined text-3xl">add</span>
+    </button>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EXPENSE MODAL
+         ═══════════════════════════════════════════════════════════ -->
+
+    <div class="fixed inset-0 z-[60] hidden" id="expense-modal">
+
+      <!-- Backdrop -->
+
+      <div
+        class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        id="expense-modal-backdrop"
+      ></div>
+
+      <!-- Modal Content -->
+
+      <div
+        class="absolute bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:rounded-3xl bg-white rounded-t-3xl p-6 md:p-8 shadow-2xl expense-modal-content"
+      >
+
+        <!-- Modal Header -->
+
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="font-h3 text-h3 text-on-background">Log Expense</h2>
+          <button
+            class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            id="expense-modal-close"
+          >
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        <!-- Amount Input -->
+
+        <div class="mb-6">
+          <label
+            class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2 block"
+            for="expense-amount-input"
+          >Amount</label>
+          <div class="flex items-center gap-3 bg-surface-container-low rounded-2xl px-5 py-4">
+            <span class="text-2xl text-on-surface-variant font-bold">₹</span>
+            <input
+              autocomplete="off"
+              class="flex-1 bg-transparent text-2xl font-bold text-on-background outline-none border-none focus:ring-0 p-0"
+              id="expense-amount-input"
+              inputmode="numeric"
+              placeholder="0"
+              type="text"
+            />
+          </div>
+        </div>
+
+        <!-- Category Selection -->
+
+        <div class="mb-6">
+          <label
+            class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 block"
+          >Category</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="expense-chip" data-modal-cat="food">
+              <span class="material-symbols-outlined text-base">restaurant</span>
+              Food
+            </button>
+            <button class="expense-chip" data-modal-cat="transport">
+              <span class="material-symbols-outlined text-base">commute</span>
+              Transport
+            </button>
+            <button class="expense-chip" data-modal-cat="entertainment">
+              <span class="material-symbols-outlined text-base">movie</span>
+              Fun
+            </button>
+            <button class="expense-chip" data-modal-cat="shopping">
+              <span class="material-symbols-outlined text-base">shopping_bag</span>
+              Shopping
+            </button>
+            <button class="expense-chip" data-modal-cat="bills">
+              <span class="material-symbols-outlined text-base">bolt</span>
+              Bills
+            </button>
+            <button class="expense-chip" data-modal-cat="other">
+              <span class="material-symbols-outlined text-base">receipt_long</span>
+              Other
+            </button>
+          </div>
+        </div>
+
+        <!-- Description Input -->
+
+        <div class="mb-8">
+          <label
+            class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2 block"
+            for="expense-desc-input"
+          >Note (optional)</label>
+          <input
+            autocomplete="off"
+            class="w-full bg-surface-container-low rounded-xl px-5 py-3 text-on-background outline-none border-none focus:ring-2 focus:ring-primary-container placeholder:text-outline-variant"
+            id="expense-desc-input"
+            placeholder="What was this for?"
+            type="text"
+          />
+        </div>
+
+        <!-- Submit Button -->
+
+        <button
+          class="w-full py-3.5 bg-primary-container text-white font-display font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+          disabled
+          id="expense-submit-btn"
+        >
+          Add Expense
+        </button>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+
+    <script src="../scripts/shared.js"></script>
+    <script src="../scripts/dashboard.js"></script>
+    <script src="../scripts/reveal.js"></script>
+  </body>
+</html>

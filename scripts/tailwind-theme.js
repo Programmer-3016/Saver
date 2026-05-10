@@ -1,5 +1,6 @@
 // Shared Tailwind theme for every static Saver page.
 // Tokens are driven by CSS variables so each page can switch visual modes without duplicating config.
+
 (function () {
   window.tailwind = window.tailwind || {};
   window.tailwind.config = {
@@ -12,7 +13,8 @@
           "on-primary": "rgb(var(--color-on-primary) / <alpha-value>)",
           "on-primary-fixed-variant": "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
           "inverse-surface": "rgb(var(--color-inverse-surface) / <alpha-value>)",
-          "surface-container-highest": "rgb(var(--color-surface-container-highest) / <alpha-value>)",
+          "surface-container-highest":
+            "rgb(var(--color-surface-container-highest) / <alpha-value>)",
           "on-tertiary-fixed": "rgb(var(--color-on-tertiary-fixed) / <alpha-value>)",
           background: "rgb(var(--color-background) / <alpha-value>)",
           "tertiary-fixed-dim": "rgb(var(--color-tertiary-fixed-dim) / <alpha-value>)",
@@ -39,7 +41,8 @@
           "on-secondary": "rgb(var(--color-on-secondary) / <alpha-value>)",
           "primary-fixed-dim": "rgb(var(--color-primary-fixed-dim) / <alpha-value>)",
           "on-primary-fixed": "rgb(var(--color-on-primary-fixed) / <alpha-value>)",
-          "on-tertiary-fixed-variant": "rgb(var(--color-on-tertiary-fixed-variant) / <alpha-value>)",
+          "on-tertiary-fixed-variant":
+            "rgb(var(--color-on-tertiary-fixed-variant) / <alpha-value>)",
           "surface-container-high": "rgb(var(--color-surface-container-high) / <alpha-value>)",
           "surface-dim": "rgb(var(--color-surface-dim) / <alpha-value>)",
           "on-error-container": "rgb(var(--color-on-error-container) / <alpha-value>)",
@@ -51,9 +54,12 @@
           "surface-tint": "rgb(var(--color-surface-tint) / <alpha-value>)",
           "on-secondary-fixed": "rgb(var(--color-on-secondary-fixed) / <alpha-value>)",
           "on-surface": "rgb(var(--color-on-surface) / <alpha-value>)",
-          "on-secondary-fixed-variant": "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
+          "on-secondary-fixed-variant":
+            "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
           "inverse-primary": "rgb(var(--color-inverse-primary) / <alpha-value>)",
           "secondary-fixed-dim": "rgb(var(--color-secondary-fixed-dim) / <alpha-value>)",
+          "on-primary-fixed-variant":
+            "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
         },
         borderRadius: {
           DEFAULT: "var(--radius-default)",
@@ -77,6 +83,8 @@
           "stack-lg": "var(--space-stack-lg)",
           "section-gap": "var(--space-section-gap)",
           "container-padding": "var(--space-container-padding)",
+          "grid-gutter": "16px",
+          "card-gap": "12px",
         },
         fontFamily: {
           h1: ['"Plus Jakarta Sans"', "sans-serif"],
@@ -87,6 +95,8 @@
           "body-md": ["Inter", "sans-serif"],
           "body-lg": ["Inter", "sans-serif"],
           "label-caps": ["Inter", "sans-serif"],
+          "currency-display": ['"Plus Jakarta Sans"', "sans-serif"],
+          "label-pill": ["Inter", "sans-serif"],
         },
         fontSize: {
           "label-caps": [
@@ -148,6 +158,23 @@
               fontWeight: "var(--font-weight-body-lg)",
             },
           ],
+          "currency-display": [
+            "28px",
+            {
+              lineHeight: "1.0",
+              fontWeight: "700",
+            },
+          ],
+          "label-pill": [
+            "13px",
+            {
+              lineHeight: "1.0",
+              fontWeight: "600",
+            },
+          ],
+        },
+        boxShadow: {
+          "soft-green": "0 4px 24px rgba(27, 67, 50, 0.05)",
         },
       },
     },

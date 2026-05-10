@@ -18,6 +18,7 @@
     window.addEventListener("load", reveal);
 
     // Failsafe: never stay invisible longer than 1.5s
+
     setTimeout(reveal, 1500);
   }
 })();

@@ -1,0 +1,118 @@
+/*
+  Saver — Shared Component Styles
+  Auth visuals, glass cards, floating animations, and auth responsive rules.
+  Used by login, register, verify, and marketing pages.
+*/
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 230, 225, 0.5);
+}
+
+.soft-glow {
+  box-shadow: 0 0 40px -10px rgba(27, 67, 50, 0.1);
+}
+
+.savings-ring {
+  background: conic-gradient(#1b4332 75%, #eae6e1 0);
+  mask: radial-gradient(transparent 62%, white 63%);
+  -webkit-mask: radial-gradient(transparent 62%, white 63%);
+}
+
+.floating-card {
+  animation: card-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.floating-card-delay {
+  animation-delay: -3.5s;
+}
+
+.animated-ring {
+  animation: ring-pulse 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animated-orb {
+  animation: orb-drift 14s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animated-orb-delay {
+  animation-delay: -6s;
+}
+
+@keyframes card-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes orb-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(28px, -22px, 0);
+  }
+}
+
+/* ========================
+   Auth responsive
+   ======================== */
+
+@media (max-width: 767px) {
+  body[data-ui="auth"] {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  body[data-ui="auth"] main {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .auth-form-content {
+    width: min(100%, 342px) !important;
+  }
+  .auth-panel {
+    align-items: flex-start !important;
+  }
+}
+
+/* ========================
+   Number flip animation
+   Shared by onboarding preview and dashboard metrics.
+   ======================== */
+
+@keyframes number-pop {
+  0% {
+    transform: translateY(6px) scale(0.95);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.number-updated {
+  animation: number-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}

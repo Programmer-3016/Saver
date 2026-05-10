@@ -10,14 +10,17 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Saver - Financial Mindfulness</title>
-    <meta name="description" content="Saver is a smart money clarity app designed for your unique income style. Understand where your money goes, effortlessly." />
+    <meta
+      name="description"
+      content="Saver is a smart money clarity app designed for your unique income style. Understand where your money goes, effortlessly."
+    />
     <meta name="theme-color" content="#0a4d3c" />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
       rel="stylesheet"
     />
     <link href="../styles/design-system.css" rel="stylesheet" />
-    <link href="../styles/components.css" rel="stylesheet" />
+    <link href="../styles/shared.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="../scripts/tailwind-theme.js"></script>
   </head>
@@ -55,7 +58,6 @@
             href="#testimonials"
             >Testimonials</a
           >
-
         </div>
         <div class="flex items-center gap-3">
           <a
@@ -73,20 +75,49 @@
             type="button"
             aria-label="Open menu"
           >
-            <span class="material-symbols-outlined text-[#0A4D3C]" style="font-size:24px">menu</span>
+            <span class="material-symbols-outlined text-[#0A4D3C]" style="font-size: 24px"
+              >menu</span
+            >
           </button>
         </div>
       </nav>
 
       <!-- Mobile nav overlay (fixed, slides down from under header) -->
 
-      <div class="fixed inset-x-0 top-[65px] z-40 bg-[#F9F7F2]/98 backdrop-blur-lg border-b border-stone-200 shadow-lg px-6 py-5 space-y-2 font-['Plus_Jakarta_Sans'] text-sm font-medium md:hidden" id="mobile-nav" style="display:none; transform:translateY(-100%); opacity:0; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;">
-        <a class="block py-2.5 px-2 rounded-lg text-[#0A4D3C] font-semibold hover:bg-stone-100 transition-colors" href="#home">Home</a>
-        <a class="block py-2.5 px-2 rounded-lg text-slate-500 hover:text-[#0A4D3C] hover:bg-stone-100 transition-colors" href="#features">Features</a>
-        <a class="block py-2.5 px-2 rounded-lg text-slate-500 hover:text-[#0A4D3C] hover:bg-stone-100 transition-colors" href="#testimonials">Testimonials</a>
+      <div
+        class="fixed inset-x-0 top-[65px] z-40 bg-[#F9F7F2]/98 backdrop-blur-lg border-b border-stone-200 shadow-lg px-6 py-5 space-y-2 font-['Plus_Jakarta_Sans'] text-sm font-medium md:hidden"
+        id="mobile-nav"
+        style="
+          display: none;
+          transform: translateY(-100%);
+          opacity: 0;
+          transition:
+            transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.25s ease;
+        "
+      >
+        <a
+          class="block py-2.5 px-2 rounded-lg text-[#0A4D3C] font-semibold hover:bg-stone-100 transition-colors"
+          href="#home"
+          >Home</a
+        >
+        <a
+          class="block py-2.5 px-2 rounded-lg text-slate-500 hover:text-[#0A4D3C] hover:bg-stone-100 transition-colors"
+          href="#features"
+          >Features</a
+        >
+        <a
+          class="block py-2.5 px-2 rounded-lg text-slate-500 hover:text-[#0A4D3C] hover:bg-stone-100 transition-colors"
+          href="#testimonials"
+          >Testimonials</a
+        >
 
         <div class="pt-2 border-t border-stone-200 mt-1">
-          <a class="inline-flex bg-primary-container text-on-primary px-lg py-sm rounded-full font-label-caps text-label-caps hover:opacity-90 transition-opacity w-full justify-center" href="register.html">Get Started</a>
+          <a
+            class="inline-flex bg-primary-container text-on-primary px-lg py-sm rounded-full font-label-caps text-label-caps hover:opacity-90 transition-opacity w-full justify-center"
+            href="register.html"
+            >Get Started</a
+          >
         </div>
       </div>
     </header>
@@ -95,12 +126,18 @@
       <!-- Hero Section -->
 
       <section class="relative pt-8 sm:pt-xl pb-16 sm:pb-32 overflow-hidden" id="home">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
+        <div
+          class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 sm:gap-12 items-center"
+        >
           <div class="z-10">
-            <h1 class="font-display text-[28px] sm:text-[36px] lg:text-display font-extrabold mb-4 sm:mb-6 text-primary leading-tight">
+            <h1
+              class="font-display text-[28px] sm:text-[36px] lg:text-display font-extrabold mb-4 sm:mb-6 text-primary leading-tight"
+            >
               Understand where your money goes. Effortlessly.
             </h1>
-            <p class="font-body-md sm:font-body-lg text-body-md sm:text-body-lg text-secondary mb-6 sm:mb-10 max-w-lg">
+            <p
+              class="font-body-md sm:font-body-lg text-body-md sm:text-body-lg text-secondary mb-6 sm:mb-10 max-w-lg"
+            >
               A smart money clarity app designed for your unique income style. Whether you're
               earning a salary, freelancing, or managing an allowance.
             </p>
@@ -532,7 +569,9 @@
 
       <section class="py-16 sm:py-32" id="cta">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <h2 class="font-display text-[28px] sm:text-[36px] lg:text-display font-extrabold text-primary mb-6 sm:mb-8 leading-tight">
+          <h2
+            class="font-display text-[28px] sm:text-[36px] lg:text-display font-extrabold text-primary mb-6 sm:mb-8 leading-tight"
+          >
             Ready to find your financial calm?
           </h2>
           <p class="font-body-lg text-body-lg text-secondary mb-12 max-w-xl mx-auto">
@@ -637,6 +676,7 @@
           nav.style.flexDirection = "column";
 
           // Trigger reflow so the transition plays
+
           void nav.offsetHeight;
           nav.style.transform = "translateY(0)";
           nav.style.opacity = "1";
@@ -651,7 +691,10 @@
           isOpen = false;
 
           // Hide after animation completes
-          setTimeout(() => { nav.style.display = "none"; }, 300);
+
+          setTimeout(() => {
+            nav.style.display = "none";
+          }, 300);
         }
 
         btn.addEventListener("click", () => {
@@ -659,6 +702,7 @@
         });
 
         // Close menu when a link is clicked
+
         nav.querySelectorAll("a").forEach((link) => {
           link.addEventListener("click", closeMenu);
         });

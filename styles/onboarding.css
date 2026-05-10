@@ -1,86 +1,11 @@
 /*
-  Shared component-level styles.
-  These classes support reusable auth visuals and shell behavior without changing the page logic.
-
+  Saver — Onboarding Styles
+  Step panels, progress bar, mode cards, preview panel,
+  form cards, input fields, and completion animation.
 */
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(234, 230, 225, 0.5);
-}
-
-.soft-glow {
-  box-shadow: 0 0 40px -10px rgba(27, 67, 50, 0.1);
-}
-
-.savings-ring {
-  background: conic-gradient(#1b4332 75%, #eae6e1 0);
-  mask: radial-gradient(transparent 62%, white 63%);
-  -webkit-mask: radial-gradient(transparent 62%, white 63%);
-}
-
-.floating-card {
-  animation: card-float 7s ease-in-out infinite;
-  will-change: transform;
-}
-
-.floating-card-delay {
-  animation-delay: -3.5s;
-}
-
-.animated-ring {
-  animation: ring-pulse 6s ease-in-out infinite;
-  will-change: transform;
-}
-
-.animated-orb {
-  animation: orb-drift 14s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
-.animated-orb-delay {
-  animation-delay: -6s;
-}
-
-@keyframes card-float {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -12px, 0); }
-}
-
-@keyframes ring-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-@keyframes orb-drift {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(28px, -22px, 0); }
-}
-
 /* ========================
-   Auth responsive
-   ======================== */
-
-@media (max-width: 767px) {
-  body[data-ui="auth"] {
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-  body[data-ui="auth"] main {
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-  .auth-form-content {
-    width: min(100%, 342px) !important;
-  }
-  .auth-panel {
-    align-items: flex-start !important;
-  }
-}
-
-/* ========================
-   Onboarding — Step Panels
+   Step Panels
    ======================== */
 
 .step-panel {
@@ -105,22 +30,40 @@
 /* Default: slide in from right (forward) */
 
 @keyframes step-slide-left {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Slide in from left (backward) */
 
 @keyframes step-slide-right {
-  from { opacity: 0; transform: translateX(-40px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Fallback fade */
 
 @keyframes step-slide-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ========================
@@ -148,7 +91,11 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: background 0.4s ease, border-color 0.4s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+  transition:
+    background 0.4s ease,
+    border-color 0.4s ease,
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s ease;
 }
 
 .step-num {
@@ -156,7 +103,9 @@
   font-size: 13px;
   font-weight: 700;
   color: #9c9789;
-  transition: color 0.3s ease, opacity 0.3s ease;
+  transition:
+    color 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .step-check {
@@ -174,7 +123,9 @@
   font-size: 13px;
   font-weight: 500;
   color: #9c9789;
-  transition: color 0.3s ease, font-weight 0.3s ease;
+  transition:
+    color 0.3s ease,
+    font-weight 0.3s ease;
 }
 
 /* Connector line between steps */
@@ -241,21 +192,6 @@
 }
 
 /* ========================
-   Number flip animation
-   ======================== */
-
-@keyframes number-pop {
-  0%   { transform: translateY(6px) scale(0.95); opacity: 0.4; }
-  60%  { transform: translateY(-2px) scale(1.02); opacity: 1; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.number-updated {
-  animation: number-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-
-/* ========================
    Mode Cards
    ======================== */
 
@@ -266,10 +202,11 @@
 
 .mode-card.is-selected {
   border-color: rgb(10 77 60) !important;
-  background: linear-gradient(135deg, rgba(10,77,60,0.03), rgba(178,239,216,0.08));
-  box-shadow: 0 4px 24px -4px rgb(10 77 60 / 0.12), 0 0 0 1px rgb(10 77 60 / 0.05);
+  background: linear-gradient(135deg, rgba(10, 77, 60, 0.03), rgba(178, 239, 216, 0.08));
+  box-shadow:
+    0 4px 24px -4px rgb(10 77 60 / 0.12),
+    0 0 0 1px rgb(10 77 60 / 0.05);
 }
-
 
 /* ========================
    Completion Animation
@@ -280,8 +217,14 @@
 }
 
 @keyframes check-pop {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ========================
@@ -298,13 +241,13 @@
 }
 
 .preview-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -60px;
   right: -60px;
   width: 160px;
   height: 160px;
-  background: radial-gradient(circle, rgba(178,239,216,0.25) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(178, 239, 216, 0.25) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -337,7 +280,10 @@
   border-radius: 12px;
   background: #faf9f6;
   border: 1.5px solid #e4e2dd;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   overflow: hidden;
 }
 
@@ -402,7 +348,6 @@
   font-weight: 400;
 }
 
-
 /* ========================
    Onboarding Form Card
    ======================== */
@@ -411,8 +356,8 @@
   background: white;
   border-radius: 24px;
   padding: 24px;
-  border: 1px solid rgba(228,226,221,0.5);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  border: 1px solid rgba(228, 226, 221, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 /* ========================
@@ -420,8 +365,8 @@
    ======================== */
 
 .insight-box {
-  background: rgba(178,239,216,0.08);
-  border: 1px solid rgba(178,239,216,0.2);
+  background: rgba(178, 239, 216, 0.08);
+  border: 1px solid rgba(178, 239, 216, 0.2);
   border-radius: 16px;
   padding: 16px;
   display: flex;
@@ -430,7 +375,7 @@
 }
 
 .insight-box .insight-icon {
-  background: rgba(150,211,188,0.2);
+  background: rgba(150, 211, 188, 0.2);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -471,7 +416,6 @@
   .mode-card {
     padding: 16px !important;
   }
-
 }
 
 /* ========================

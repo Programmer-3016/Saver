@@ -87,10 +87,14 @@ No bottom app navigation on the landing page.
 
 Displays: Logo, headline, form, and alternate auth link.
 
-### In-App
+### In-App (Dashboard)
 
-Displays: Top app bar, main content, bottom navigation (mobile).
-Bottom nav items: Home, Trends, Budgets, Profile.
+Top navigation bar with:
+- Logo ("Saver")
+- Tab pills: **Overview** (active) | **Transactions** | **Goals**
+- Notification bell + user avatar
+
+No sidebar navigation. No bottom nav. Tabs switch content in-place.
 
 ---
 
@@ -137,14 +141,17 @@ Each public page is a separate HTML file:
 - `pages/register.html` — Register
 - `pages/verify.html` — Email/OTP verification
 
-These pages share styles via `design-system.css`, `components.css`, and `tailwind-theme.js`.
+These pages share styles via `design-system.css`, `shared.css`, and `tailwind-theme.js`.
 
-**Zone 2 — Single-Page (Authenticated App)**
+**Zone 2 — Multi-Page (Authenticated App)**
 
-All authenticated features live in one file:
-- `pages/app.html` — Onboarding, Dashboard, Transactions, Goals, Profile
+Authenticated features are split across two pages:
+- `pages/onboarding.html` — Setup wizard (Mode → Money → Goal → Done)
+- `pages/dashboard.html` — Dashboard (tabbed: Overview, Transactions, Goals)
 
-JavaScript toggles sections. Bottom nav stays persistent. No page reloads inside the app.
+Onboarding redirects to dashboard on completion. Dashboard redirects back to onboarding if setup is incomplete. Tab switching within the dashboard uses `dash-panel` + `data-panel` attributes — no page reloads inside the dashboard.
+
+Shared logic lives in `scripts/shared.js` (DOM helpers, currency formatting, state persistence). Each page has its own script (`onboarding.js`, `dashboard.js`).
 
 ### Design System Modes
 
@@ -156,6 +163,7 @@ JavaScript toggles sections. Bottom nav stays persistent. No page reloads inside
 
 Stored in `localStorage`:
 - `saver_onboarding` — Onboarding wizard state (mode, money, saving, goal)
+- `saver_transactions` — Array of expense/income objects `{ desc, amount, category, ts }`
 - `saverUserEmail` — User email from auth
 - `saverUserName` — User name from auth
 
@@ -164,11 +172,11 @@ Stored in `localStorage`:
 ## Implemented Flow
 
 ```
-Landing → Register → Verify → app.html (Onboarding) → app.html (Dashboard)
+Landing → Register → Verify → onboarding.html (Wizard) → dashboard.html (Dashboard)
 ```
 
 Returning users:
 
 ```
-Landing or direct URL → Login → app.html (Dashboard)
+Landing or direct URL → Login → onboarding.html (auto-redirects to dashboard.html)
 ```

@@ -1,13 +1,14 @@
 /**
- * Saver App — Onboarding Wizard + Section Routing
+ * Saver — Onboarding Wizard
  *
- * This script powers the multi-step onboarding wizard in app.html.
- * It manages step transitions, user state, the live preview panel,
+ * Powers the multi-step onboarding wizard in onboarding.html.
+ * Manages step transitions, user state, the live preview panel,
  * and persists progress to localStorage so users can resume later.
  *
- * Flow: Step 1 (Mode) → Step 2 (Money) → Step 3 (Goal) → Step 4 (Done)
+ * Flow: Step 1 (Mode) → Step 2 (Money) → Step 3 (Goal) → Step 4 (Done) → dashboard.html
+ *
+ * Depends on: shared.js (must be loaded first)
  */
-
 
 // ── Mode Configurations ──────────────────────────────────────────
 // Each income type has a label and contextual note shown in Step 2.
@@ -27,7 +28,6 @@ const modeConfig = {
     note: "Track your pocket money or travel savings clearly and efficiently.",
   },
 };
-
 
 // ── Step Metadata ────────────────────────────────────────────────
 // Title and subtitle for each step, displayed in the header area.
@@ -52,42 +52,11 @@ const stepMeta = {
   },
 };
 
-
-// ── Application State ────────────────────────────────────────────
-// Central state object that tracks every user choice during onboarding.
-// This gets saved to localStorage so progress survives page refreshes.
-
-const state = {
-  step: 1,
-  mode: "",           // "fixed" | "irregular" | "allowance"
-  totalMoney: 0,      // how much money the user currently has
-  saveMode: "",       // "custom" | "smart"
-  saveAmount: 0,      // how much they want to save per cycle
-  goalType: "",       // "specific" | "safety"
-  goalItem: "",       // what they want to buy (only for "specific")
-  goalPrice: 0,       // target price (only for "specific")
-};
-
-
-// ── DOM Shorthand ────────────────────────────────────────────────
-// $ = single element, $$ = array of elements.
-// Keeps DOM queries at the top so they're easy to find and update.
-
-function $(sel) {
-  return document.querySelector(sel);
-}
-
-function $$(sel) {
-  return [...document.querySelectorAll(sel)];
-}
-
-
 // ── DOM References ───────────────────────────────────────────────
 // All DOM elements cached once at startup to avoid repeated lookups.
 // Grouped by the step/section they belong to for readability.
 
 const dom = {
-
   // Header
   stepLabelText: $("#step-label-text"),
   stepTitle: $("#step-title"),
@@ -151,40 +120,9 @@ const dom = {
   startDashboardBtn: $("#start-dashboard-btn"),
 };
 
-
-// ═══════════════════════════════════════════════════════════════════
-//  HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
-
-
-// Formats a number as Indian Rupee currency (₹1,500).
-// Returns ₹0 for invalid values to prevent NaN in the UI.
-
-function formatCurrency(value) {
-  const num = Number.isFinite(value) ? value : 0;
-  return "\u20B9" + new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(num);
-}
-
-
-// Applies a pop animation when a displayed value changes.
-// Prevents re-triggering if the text hasn't actually changed.
-
-function animateValue(el, text) {
-  if (!el || el.textContent === text) return;
-  el.textContent = text;
-  el.classList.remove("number-updated");
-
-  // Force browser reflow so the animation class restarts from scratch
-  void el.offsetWidth;
-
-  el.classList.add("number-updated");
-}
-
-
 // ═══════════════════════════════════════════════════════════════════
 //  PROGRESS INDICATOR
 // ═══════════════════════════════════════════════════════════════════
-
 
 /**
  * Updates the segmented step progress bar (1 Mode → 2 Money → 3 Goal).
@@ -199,6 +137,7 @@ function syncStepProgress(step) {
   const clampedStep = Math.min(step, 3);
 
   // Mark each step circle as active, done, or default
+
   dom.stepNodes.forEach((node) => {
     const num = Number(node.dataset.stepNode);
     node.classList.remove("is-active", "is-done");
@@ -208,22 +147,22 @@ function syncStepProgress(step) {
 
   // Fill connector lines between completed steps
   // connector[0] = between step 1→2, connector[1] = between step 2→3
+
   dom.stepConnectors.forEach((conn, i) => {
     const afterStep = i + 1;
     conn.classList.toggle("is-filled", clampedStep > afterStep);
   });
 
   // Update "Step X of 3" text in the header
+
   if (dom.stepLabelText) {
     dom.stepLabelText.textContent = step >= 4 ? "Complete!" : `Step ${clampedStep} of 3`;
   }
 }
 
-
 // ═══════════════════════════════════════════════════════════════════
 //  PREVIEW COMPUTATION
 // ═══════════════════════════════════════════════════════════════════
-
 
 /**
  * Calculates all preview values from the current state.
@@ -238,15 +177,15 @@ function syncStepProgress(step) {
  */
 
 function computePreview() {
-
   // Calculate effective save amount based on mode (smart = 30% auto)
-  const effectiveSave = state.saveMode === "smart"
-    ? Math.round(state.totalMoney * 0.3)
-    : state.saveAmount;
+
+  const effectiveSave =
+    state.saveMode === "smart" ? Math.round(state.totalMoney * 0.3) : state.saveAmount;
 
   const freeMoney = Math.max(state.totalMoney - effectiveSave, 0);
 
   // Generate contextual messages based on the user's numbers
+
   let caption = "Enter your available money to get started.";
   let insight = "Saver shows you clearly how much you can freely spend and how much stays safe.";
 
@@ -256,7 +195,8 @@ function computePreview() {
     if (freeMoney === 0) {
       insight = "All money is going to savings — keep some flexibility to avoid frustration.";
     } else if (effectiveSave === 0) {
-      insight = "Nothing is being saved. Even a small amount set aside makes a difference over time.";
+      insight =
+        "Nothing is being saved. Even a small amount set aside makes a difference over time.";
     } else if (state.mode === "allowance") {
       insight = "Saving from pocket money is tough, but small consistent savings add up fast.";
     } else {
@@ -265,6 +205,7 @@ function computePreview() {
   }
 
   // Goal-related preview info (Step 3)
+
   let goalName = "Choose your saving goal";
   let goalMeta = "Pick a goal type in Step 3.";
   let goalIcon = "savings";
@@ -294,11 +235,9 @@ function computePreview() {
   return { effectiveSave, freeMoney, caption, insight, goalName, goalMeta, goalIcon };
 }
 
-
 // ═══════════════════════════════════════════════════════════════════
 //  SYNC FUNCTIONS — Keep DOM in sync with state
 // ═══════════════════════════════════════════════════════════════════
-
 
 /**
  * Updates the live preview panel (both desktop and mobile) with
@@ -310,6 +249,7 @@ function syncPreview() {
   const p = computePreview();
 
   // Desktop preview panel (right sidebar on large screens)
+
   if (dom.previewFree) animateValue(dom.previewFree, formatCurrency(p.freeMoney));
   if (dom.previewCaption) dom.previewCaption.textContent = p.caption;
   if (dom.previewMode) dom.previewMode.textContent = config ? config.label : "Not selected";
@@ -322,32 +262,35 @@ function syncPreview() {
   if (dom.previewInsight) dom.previewInsight.textContent = p.insight;
 
   // Mobile preview strip (visible on small screens)
-  if (dom.mobilePreviewDaily) dom.mobilePreviewDaily.textContent = formatCurrency(p.freeMoney) + " free";
-  if (dom.mobilePreviewMode) dom.mobilePreviewMode.textContent = config ? config.label : "Not selected";
+
+  if (dom.mobilePreviewDaily)
+    dom.mobilePreviewDaily.textContent = formatCurrency(p.freeMoney) + " free";
+  if (dom.mobilePreviewMode)
+    dom.mobilePreviewMode.textContent = config ? config.label : "Not selected";
   if (dom.mobilePreviewFree) dom.mobilePreviewFree.textContent = formatCurrency(p.freeMoney);
-  if (dom.mobilePreviewReserve) dom.mobilePreviewReserve.textContent = formatCurrency(p.effectiveSave);
+  if (dom.mobilePreviewReserve)
+    dom.mobilePreviewReserve.textContent = formatCurrency(p.effectiveSave);
   if (dom.mobilePreviewInsight) dom.mobilePreviewInsight.textContent = p.insight;
 
   // Smart suggestion display — shows recommended 30% save amount
+
   if (dom.smartSaveAmount && state.totalMoney > 0) {
     const smartAmount = Math.round(state.totalMoney * 0.3);
     dom.smartSaveAmount.textContent = `Save ${formatCurrency(smartAmount)}`;
   }
 
   // Safety plan text — calculates how long to build a ₹5,000 buffer
+
   if (dom.safetyPlanText && state.goalType === "safety") {
-    const effectiveSave = state.saveMode === "smart"
-      ? Math.round(state.totalMoney * 0.3)
-      : state.saveAmount;
+    const effectiveSave =
+      state.saveMode === "smart" ? Math.round(state.totalMoney * 0.3) : state.saveAmount;
 
     if (effectiveSave > 0) {
       const months = Math.ceil(5000 / effectiveSave);
-      dom.safetyPlanText.textContent =
-        `Saving ${formatCurrency(effectiveSave)} per cycle builds a ₹5,000 safety net in ~${months} cycles. Saver will track your progress automatically.`;
+      dom.safetyPlanText.textContent = `Saving ${formatCurrency(effectiveSave)} per cycle builds a ₹5,000 safety net in ~${months} cycles. Saver will track your progress automatically.`;
     }
   }
 }
-
 
 /**
  * Synchronizes the entire step UI:
@@ -358,26 +301,30 @@ function syncPreview() {
  */
 
 function syncStep() {
-
   // Show only the active step panel, hide others
+
   dom.stepPanels.forEach((panel) => {
     const stepNum = Number(panel.dataset.step);
     panel.classList.toggle("is-active", stepNum === state.step);
   });
 
   // Update header text from stepMeta
+
   const meta = stepMeta[state.step];
   dom.stepTitle.textContent = meta.title;
   dom.stepSubtitle.textContent = meta.subtitle;
 
   // Update the segmented progress bar circles + connectors
+
   syncStepProgress(state.step);
 
   // Back button — disabled on step 1, hidden on completion
+
   dom.backBtn.disabled = state.step === 1;
   dom.backBtn.hidden = state.step === 4;
 
   // Next button — label and disabled state depend on the current step
+
   if (state.step === 1) {
     dom.nextBtn.textContent = "Continue";
     dom.nextBtn.disabled = !state.mode;
@@ -392,6 +339,7 @@ function syncStep() {
   }
 
   // Re-add the arrow icon if it was removed (happens when text changes)
+
   if (state.step !== 4) {
     dom.nextBtn.hidden = false;
     if (!dom.nextBtn.querySelector(".material-symbols-outlined")) {
@@ -403,9 +351,9 @@ function syncStep() {
   }
 
   // Hide the entire nav bar on the completion screen
+
   dom.stepNav.style.display = state.step === 4 ? "none" : "";
 }
-
 
 /**
  * Populates the Step 4 completion screen with a personalized summary.
@@ -421,11 +369,9 @@ function syncFinalSummary() {
   dom.finalSummary.textContent = `Based on your ${modeLabel} setup, you have ${formatCurrency(p.freeMoney)} to spend freely. Saver will help you track spending on your dashboard.`;
 }
 
-
 // ═══════════════════════════════════════════════════════════════════
 //  EVENT HANDLERS
 // ═══════════════════════════════════════════════════════════════════
-
 
 // Step 1 — Selects the user's income mode (fixed, irregular, allowance).
 // Highlights the chosen card and shows a contextual note in Step 2.
@@ -438,6 +384,7 @@ function setMode(mode) {
   });
 
   // Show the mode-specific note (e.g., "Your salary will be used to...")
+
   if (dom.setupNote && modeConfig[mode]) {
     dom.setupNote.textContent = modeConfig[mode].note;
   }
@@ -445,7 +392,6 @@ function setMode(mode) {
   syncStep();
   syncPreview();
 }
-
 
 // Step 2 — Selects save mode (custom amount vs smart 30% recommendation).
 // Toggles visibility of the custom input or smart suggestion section.
@@ -458,10 +404,12 @@ function setSaveMode(mode) {
   });
 
   // Show the matching input section, hide the other
+
   dom.customSaveSection.classList.toggle("hidden", mode !== "custom");
   dom.smartSaveSection.classList.toggle("hidden", mode !== "smart");
 
   // Auto-calculate 30% when smart mode is selected
+
   if (mode === "smart") {
     state.saveAmount = Math.round(state.totalMoney * 0.3);
   }
@@ -469,7 +417,6 @@ function setSaveMode(mode) {
   syncStep();
   syncPreview();
 }
-
 
 // Step 3 — Selects goal type (specific item or safety buffer).
 // Shows item name/price fields or the safety plan text accordingly.
@@ -482,13 +429,13 @@ function setGoalType(type) {
   });
 
   // Show the matching goal detail section
+
   dom.specificGoalSection.classList.toggle("hidden", type !== "specific");
   dom.safetyGoalSection.classList.toggle("hidden", type !== "safety");
 
   syncStep();
   syncPreview();
 }
-
 
 /**
  * Advances to the next step.
@@ -505,11 +452,13 @@ function goNext() {
   if (state.step === 3 && !state.goalType) return;
 
   // Tell CSS to slide the new panel in from the right (forward direction)
+
   dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "forward");
 
   state.step += 1;
 
   // On completion, save progress and show the final summary
+
   if (state.step === 4) {
     syncFinalSummary();
     saveState();
@@ -520,7 +469,6 @@ function goNext() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-
 /**
  * Goes back to the previous step.
  * Sets the slide direction so the panel animates in from the left.
@@ -530,6 +478,7 @@ function goBack() {
   if (state.step <= 1) return;
 
   // Tell CSS to slide the panel in from the left (backward direction)
+
   dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "backward");
 
   state.step -= 1;
@@ -538,115 +487,106 @@ function goBack() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-
-// ═══════════════════════════════════════════════════════════════════
-//  STATE PERSISTENCE
-// ═══════════════════════════════════════════════════════════════════
-
-
-// Saves onboarding progress to localStorage.
-// Users can close the tab and resume exactly where they left off.
-
-function saveState() {
-  try {
-    localStorage.setItem("saver_onboarding", JSON.stringify(state));
-  } catch (_) {}
-}
-
-
-// Loads previously saved onboarding progress from localStorage.
-// Returns true if saved state was found, false otherwise.
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem("saver_onboarding");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      Object.assign(state, parsed);
-      return true;
-    }
-  } catch (_) {}
-  return false;
-}
-
-
 // ═══════════════════════════════════════════════════════════════════
 //  INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════
 
-
 /**
  * Boots the onboarding wizard:
  * 1. Loads any saved progress from localStorage
- * 2. Binds click/input event listeners to all interactive elements
- * 3. Restores UI state to match the loaded data
- * 4. Runs initial sync to render the correct step
+ * 2. If already completed, redirects to dashboard.html
+ * 3. Binds click/input event listeners to all interactive elements
+ * 4. Restores UI state to match the loaded data
+ * 5. Runs initial sync to render the correct step
  */
 
 function init() {
   const hadState = loadState();
 
+  // If onboarding was already completed, go straight to dashboard
+
+  if (hadState && state.onboardingComplete) {
+    window.location.replace("dashboard.html");
+    return;
+  }
+
   // Step 1 — Mode card click handlers
+
   dom.modeCards.forEach((card) => {
     card.addEventListener("click", () => setMode(card.dataset.mode));
   });
 
-  // Step 2 — Save mode card click handlers
-  dom.saveModeCards.forEach((card) => {
-    card.addEventListener("click", () => setSaveMode(card.dataset.saveMode));
-  });
+  // Step 2 — Total money input
 
-  // Step 2 — Money input (strips non-numeric characters for clean data)
   dom.totalMoneyInput.addEventListener("input", () => {
-    const clean = dom.totalMoneyInput.value.replace(/[^0-9]/g, "");
-    dom.totalMoneyInput.value = clean;
-    state.totalMoney = Number(clean) || 0;
+    dom.totalMoneyInput.value = dom.totalMoneyInput.value.replace(/[^0-9]/g, "");
+    state.totalMoney = Number(dom.totalMoneyInput.value) || 0;
 
-    // Recalculate smart suggestion if that mode is active
+    // Recalculate smart suggestion if smart mode is active
+
     if (state.saveMode === "smart") {
       state.saveAmount = Math.round(state.totalMoney * 0.3);
     }
 
-    syncPreview();
     syncStep();
+    syncPreview();
+  });
+
+  // Step 2 — Save mode card selection (custom vs smart)
+
+  dom.saveModeCards.forEach((card) => {
+    card.addEventListener("click", () => setSaveMode(card.dataset.saveMode));
   });
 
   // Step 2 — Custom save amount input
+
   dom.customSaveInput.addEventListener("input", () => {
-    const clean = dom.customSaveInput.value.replace(/[^0-9]/g, "");
-    dom.customSaveInput.value = clean;
-    state.saveAmount = Number(clean) || 0;
+    dom.customSaveInput.value = dom.customSaveInput.value.replace(/[^0-9]/g, "");
+    state.saveAmount = Number(dom.customSaveInput.value) || 0;
     syncPreview();
-    syncStep();
   });
 
-  // Step 3 — Goal type card click handlers
+  // Step 3 — Goal type card selection
+
   dom.goalTypeCards.forEach((card) => {
     card.addEventListener("click", () => setGoalType(card.dataset.goalType));
   });
 
-  // Step 3 — Goal item name input (for "specific" goal type)
+  // Step 3 — Goal item name input (for specific goal)
+
   dom.goalItemInput.addEventListener("input", () => {
     state.goalItem = dom.goalItemInput.value.trim();
     syncPreview();
   });
 
-  // Step 3 — Goal price input (for "specific" goal type)
+  // Step 3 — Goal price input (for specific goal)
+
   dom.goalPriceInput.addEventListener("input", () => {
-    const clean = dom.goalPriceInput.value.replace(/[^0-9]/g, "");
-    dom.goalPriceInput.value = clean;
-    state.goalPrice = Number(clean) || 0;
+    dom.goalPriceInput.value = dom.goalPriceInput.value.replace(/[^0-9]/g, "");
+    state.goalPrice = Number(dom.goalPriceInput.value) || 0;
     syncPreview();
   });
 
-  // Navigation buttons
-  dom.backBtn.addEventListener("click", goBack);
-  dom.nextBtn.addEventListener("click", goNext);
+  // Navigation — Next button advances the step
 
-  // "Start Using Saver" button on the completion screen
-  dom.startDashboardBtn.addEventListener("click", () => {
+  dom.nextBtn.addEventListener("click", () => {
+    goNext();
     saveState();
-    alert("Dashboard coming soon! Your setup has been saved.");
+  });
+
+  // Navigation — Back button returns to the previous step
+
+  dom.backBtn.addEventListener("click", () => {
+    goBack();
+    saveState();
+  });
+
+  // Completion — Start Dashboard button redirects to dashboard
+
+  dom.startDashboardBtn.addEventListener("click", () => {
+    state.onboardingComplete = true;
+    saveState();
+    window.location.href = "dashboard.html";
   });
 
   // ── Restore saved state to UI ──────────────────────────────────
@@ -654,13 +594,14 @@ function init() {
   // selections so the UI matches what they see in the progress bar.
 
   if (hadState && state.mode) {
-
     // Restore mode card selection
+
     dom.modeCards.forEach((card) => {
       card.classList.toggle("is-selected", card.dataset.mode === state.mode);
     });
 
     // Restore money + save mode
+
     if (state.totalMoney) dom.totalMoneyInput.value = state.totalMoney;
     if (state.saveMode) {
       setSaveMode(state.saveMode);
@@ -670,6 +611,7 @@ function init() {
     }
 
     // Restore goal selections
+
     if (state.goalType) {
       setGoalType(state.goalType);
       if (state.goalType === "specific") {
@@ -679,17 +621,18 @@ function init() {
     }
 
     // If they completed the wizard, show the final summary
+
     if (state.step === 4) {
       syncFinalSummary();
     }
   }
 
   // Initial render — show the correct step and preview values
+
   syncStep();
   syncPreview();
 }
 
-
-// ── Start the app ────────────────────────────────────────────────
+// ── Start the wizard ─────────────────────────────────────────────
 
 init();

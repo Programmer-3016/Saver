@@ -1,5 +1,6 @@
 // Shared auth validation for the static Saver prototype.
 // This keeps login/register behavior consistent until a real backend is added.
+
 (function () {
   const form = document.querySelector("[data-auth-form]");
   if (!form) return;
@@ -128,7 +129,7 @@
     }
 
     setStatus("Looks good. Taking you to verification...");
-    const destination = formType === "register" ? "verify.html" : "app.html";
+    const destination = formType === "register" ? "verify.html" : "onboarding.html";
     window.setTimeout(() => {
       window.location.href = destination;
     }, 650);
@@ -137,7 +138,7 @@
   if (googleButton) {
     googleButton.addEventListener("click", () => {
       localStorage.setItem("saverAuthProvider", "google");
-      window.location.href = "app.html";
+      window.location.href = "onboarding.html";
     });
   }
 })();
