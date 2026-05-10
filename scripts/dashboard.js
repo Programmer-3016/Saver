@@ -608,6 +608,28 @@ function switchTab(tabName) {
 
 const modalState = { amount: 0, desc: "", category: "", source: "savings" };
 
+// Saved scroll position — used to restore after closing the modal
+
+let savedScrollY = 0;
+
+function lockBodyScroll() {
+  savedScrollY = window.scrollY;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.overflow = "hidden";
+}
+
+function unlockBodyScroll() {
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.overflow = "";
+  window.scrollTo(0, savedScrollY);
+}
+
 function openExpenseModal(preCategory) {
   const modal = $("#expense-modal");
   if (!modal) return;
@@ -644,7 +666,7 @@ function openExpenseModal(preCategory) {
 
   validateExpenseForm();
   modal.classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+  lockBodyScroll();
   if (amtInput) setTimeout(() => amtInput.focus(), 100);
 }
 
@@ -652,7 +674,7 @@ function closeExpenseModal() {
   const modal = $("#expense-modal");
 
   if (modal) modal.classList.add("hidden");
-  document.body.style.overflow = "";
+  unlockBodyScroll();
 }
 
 function validateExpenseForm() {
