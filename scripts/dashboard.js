@@ -160,9 +160,13 @@ function populateHeroCards(dailyLimit, todaySpent, todayLeft, freeToSpend, daysE
 //  SPENDING CHART
 // ═══════════════════════════════════════════════════════════════════
 
+// Holds the Chart.js instance so it can be destroyed on re-render
+
+let spendingChartInstance = null;
+
 function populateSpendingChart(txns, dailyLimit) {
-  const container = $("#spending-chart");
-  if (!container) return;
+  const canvas = $("#spending-chart");
+  if (!canvas) return;
 
   // Build last 7 days of spending
 
@@ -181,60 +185,113 @@ function populateSpendingChart(txns, dailyLimit) {
     days.push({ date: d, spent: daySpent, name: getDayName(d) });
   }
 
-  // Find max for scaling (at least dailyLimit so bars don't overflow)
+  // Destroy old chart before creating a new one
 
-  const maxSpent = Math.max(...days.map((d) => d.spent), dailyLimit, 1);
+  if (spendingChartInstance) {
+    spendingChartInstance.destroy();
+    spendingChartInstance = null;
+  }
 
-  // Clear old bars and re-draw the daily limit reference line
+  // Bar colors: over-limit = red, today = dark green, past = light
 
-  container.innerHTML = "";
-
-  const limitLineWrapper = document.createElement("div");
-  limitLineWrapper.className =
-    "absolute left-0 w-full border-t border-dashed border-outline-variant flex items-center";
-  limitLineWrapper.style.top = `${Math.round((1 - dailyLimit / maxSpent) * 100)}%`;
-  limitLineWrapper.innerHTML =
-    '<span class="absolute right-0 -top-6 text-xs text-on-surface-variant bg-white px-2">Daily Limit</span>';
-  container.appendChild(limitLineWrapper);
-
-  // Generate bars
-
-  days.forEach((day) => {
-    const heightPercent = maxSpent > 0 ? Math.round((day.spent / maxSpent) * 100) : 0;
-    const isOverLimit = day.spent > dailyLimit;
+  const barColors = days.map((day) => {
     const isToday = day.date.getTime() === today.getTime();
-
-    const bar = document.createElement("div");
-    bar.className = "flex-1 chart-bar relative group";
-    bar.style.height = `${Math.max(heightPercent, 2)}%`;
-
-    if (isOverLimit) {
-      bar.style.backgroundColor = "#ba1a1a";
-      bar.style.opacity = "0.8";
-    } else if (isToday) {
-      bar.style.backgroundColor = "#1b4332";
-    } else {
-      bar.style.backgroundColor = "#e8e8e5";
-    }
-
-    // Tooltip
-
-    const tooltip = document.createElement("div");
-    tooltip.className =
-      "absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded whitespace-nowrap z-10";
-    tooltip.textContent = formatCurrency(day.spent);
-    bar.appendChild(tooltip);
-
-    container.appendChild(bar);
+    if (day.spent > dailyLimit) return "rgba(186, 26, 26, 0.8)";
+    if (isToday) return "#1b4332";
+    return "#e8e8e5";
   });
 
-  // Update labels
+  const hoverColors = days.map(() => "#1b4332");
 
-  const labelsEl = $("#spending-chart-labels");
+  // Create Chart.js bar chart
 
-  if (labelsEl) {
-    labelsEl.innerHTML = days.map((d) => `<span>${d.name}</span>`).join("");
-  }
+  spendingChartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: days.map((d) => d.name),
+      datasets: [
+        {
+          label: "Spending",
+          data: days.map((d) => d.spent),
+          backgroundColor: barColors,
+          hoverBackgroundColor: hoverColors,
+          borderRadius: 6,
+          borderSkipped: false,
+          barPercentage: 0.6,
+          categoryPercentage: 0.7,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#1b1c19",
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
+          bodyFont: { family: "'Inter', sans-serif", size: 12, weight: 600 },
+          padding: { x: 10, y: 6 },
+          cornerRadius: 8,
+          displayColors: false,
+          callbacks: {
+            title: () => "",
+            label: (ctx) => formatCurrency(ctx.raw),
+          },
+        },
+
+        // Daily limit annotation line
+
+        annotation: undefined,
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { family: "'Inter', sans-serif", size: 11 },
+            color: "#9c9789",
+          },
+        },
+        y: {
+          display: false,
+          beginAtZero: true,
+          suggestedMax: Math.max(...days.map((d) => d.spent), dailyLimit) * 1.15,
+        },
+      },
+    },
+
+    // Draw the daily limit dashed line as a custom plugin
+
+    plugins: [
+      {
+        id: "dailyLimitLine",
+        afterDraw(chart) {
+          const yScale = chart.scales.y;
+          const ctx = chart.ctx;
+          const yPos = yScale.getPixelForValue(dailyLimit);
+
+          ctx.save();
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = "#c4c0b8";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(chart.chartArea.left, yPos);
+          ctx.lineTo(chart.chartArea.right, yPos);
+          ctx.stroke();
+
+          // "Daily Limit" label
+
+          ctx.setLineDash([]);
+          ctx.font = "500 11px 'Inter', sans-serif";
+          ctx.fillStyle = "#9c9789";
+          ctx.textAlign = "right";
+          ctx.fillText("Daily Limit", chart.chartArea.right, yPos - 6);
+          ctx.restore();
+        },
+      },
+    ],
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -611,6 +668,12 @@ let savedScrollY = 0;
 
 function lockBodyScroll() {
   savedScrollY = window.scrollY;
+
+  // Compensate for disappearing scrollbar to prevent layout shift
+
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  document.body.style.paddingRight = `${scrollbarWidth}px`;
+
   document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
   document.body.style.position = "fixed";
@@ -624,6 +687,7 @@ function unlockBodyScroll() {
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.width = "";
+  document.body.style.paddingRight = "";
   window.scrollTo(0, savedScrollY);
 }
 

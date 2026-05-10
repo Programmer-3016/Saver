@@ -24,6 +24,7 @@
     <link href="../styles/design-system.css" rel="stylesheet" />
     <link href="../styles/shared.css" rel="stylesheet" />
     <link href="../styles/dashboard.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="../scripts/tailwind-theme.js"></script>
   </head>
@@ -194,25 +195,8 @@
 
             <!-- Chart Area -->
 
-            <div class="flex-1 relative min-h-[200px] flex items-end gap-3" id="spending-chart">
-
-              <!-- Daily Limit Line -->
-
-              <div class="absolute top-1/3 left-0 w-full border-t border-dashed border-outline-variant flex items-center">
-                <span class="absolute right-0 -top-6 text-xs text-on-surface-variant bg-white px-2">Daily Limit</span>
-              </div>
-
-              <!-- Bars populated by JS -->
-
-            </div>
-
-            <!-- X-Axis -->
-
-            <div
-              class="flex justify-between mt-4 text-xs text-on-surface-variant border-t border-surface-container pt-2"
-              id="spending-chart-labels"
-            >
-              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            <div class="flex-1 relative min-h-[200px]">
+              <canvas id="spending-chart"></canvas>
             </div>
           </div>
 
