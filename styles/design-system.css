@@ -75,6 +75,26 @@ html {
   overflow-x: hidden;
 }
 
+/* Applied via JS when the expense modal is open */
+
+html.scroll-locked {
+  overflow: hidden !important;
+  touch-action: none !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html.scroll-locked::-webkit-scrollbar {
+  display: none !important;
+}
+
+html.scroll-locked body {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  touch-action: none !important;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

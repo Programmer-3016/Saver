@@ -120,8 +120,13 @@ function populateDashboard() {
   const avatar = $("#dash-avatar");
 
   if (avatar && state.mode) {
-    avatar.textContent = state.mode === "salary" ? "S" : "F";
+    const initials = { fixed: "F", irregular: "I", allowance: "A" };
+    avatar.textContent = initials[state.mode] || "S";
   }
+
+  // ── Profile Tab ───────────────────────────────────────────────
+
+  populateProfileTab(txns, effectiveSave);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -240,9 +245,6 @@ function populateSpendingChart(txns, dailyLimit) {
           },
         },
 
-        // Daily limit annotation line
-
-        annotation: undefined,
       },
       scales: {
         x: {
@@ -530,6 +532,50 @@ function renderAllTransactions(txns) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  PROFILE TAB
+// ═══════════════════════════════════════════════════════════════════
+
+function populateProfileTab(txns, effectiveSave) {
+
+  // Avatar initial
+
+  const profileAvatar = $("#profile-avatar");
+
+  if (profileAvatar && state.mode) {
+    const initials = { fixed: "F", irregular: "I", allowance: "A" };
+    profileAvatar.textContent = initials[state.mode] || "S";
+  }
+
+  // Mode badge
+
+  const modeBadge = $("#profile-mode-badge");
+
+  if (modeBadge && state.mode) {
+    const modes = {
+      fixed: { icon: "account_balance_wallet", label: "Fixed Income" },
+      irregular: { icon: "work", label: "Irregular Income" },
+      allowance: { icon: "school", label: "Allowance Mode" },
+    };
+    const m = modes[state.mode] || modes.fixed;
+    modeBadge.innerHTML = `<span class="material-symbols-outlined text-sm">${m.icon}</span>${m.label}`;
+  }
+
+  // Stats
+
+  const totalSpent = txns
+    .filter((t) => t.category !== "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const savedEl = $("#profile-total-saved");
+  const spentEl = $("#profile-total-spent");
+  const countEl = $("#profile-txn-count");
+
+  if (savedEl) savedEl.textContent = formatCurrency(effectiveSave);
+  if (spentEl) spentEl.textContent = formatCurrency(totalSpent);
+  if (countEl) countEl.textContent = txns.filter((t) => t.category !== "income").length;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  DASHBOARD EVENTS
 // ═══════════════════════════════════════════════════════════════════
 
@@ -554,6 +600,25 @@ function initDashboardEvents() {
   $$("[data-tab]").forEach((btn) => {
     if (btn.classList.contains("nav-pill") || btn.classList.contains("mobile-nav-tab")) return;
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
+
+  // Profile — Edit Profile (re-run onboarding)
+
+  const editBtn = $("#profile-edit-btn");
+
+  if (editBtn) editBtn.addEventListener("click", () => {
+    window.location.href = "onboarding.html";
+  });
+
+  // Profile — Reset All Data
+
+  const resetBtn = $("#profile-reset-btn");
+
+  if (resetBtn) resetBtn.addEventListener("click", () => {
+    if (confirm("Are you sure? This will clear ALL your data — transactions, goals, and settings. This cannot be undone.")) {
+      localStorage.clear();
+      window.location.href = "onboarding.html";
+    }
   });
 
   // FAB — opens the expense modal (desktop)
@@ -637,6 +702,24 @@ function initDashboardEvents() {
   const submitBtn = $("#expense-submit-btn");
 
   if (submitBtn) submitBtn.addEventListener("click", submitExpense);
+
+  // Success screen — Return to Dashboard
+
+  const returnBtn = $("#success-return-btn");
+
+  if (returnBtn) returnBtn.addEventListener("click", () => {
+    closeExpenseModal();
+    populateDashboard();
+  });
+
+  // Success screen — Add Another expense
+
+  const addAnotherBtn = $("#success-add-another-btn");
+
+  if (addAnotherBtn) addAnotherBtn.addEventListener("click", () => {
+    showExpenseFormView();
+    openExpenseModal();
+  });
 }
 
 // ── Tab Switching ────────────────────────────────────────────────
@@ -673,21 +756,28 @@ function lockBodyScroll() {
 
   const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
   document.body.style.paddingRight = `${scrollbarWidth}px`;
+  document.body.style.top = `-${savedScrollY}px`;
+
+  // CSS class with !important (primary lock)
+
+  document.documentElement.classList.add("scroll-locked");
+
+  // Inline styles as fallback in case CSS is cached
 
   document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
   document.body.style.position = "fixed";
-  document.body.style.top = `-${savedScrollY}px`;
   document.body.style.width = "100%";
 }
 
 function unlockBodyScroll() {
+  document.documentElement.classList.remove("scroll-locked");
   document.documentElement.style.overflow = "";
   document.body.style.overflow = "";
   document.body.style.position = "";
-  document.body.style.top = "";
   document.body.style.width = "";
   document.body.style.paddingRight = "";
+  document.body.style.top = "";
   window.scrollTo(0, savedScrollY);
 }
 
@@ -736,6 +826,8 @@ function closeExpenseModal() {
 
   if (modal) modal.classList.add("hidden");
   unlockBodyScroll();
+  showExpenseFormView();
+  populateDashboard();
 }
 
 function validateExpenseForm() {
@@ -758,8 +850,71 @@ function submitExpense() {
   });
 
   saveTransactions(txns);
-  closeExpenseModal();
-  populateDashboard();
+
+  // Show success screen instead of closing
+
+  showExpenseSuccessView();
+}
+
+// ── Success View Helpers ─────────────────────────────────────────
+
+const sourceLabels = {
+  savings: "Savings Account",
+  credit: "Credit Card",
+  cash: "Cash",
+};
+
+/**
+ * Switches the modal from the form to the success summary.
+ * Populates all summary fields with the just-submitted data.
+ */
+
+function showExpenseSuccessView() {
+  const formView = $("#expense-form-view");
+  const successView = $("#expense-success-view");
+
+  if (!formView || !successView) return;
+
+  // Populate summary card
+
+  const amountEl = $("#success-amount");
+  const iconEl = $("#success-icon");
+  const categoryEl = $("#success-category");
+  const sourceEl = $("#success-source");
+  const timeEl = $("#success-time");
+  const cat = categoryConfig[modalState.category] || categoryConfig.other;
+
+  if (amountEl) amountEl.textContent = formatCurrency(modalState.amount);
+  if (iconEl) iconEl.textContent = cat.icon;
+  if (categoryEl) categoryEl.textContent = cat.label;
+  if (sourceEl) sourceEl.textContent = sourceLabels[modalState.source] || modalState.source;
+
+  if (timeEl) {
+    const now = new Date();
+    const time = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+    timeEl.textContent = `Today, ${time}`;
+  }
+
+  // Toggle views
+
+  formView.classList.add("hidden");
+  successView.classList.remove("hidden");
+  successView.classList.add("flex");
+}
+
+/**
+ * Resets the modal back to the form view.
+ */
+
+function showExpenseFormView() {
+  const formView = $("#expense-form-view");
+  const successView = $("#expense-success-view");
+
+  if (!formView || !successView) return;
+
+  successView.classList.add("hidden");
+  successView.classList.remove("flex");
+  formView.classList.remove("hidden");
 }
 
 // ═══════════════════════════════════════════════════════════════════
