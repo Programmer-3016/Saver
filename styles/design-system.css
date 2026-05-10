@@ -72,6 +72,7 @@ body.is-ready {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {

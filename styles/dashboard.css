@@ -167,6 +167,16 @@
 
 .expense-modal-content {
   animation: modal-slide-up 0.3s ease-out;
+  max-width: 100vw;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+/* Lock the page when the modal is open */
+
+.expense-modal-content * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes modal-slide-up {
