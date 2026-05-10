@@ -307,9 +307,6 @@ function populateCategoryBreakdown(txns) {
   });
 
   if (grandTotal === 0) {
-
-    // Empty state
-
     barEl.innerHTML = '<div class="bg-surface-container-high h-full w-full"></div>';
     chipsEl.innerHTML =
       '<span class="text-sm text-on-surface-variant">No spending data yet. Log your first expense!</span>';

@@ -160,12 +160,6 @@ body[data-ui="app"] {
   --color-on-secondary-fixed-variant: 60 71 90;
   --color-inverse-primary: 150 211 188;
   --color-secondary-fixed-dim: 188 199 221;
-
-  --font-size-display: 40px;
-  --line-height-display: 1.2;
-  --font-size-h1: 32px;
-  --line-height-h1: 1.25;
-  --tracking-h1: -0.01em;
 }
 
 /*

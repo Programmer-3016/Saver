@@ -172,7 +172,7 @@
   word-break: break-word;
 }
 
-/* Lock the page when the modal is open */
+/* Prevent any child element from overflowing the modal */
 
 .expense-modal-content * {
   max-width: 100%;
