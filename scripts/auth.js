@@ -130,7 +130,7 @@
 
     setStatus("Looks good. Taking you to verification...");
     const destination = formType === "register" ? "verify.html" : "onboarding.html";
-    window.setTimeout(() => {
+    setTimeout(() => {
       window.location.href = destination;
     }, 650);
   });

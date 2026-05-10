@@ -15,21 +15,10 @@ const categoryConfig = {
   food: { label: "Food", icon: "restaurant", color: "#1b4332" },
   transport: { label: "Transport", icon: "commute", color: "#3f6653" },
   entertainment: { label: "Fun", icon: "movie", color: "#a5d0b9" },
-  shopping: { label: "Shopping", icon: "shopping_bag", color: "#e8e8e5" },
+  shopping: { label: "Shopping", icon: "shopping_bag", color: "#c1ecd4" },
   bills: { label: "Bills", icon: "bolt", color: "#5a302f" },
-  other: { label: "Other", icon: "receipt_long", color: "#717973" },
+  other: { label: "Other", icon: "receipt_long", color: "#e8e8e5" },
   income: { label: "Income", icon: "payments", color: "#059669" },
-};
-
-// Category colors for the stacked bar chart
-
-const categoryBarColors = {
-  food: "#1b4332",
-  transport: "#3f6653",
-  shopping: "#a5d0b9",
-  entertainment: "#c1ecd4",
-  bills: "#5a302f",
-  other: "#e8e8e5",
 };
 
 // ── Relative Date Label ──────────────────────────────────────────
@@ -108,7 +97,7 @@ function populateDashboard() {
 
   // ── Budget Pulse ─────────────────────────────────────────────
 
-  populateBudgetPulse(txns, dailyLimit);
+  populateBudgetPulse(txns, dailyLimit, todaySpent);
 
   // ── Category Breakdown ───────────────────────────────────────
 
@@ -196,20 +185,17 @@ function populateSpendingChart(txns, dailyLimit) {
 
   const maxSpent = Math.max(...days.map((d) => d.spent), dailyLimit, 1);
 
-  // Keep the daily limit line but clear old bars
+  // Clear old bars and re-draw the daily limit reference line
 
-  const limitLine = container.querySelector(".border-dashed")?.parentElement;
   container.innerHTML = "";
 
-  if (limitLine) {
-    const limitLineWrapper = document.createElement("div");
-    limitLineWrapper.className =
-      "absolute left-0 w-full border-t border-dashed border-outline-variant flex items-center";
-    limitLineWrapper.style.top = `${Math.round((1 - dailyLimit / maxSpent) * 100)}%`;
-    limitLineWrapper.innerHTML =
-      '<span class="absolute right-0 -top-6 text-xs text-on-surface-variant bg-white px-2">Daily Limit</span>';
-    container.appendChild(limitLineWrapper);
-  }
+  const limitLineWrapper = document.createElement("div");
+  limitLineWrapper.className =
+    "absolute left-0 w-full border-t border-dashed border-outline-variant flex items-center";
+  limitLineWrapper.style.top = `${Math.round((1 - dailyLimit / maxSpent) * 100)}%`;
+  limitLineWrapper.innerHTML =
+    '<span class="absolute right-0 -top-6 text-xs text-on-surface-variant bg-white px-2">Daily Limit</span>';
+  container.appendChild(limitLineWrapper);
 
   // Generate bars
 
@@ -255,7 +241,7 @@ function populateSpendingChart(txns, dailyLimit) {
 //  BUDGET PULSE
 // ═══════════════════════════════════════════════════════════════════
 
-function populateBudgetPulse(txns, dailyLimit) {
+function populateBudgetPulse(txns, dailyLimit, todaySpent) {
   const statusEl = $("#budget-pulse-status");
   const streakEl = $("#budget-pulse-streak");
   const tipEl = $("#budget-pulse-tip");
@@ -267,7 +253,7 @@ function populateBudgetPulse(txns, dailyLimit) {
   const today = startOfDay(new Date());
   let streak = 0;
 
-  for (let i = 0; i < 365; i++) {
+  for (let i = 0; i < 30; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dayStart = startOfDay(d).getTime();
@@ -279,12 +265,6 @@ function populateBudgetPulse(txns, dailyLimit) {
     if (daySpent > dailyLimit) break;
     if (daySpent > 0 || i === 0) streak++;
   }
-
-  // Today's spending
-
-  const todaySpent = txns
-    .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === today.getTime())
-    .reduce((sum, t) => sum + t.amount, 0);
 
   const isUnder = todaySpent <= dailyLimit;
 
@@ -345,7 +325,7 @@ function populateCategoryBreakdown(txns) {
   barEl.innerHTML = sorted
     .map(([cat, amt]) => {
       const pct = Math.round((amt / grandTotal) * 100);
-      const color = categoryBarColors[cat] || "#717973";
+      const color = categoryConfig[cat]?.color || "#717973";
       return `<div class="h-full" style="width:${pct}%;background:${color}"></div>`;
     })
     .join("");
@@ -355,7 +335,7 @@ function populateCategoryBreakdown(txns) {
   chipsEl.innerHTML = sorted
     .map(([cat, amt]) => {
       const pct = Math.round((amt / grandTotal) * 100);
-      const color = categoryBarColors[cat] || "#717973";
+      const color = categoryConfig[cat]?.color || "#717973";
       const label = categoryConfig[cat]?.label || cat;
       return `
         <div class="bg-[#f5f3ee] px-3 py-2 rounded-lg flex items-center gap-2 min-w-[120px]">
@@ -439,7 +419,7 @@ function buildTransactionHTML(t, index) {
   const cat = categoryConfig[t.category] || categoryConfig.other;
   const isIncome = t.category === "income";
 
-  // Alternating icon background — matches YOLO layout visual rhythm
+  // Alternating icon background for visual rhythm
 
   const isEven = index % 2 === 0;
   const iconBg = isIncome ? "bg-primary-fixed" : isEven ? "bg-[#F9F7F2]" : "bg-primary-fixed";
@@ -509,19 +489,30 @@ function initDashboardEvents() {
     pill.addEventListener("click", () => switchTab(pill.dataset.tab));
   });
 
-  // Any element with data-tab can also switch tabs (e.g., "Review Goals" button)
+  // Mobile bottom nav tab switching
 
-  $$("[data-tab]").forEach((btn) => {
-    if (!btn.classList.contains("nav-pill")) {
-      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-    }
+  $$(".mobile-nav-tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
   });
 
-  // FAB — opens the expense modal
+  // Other [data-tab] elements (e.g., "Review Goals" button)
+
+  $$("[data-tab]").forEach((btn) => {
+    if (btn.classList.contains("nav-pill") || btn.classList.contains("mobile-nav-tab")) return;
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
+
+  // FAB — opens the expense modal (desktop)
 
   const fab = $("#fab-add-expense");
 
   if (fab) fab.addEventListener("click", () => openExpenseModal());
+
+  // Mobile bottom nav + button — opens the expense modal
+
+  const mobileAdd = $("#mobile-add-expense");
+
+  if (mobileAdd) mobileAdd.addEventListener("click", () => openExpenseModal());
 
   // Add Expense button (transactions tab)
 
@@ -554,6 +545,23 @@ function initDashboardEvents() {
     });
   });
 
+  // Payment source selection (radio-style toggle)
+
+  $$(".payment-source").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      $$(".payment-source").forEach((b) => {
+        const isThis = b === btn;
+        b.classList.toggle("is-active", isThis);
+        b.classList.toggle("bg-surface-container-high", isThis);
+        b.classList.toggle("border-outline-variant/30", isThis);
+        b.classList.toggle("bg-surface-container-low", !isThis);
+        b.classList.toggle("border-transparent", !isThis);
+        b.querySelector(".source-check")?.classList.toggle("hidden", !isThis);
+      });
+      modalState.source = btn.dataset.source;
+    });
+  });
+
   // Modal inputs
 
   const amtInput = $("#expense-amount-input");
@@ -581,9 +589,13 @@ function initDashboardEvents() {
 
 function switchTab(tabName) {
 
-  // Update nav pills
+  // Update desktop nav pills
 
   $$(".nav-pill").forEach((p) => p.classList.toggle("is-active", p.dataset.tab === tabName));
+
+  // Update mobile bottom nav tabs
+
+  $$(".mobile-nav-tab").forEach((t) => t.classList.toggle("is-active", t.dataset.tab === tabName));
 
   // Update panels
 
@@ -594,7 +606,7 @@ function switchTab(tabName) {
 
 // ── Expense Modal ────────────────────────────────────────────────
 
-const modalState = { amount: 0, desc: "", category: "" };
+const modalState = { amount: 0, desc: "", category: "", source: "savings" };
 
 function openExpenseModal(preCategory) {
   const modal = $("#expense-modal");
@@ -605,6 +617,7 @@ function openExpenseModal(preCategory) {
   modalState.amount = 0;
   modalState.desc = "";
   modalState.category = preCategory || "";
+  modalState.source = "savings";
   const amtInput = $("#expense-amount-input");
   const descInput = $("#expense-desc-input");
 
@@ -615,6 +628,18 @@ function openExpenseModal(preCategory) {
 
   $$("[data-modal-cat]").forEach((c) => {
     c.classList.toggle("is-active", c.dataset.modalCat === preCategory);
+  });
+
+  // Reset payment source selection
+
+  $$(".payment-source").forEach((btn) => {
+    const isDefault = btn.dataset.source === "savings";
+    btn.classList.toggle("is-active", isDefault);
+    btn.classList.toggle("bg-surface-container-high", isDefault);
+    btn.classList.toggle("border-outline-variant/30", isDefault);
+    btn.classList.toggle("bg-surface-container-low", !isDefault);
+    btn.classList.toggle("border-transparent", !isDefault);
+    btn.querySelector(".source-check")?.classList.toggle("hidden", !isDefault);
   });
 
   validateExpenseForm();
@@ -643,6 +668,7 @@ function submitExpense() {
     amount: modalState.amount,
     desc: modalState.desc || categoryConfig[modalState.category]?.label || "Expense",
     category: modalState.category,
+    source: modalState.source,
     ts: Date.now(),
   });
 

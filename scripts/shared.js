@@ -55,6 +55,7 @@ const state = {
   goalType: "", // "specific" | "safety"
   goalItem: "", // what they want to buy (only for "specific")
   goalPrice: 0, // target price (only for "specific")
+  onboardingComplete: false, // true after completing all onboarding steps
 };
 
 // ── State Persistence ────────────────────────────────────────────

@@ -68,6 +68,7 @@ const dom = {
 
   // Step panels (the actual form content for each step)
   stepPanels: $$(".step-panel"),
+  stepContainer: $(".step-panel")?.parentElement,
   stepNav: $("#step-nav"),
 
   // Step 1 — Mode selection cards
@@ -282,12 +283,9 @@ function syncPreview() {
   // Safety plan text — calculates how long to build a ₹5,000 buffer
 
   if (dom.safetyPlanText && state.goalType === "safety") {
-    const effectiveSave =
-      state.saveMode === "smart" ? Math.round(state.totalMoney * 0.3) : state.saveAmount;
-
-    if (effectiveSave > 0) {
-      const months = Math.ceil(5000 / effectiveSave);
-      dom.safetyPlanText.textContent = `Saving ${formatCurrency(effectiveSave)} per cycle builds a ₹5,000 safety net in ~${months} cycles. Saver will track your progress automatically.`;
+    if (p.effectiveSave > 0) {
+      const months = Math.ceil(5000 / p.effectiveSave);
+      dom.safetyPlanText.textContent = `Saving ${formatCurrency(p.effectiveSave)} per cycle builds a ₹5,000 safety net in ~${months} cycles. Saver will track your progress automatically.`;
     }
   }
 }
@@ -453,7 +451,7 @@ function goNext() {
 
   // Tell CSS to slide the new panel in from the right (forward direction)
 
-  dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "forward");
+  dom.stepContainer?.setAttribute("data-direction", "forward");
 
   state.step += 1;
 
@@ -479,7 +477,7 @@ function goBack() {
 
   // Tell CSS to slide the panel in from the left (backward direction)
 
-  dom.stepPanels[0]?.closest("div")?.parentElement?.setAttribute("data-direction", "backward");
+  dom.stepContainer?.setAttribute("data-direction", "backward");
 
   state.step -= 1;
   syncStep();

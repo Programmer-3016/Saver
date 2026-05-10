@@ -94,7 +94,7 @@ Top navigation bar with:
 - Tab pills: **Overview** (active) | **Transactions** | **Goals**
 - Notification bell + user avatar
 
-No sidebar navigation. No bottom nav. Tabs switch content in-place.
+No sidebar navigation. Mobile uses a fixed bottom nav bar for tab switching. Tabs switch content in-place.
 
 ---
 

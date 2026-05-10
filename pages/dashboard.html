@@ -29,7 +29,7 @@
   </head>
   <body
     data-ui="app"
-    class="bg-background text-on-background antialiased min-h-screen font-body-md text-body-md flex flex-col items-center"
+    class="bg-background text-on-background antialiased min-h-screen font-body-md text-body-md flex flex-col items-center overflow-x-hidden"
   >
 
     <!-- Top App Bar -->
@@ -89,7 +89,7 @@
 
     <!-- Main Content Canvas -->
 
-    <main class="w-full max-w-7xl mx-auto flex-1 pb-24">
+    <main class="w-full max-w-7xl mx-auto flex-1 pb-28 md:pb-16 overflow-x-hidden">
 
       <!-- ═══════════════════════════════════════════════════════════
            OVERVIEW PANEL
@@ -99,7 +99,7 @@
 
         <!-- Hero Section -->
 
-        <section class="relative w-full flex items-end pb-8 px-6 h-auto md:h-[320px] mt-2 pt-8 md:pt-0">
+        <section class="relative w-full px-6 pt-8 pb-8">
 
           <!-- Decorative Gradient -->
 
@@ -298,12 +298,13 @@
                 <span class="text-xs font-medium text-on-surface-variant">Coffee</span>
               </button>
               <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform border border-dashed border-outline-variant rounded-full p-1"
+                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
                 data-quick-cat="other"
               >
-                <div class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant">
+                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
                   <span class="material-symbols-outlined">add</span>
                 </div>
+                <span class="text-xs font-medium text-on-surface-variant">Other</span>
               </button>
             </div>
           </div>
@@ -424,14 +425,53 @@
       </div>
     </main>
 
-    <!-- Floating Action Button -->
+    <!-- Floating Action Button (Desktop only) -->
 
     <button
-      class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 z-50"
+      class="hidden md:flex fixed bottom-8 right-8 w-12 h-12 rounded-full bg-primary-container text-white items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 z-50"
       id="fab-add-expense"
     >
-      <span class="material-symbols-outlined text-3xl">add</span>
+      <span class="material-symbols-outlined">add</span>
     </button>
+
+    <!-- Mobile Bottom Nav Bar -->
+
+    <nav
+      class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white border-t border-stone-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-[32px]"
+      id="mobile-bottom-nav"
+    >
+      <button
+        class="mobile-nav-tab is-active flex flex-col items-center justify-center px-4 py-2 transition-all active:scale-95 duration-150"
+        data-tab="overview"
+      >
+        <span class="material-symbols-outlined">home</span>
+        <span class="font-display text-[11px] font-semibold mt-1">Overview</span>
+      </button>
+      <button
+        class="mobile-nav-tab flex flex-col items-center justify-center px-4 py-2 transition-all active:scale-95 duration-150"
+        data-tab="transactions"
+      >
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span class="font-display text-[11px] font-semibold mt-1">Transactions</span>
+      </button>
+
+      <!-- Centered Add Expense Button -->
+
+      <button
+        class="flex items-center justify-center w-14 h-14 -translate-y-3 rounded-full bg-primary-container text-white shadow-lg hover:shadow-xl active:scale-95 transition-all"
+        id="mobile-add-expense"
+      >
+        <span class="material-symbols-outlined text-[28px]">add</span>
+      </button>
+
+      <button
+        class="mobile-nav-tab flex flex-col items-center justify-center px-4 py-2 transition-all active:scale-95 duration-150"
+        data-tab="goals"
+      >
+        <span class="material-symbols-outlined">flag</span>
+        <span class="font-display text-[11px] font-semibold mt-1">Goals</span>
+      </button>
+    </nav>
 
     <!-- ═══════════════════════════════════════════════════════════
          EXPENSE MODAL
@@ -449,7 +489,7 @@
       <!-- Modal Content -->
 
       <div
-        class="absolute bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:rounded-3xl bg-white rounded-t-3xl p-6 md:p-8 shadow-2xl expense-modal-content"
+        class="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:max-h-[90vh] md:rounded-3xl bg-white rounded-t-3xl p-6 md:p-8 shadow-2xl expense-modal-content"
       >
 
         <!-- Modal Header -->
@@ -514,6 +554,61 @@
             <button class="expense-chip" data-modal-cat="other">
               <span class="material-symbols-outlined text-base">receipt_long</span>
               Other
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Source -->
+
+        <div class="mb-6">
+          <label
+            class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 block"
+          >Payment Source</label>
+          <div class="space-y-2">
+            <button
+              class="payment-source is-active w-full flex items-center justify-between p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 transition-colors"
+              data-source="savings"
+            >
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-container">account_balance_wallet</span>
+                </div>
+                <div class="text-left">
+                  <p class="text-sm font-semibold text-on-surface">Savings Account</p>
+                  <p class="text-xs text-on-surface-variant">Primary</p>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-primary-container source-check" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            </button>
+            <button
+              class="payment-source w-full flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-transparent hover:bg-surface-container-high transition-colors"
+              data-source="credit"
+            >
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-surface-variant">credit_card</span>
+                </div>
+                <div class="text-left">
+                  <p class="text-sm font-semibold text-on-surface">Credit Card</p>
+                  <p class="text-xs text-on-surface-variant">Secondary</p>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-primary-container source-check hidden" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            </button>
+            <button
+              class="payment-source w-full flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-transparent hover:bg-surface-container-high transition-colors"
+              data-source="cash"
+            >
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-surface-variant">payments</span>
+                </div>
+                <div class="text-left">
+                  <p class="text-sm font-semibold text-on-surface">Cash</p>
+                  <p class="text-xs text-on-surface-variant">Physical</p>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-primary-container source-check hidden" style="font-variation-settings: 'FILL' 1;">check_circle</span>
             </button>
           </div>
         </div>
