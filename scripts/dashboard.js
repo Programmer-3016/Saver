@@ -644,6 +644,7 @@ function openExpenseModal(preCategory) {
 
   validateExpenseForm();
   modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
   if (amtInput) setTimeout(() => amtInput.focus(), 100);
 }
 
@@ -651,6 +652,7 @@ function closeExpenseModal() {
   const modal = $("#expense-modal");
 
   if (modal) modal.classList.add("hidden");
+  document.body.style.overflow = "";
 }
 
 function validateExpenseForm() {
