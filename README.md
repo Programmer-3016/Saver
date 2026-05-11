@@ -47,6 +47,7 @@ Saver/
 │   ├── index.html              # Landing page (marketing)
 │   ├── login.html              # User login
 │   ├── register.html           # User registration
+│   ├── reset-password.html     # Password reset completion
 │   ├── onboarding.html         # Setup wizard (Mode → Money → Goal → Done)
 │   └── dashboard.html          # Dashboard (Overview, Transactions, Goals, Profile)
 │

@@ -37,11 +37,12 @@ Both share a unified design system but serve different UX goals.
 
 ### Public Routes
 
-| Route       | Page          | Purpose                        |
-| ----------- | ------------- | ------------------------------ |
-| `/`         | Landing page  | Marketing and product overview |
-| `/register` | Register page | New user account creation      |
-| `/login`    | Login page    | Existing user authentication   |
+| Route             | Page           | Purpose                        |
+| ----------------- | -------------- | ------------------------------ |
+| `/`               | Landing page   | Marketing and product overview |
+| `/register`       | Register page  | New user account creation      |
+| `/login`          | Login page     | Existing user authentication   |
+| `/reset-password` | Reset password | Password recovery completion   |
 
 ### Protected Setup Routes
 
@@ -67,7 +68,7 @@ Both share a unified design system but serve different UX goals.
 
 | User State                   | Can Access                 | Redirected From                          |
 | ---------------------------- | -------------------------- | ---------------------------------------- |
-| Guest                        | `/`, `/register`, `/login` | `/onboarding`, `/app/*`                  |
+| Guest                        | `/`, `/register`, `/login`, `/reset-password` | `/onboarding`, `/app/*`                  |
 | Authenticated, not onboarded | `/onboarding/*`            | `/app/*` → `/onboarding`                 |
 | Fully authenticated          | `/app/*`                   | `/login`, `/register` → `/app/dashboard` |
 
@@ -80,7 +81,7 @@ Both share a unified design system but serve different UX goals.
 Header displays: Logo, Features, Testimonials, Login, Get Started.
 No bottom app navigation on the landing page.
 
-### Auth Pages (Login/Register)
+### Auth Pages (Login/Register/Reset)
 
 Displays: Logo, headline, form, and alternate auth link.
 
@@ -141,8 +142,9 @@ Each public page is a separate HTML file:
 - `pages/index.html` — Landing page
 - `pages/login.html` — Login
 - `pages/register.html` — Register
+- `pages/reset-password.html` — Password reset completion
 
-These pages share styles via `design-system.css`, `shared.css`, and `tailwind-theme.js`. Login and register use Supabase Auth through `supabase/config.js`, `scripts/supabase-client.js`, and `scripts/auth.js`.
+These pages share styles via `design-system.css`, `shared.css`, and `tailwind-theme.js`. Login, register, and password reset use Supabase Auth through `supabase/config.js`, `scripts/supabase-client.js`, and `scripts/auth.js`.
 
 **Zone 2 — Multi-Page (Authenticated App)**
 
@@ -158,7 +160,7 @@ Shared logic lives in `scripts/shared.js` (DOM helpers, currency formatting, sta
 ### Design System Modes
 
 - `data-ui="marketing"` — Landing page
-- `data-ui="auth"` — Login, register pages
+- `data-ui="auth"` — Login, register, reset password pages
 - `data-ui="app"` — Authenticated app shell
 
 ### State Model

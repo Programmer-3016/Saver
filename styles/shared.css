@@ -1,7 +1,7 @@
 /*
   Saver — Shared Component Styles
   Auth visuals, glass cards, floating animations, and auth responsive rules.
-  Used by login, register, and marketing pages.
+  Used by login, register, reset password, and marketing pages.
 */
 
 .glass-card {
@@ -41,6 +41,48 @@
 
 .animated-orb-delay {
   animation-delay: -6s;
+}
+
+.auth-password-wrap {
+  position: relative;
+}
+
+.auth-password-input {
+  padding-right: 3.25rem !important;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-on-surface-variant);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+  background: var(--color-surface-container);
+  color: var(--color-primary-container);
+  outline: none;
+}
+
+.auth-password-toggle .material-symbols-outlined {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.auth-link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 @keyframes card-float {
@@ -169,6 +211,16 @@
     padding: 0.68rem 1rem !important;
     font-size: 14px !important;
     border-radius: 14px !important;
+  }
+
+  .auth-password-input {
+    padding-right: 3rem !important;
+  }
+
+  .auth-password-toggle {
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .auth-error {

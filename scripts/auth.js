@@ -1,4 +1,4 @@
-// Shared auth validation and Supabase Auth wiring for login/register.
+// Shared auth validation and Supabase Auth wiring for login/register/reset.
 
 (function () {
   const form = document.querySelector("[data-auth-form]");
@@ -7,9 +7,11 @@
   const formType = form.dataset.authForm;
   const submitButton = form.querySelector("button[type='submit']");
   const googleButton = document.querySelector("[data-google-auth]");
+  const passwordResetButton = document.querySelector("[data-password-reset]");
   const supabaseAuth = window.saverSupabase;
   let submitButtonState = null;
   let googleButtonState = null;
+  let passwordResetButtonState = null;
   let awaitingEmailConfirmation = false;
 
   const rules = {
@@ -23,6 +25,10 @@
       ["password", validatePassword],
       ["confirmPassword", validatePasswordMatch],
       ["terms", validateTerms],
+    ],
+    reset: [
+      ["password", validatePassword],
+      ["confirmPassword", validatePasswordMatch],
     ],
   };
 
@@ -115,8 +121,10 @@
 
     restoreButton(submitButton, submitButtonState);
     restoreButton(googleButton, googleButtonState);
+    restoreButton(passwordResetButton, passwordResetButtonState);
     submitButtonState = null;
     googleButtonState = null;
+    passwordResetButtonState = null;
   }
 
   function resetEmailConfirmationState() {
@@ -133,6 +141,23 @@
     submitButtonState = null;
     submitButton.disabled = true;
     submitButton.textContent = "Check your email";
+  }
+
+  function initPasswordToggles() {
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      const inputId = button.getAttribute("aria-controls");
+      const input = inputId ? document.getElementById(inputId) : null;
+      const icon = button.querySelector(".material-symbols-outlined");
+
+      if (!input) return;
+
+      button.addEventListener("click", () => {
+        const shouldShow = input.type === "password";
+        input.type = shouldShow ? "text" : "password";
+        button.setAttribute("aria-label", shouldShow ? "Hide password" : "Show password");
+        if (icon) icon.textContent = shouldShow ? "visibility_off" : "visibility";
+      });
+    });
   }
 
   function friendlyAuthError(error) {
@@ -188,6 +213,11 @@
       return;
     }
 
+    if (formType === "reset") {
+      await updatePasswordWithSupabase();
+      return;
+    }
+
     submitButtonState = setButtonLoading(
       submitButton,
       formType === "register" ? "Creating account..." : "Logging in...",
@@ -216,7 +246,9 @@
           return;
         }
 
-        setStatus(`Account created. Check ${value("email")} for the confirmation link, then log in.`);
+        setStatus(
+          `If ${value("email")} is new, check your inbox for a confirmation link. If you already signed in before, log in or continue with Google.`,
+        );
         showEmailConfirmationState();
         return;
       }
@@ -231,6 +263,76 @@
       persistUserProfile(data.user);
       setStatus("Login successful. Opening setup...");
       window.location.href = "onboarding.html";
+    } catch (error) {
+      setStatus(friendlyAuthError(error), true);
+      restoreButton(submitButton, submitButtonState);
+      submitButtonState = null;
+    }
+  }
+
+  async function requestPasswordReset() {
+    setStatus("");
+
+    if (!hasSupabaseAuth()) {
+      showSupabaseConfigMessage();
+      return;
+    }
+
+    const emailInput = field("email");
+    const emailError = validateEmail();
+
+    if (emailError) {
+      setError(emailInput, "Enter your email first so we can send reset instructions.");
+      emailInput.focus();
+      return;
+    }
+
+    passwordResetButtonState = setButtonLoading(passwordResetButton, "Sending...");
+
+    try {
+      const { error } = await supabaseAuth.client.auth.resetPasswordForEmail(value("email"), {
+        redirectTo: supabaseAuth.pageUrl("reset-password.html"),
+      });
+
+      if (error) throw error;
+
+      setStatus(
+        "If password login is available for this email, reset instructions have been sent. Google users can continue with Google.",
+      );
+    } catch (error) {
+      setStatus(friendlyAuthError(error), true);
+    } finally {
+      restoreButton(passwordResetButton, passwordResetButtonState);
+      passwordResetButtonState = null;
+    }
+  }
+
+  async function updatePasswordWithSupabase() {
+    submitButtonState = setButtonLoading(submitButton, "Updating password...");
+
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabaseAuth.client.auth.getSession();
+
+      if (sessionError || !session) {
+        throw new Error(
+          "Open the password reset link from your email again, then set a new password.",
+        );
+      }
+
+      const { error } = await supabaseAuth.client.auth.updateUser({
+        password: value("password"),
+      });
+
+      if (error) throw error;
+
+      setStatus("Password updated. Redirecting to login...");
+      await supabaseAuth.client.auth.signOut();
+      window.setTimeout(() => {
+        window.location.href = "login.html";
+      }, 900);
     } catch (error) {
       setStatus(friendlyAuthError(error), true);
       restoreButton(submitButton, submitButtonState);
@@ -325,8 +427,19 @@
     googleButton.addEventListener("click", continueWithGoogle);
   }
 
+  if (passwordResetButton) {
+    passwordResetButton.addEventListener("click", requestPasswordReset);
+  }
+
+  initPasswordToggles();
+
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted || submitButton?.disabled || googleButton?.disabled) {
+    if (
+      event.persisted ||
+      submitButton?.disabled ||
+      googleButton?.disabled ||
+      passwordResetButton?.disabled
+    ) {
       restoreTransientState();
     }
   });

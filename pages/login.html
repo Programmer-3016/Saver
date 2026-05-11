@@ -82,14 +82,25 @@
               <label class="font-label-caps text-label-caps text-secondary ml-1" for="password"
                 >Password</label
               >
-              <input
-                autocomplete="current-password"
-                class="auth-input w-full px-6 py-3.5 md:py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
-                id="password"
-                name="password"
-                placeholder="Password"
-                type="password"
-              />
+              <div class="auth-password-wrap">
+                <input
+                  autocomplete="current-password"
+                  class="auth-input auth-password-input w-full px-6 py-3.5 md:py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                  id="password"
+                  name="password"
+                  placeholder="Password"
+                  type="password"
+                />
+                <button
+                  aria-controls="password"
+                  aria-label="Show password"
+                  class="auth-password-toggle"
+                  data-password-toggle
+                  type="button"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                </button>
+              </div>
               <p class="hidden auth-error font-body-sm text-body-sm text-error ml-1" data-error></p>
             </div>
             <div class="auth-login-options flex flex-row items-center justify-between gap-3 pt-1">
@@ -103,6 +114,13 @@
                   >Keep me signed in</span
                 >
               </label>
+              <button
+                class="auth-link-button font-body-sm text-body-sm text-primary-container font-semibold hover:opacity-70 transition-opacity"
+                data-password-reset
+                type="button"
+              >
+                Forgot password?
+              </button>
             </div>
             <p
               class="hidden auth-status font-body-sm text-body-sm text-primary-container"

@@ -97,14 +97,25 @@
                 <label class="font-label-caps text-label-caps text-secondary ml-1" for="password"
                   >Password</label
                 >
-                <input
-                  autocomplete="new-password"
-                  class="auth-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
-                  id="password"
-                  name="password"
-                  placeholder="Create"
-                  type="password"
-                />
+                <div class="auth-password-wrap">
+                  <input
+                    autocomplete="new-password"
+                    class="auth-input auth-password-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                    id="password"
+                    name="password"
+                    placeholder="Create"
+                    type="password"
+                  />
+                  <button
+                    aria-controls="password"
+                    aria-label="Show password"
+                    class="auth-password-toggle"
+                    data-password-toggle
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  </button>
+                </div>
                 <p
                   class="hidden auth-error font-body-sm text-body-sm text-error ml-1"
                   data-error
@@ -116,14 +127,25 @@
                   for="confirmPassword"
                   >Confirm</label
                 >
-                <input
-                  autocomplete="new-password"
-                  class="auth-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  placeholder="Repeat"
-                  type="password"
-                />
+                <div class="auth-password-wrap">
+                  <input
+                    autocomplete="new-password"
+                    class="auth-input auth-password-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Repeat"
+                    type="password"
+                  />
+                  <button
+                    aria-controls="confirmPassword"
+                    aria-label="Show password"
+                    class="auth-password-toggle"
+                    data-password-toggle
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  </button>
+                </div>
                 <p
                   class="hidden auth-error font-body-sm text-body-sm text-error ml-1"
                   data-error
