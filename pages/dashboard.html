@@ -233,73 +233,9 @@
             </div>
           </div>
 
-          <!-- Quick Log (4-col) -->
+          <!-- Where Your Money Goes (full-width) -->
 
-          <div class="bento-card md:col-span-4 flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="font-h3 text-h3 text-on-background">Quick Log</h2>
-            </div>
-            <div class="grid grid-cols-3 gap-4 flex-1 content-center" id="quick-log-grid">
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="food"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">restaurant</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Food</span>
-              </button>
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="transport"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">commute</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Transport</span>
-              </button>
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="shopping"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">shopping_bag</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Shopping</span>
-              </button>
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="bills"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">bolt</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Bills</span>
-              </button>
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="entertainment"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">local_cafe</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Coffee</span>
-              </button>
-              <button
-                class="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-                data-quick-cat="other"
-              >
-                <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">add</span>
-                </div>
-                <span class="text-xs font-medium text-on-surface-variant">Other</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Where Your Money Goes (8-col) -->
-
-          <div class="bento-card md:col-span-8 flex flex-col justify-between">
+          <div class="bento-card md:col-span-12 flex flex-col justify-between">
             <div class="flex justify-between items-center mb-6">
               <h2 class="font-h3 text-h3 text-on-background">Where Your Money Goes</h2>
               <span class="text-sm text-on-surface-variant">This Month</span>
@@ -506,7 +442,7 @@
     <!-- Mobile Bottom Nav Bar -->
 
     <nav
-      class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white border-t border-stone-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-[32px]"
+      class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-white border-t border-stone-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-[28px]"
       id="mobile-bottom-nav"
     >
       <button
@@ -514,20 +450,21 @@
         data-tab="overview"
       >
         <span class="material-symbols-outlined">home</span>
-        <span class="font-display text-[11px] font-semibold mt-1">Overview</span>
+        <span class="font-display text-[11px] font-semibold mt-1">Home</span>
       </button>
       <button
         class="mobile-nav-tab flex flex-col items-center justify-center px-3 py-2 transition-all active:scale-95 duration-150"
         data-tab="transactions"
       >
         <span class="material-symbols-outlined">receipt_long</span>
-        <span class="font-display text-[11px] font-semibold mt-1">Transactions</span>
+        <span class="font-display text-[11px] font-semibold mt-1">History</span>
       </button>
 
       <!-- Centered Add Expense Button -->
 
       <button
-        class="flex items-center justify-center w-14 h-14 -translate-y-3 rounded-full bg-primary-container text-white shadow-lg hover:shadow-xl active:scale-95 transition-all"
+        class="mobile-add-button active:scale-95 transition-all"
+        aria-label="Add expense"
         id="mobile-add-expense"
       >
         <span class="material-symbols-outlined text-[28px]">add</span>

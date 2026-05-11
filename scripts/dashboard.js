@@ -639,12 +639,6 @@ function initDashboardEvents() {
 
   if (addBtnAlt) addBtnAlt.addEventListener("click", () => openExpenseModal());
 
-  // Quick Log category buttons — open modal with category pre-selected
-
-  $$("[data-quick-cat]").forEach((btn) => {
-    btn.addEventListener("click", () => openExpenseModal(btn.dataset.quickCat));
-  });
-
   // Modal close
 
   const closeBtn = $("#expense-modal-close");
