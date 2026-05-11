@@ -92,6 +92,13 @@
     status.classList.toggle("text-primary-container", !isError);
   }
 
+  function clearFormErrors() {
+    for (const [name] of rules[formType] || []) {
+      const input = field(name);
+      if (input) setError(input, "");
+    }
+  }
+
   function hasSupabaseAuth() {
     return Boolean(supabaseAuth?.isConfigured && supabaseAuth.client?.auth);
   }
@@ -304,7 +311,7 @@
         if (data.session) {
           await supabaseAuth.client.auth.signOut();
           setStatus("Account created. Redirecting to login...");
-          window.location.href = "login.html";
+          window.location.href = supabaseAuth.pageUrl("login.html");
           return;
         }
 
@@ -322,7 +329,7 @@
 
       persistUserProfile(data.user);
       setStatus("Login successful. Opening setup...");
-      window.location.href = "onboarding.html";
+      window.location.href = supabaseAuth.pageUrl("onboarding.html");
     } catch (error) {
       setStatus(friendlyAuthError(error), true);
       restoreButton(submitButton, submitButtonState);
@@ -332,6 +339,7 @@
 
   async function requestPasswordReset() {
     setStatus("");
+    clearFormErrors();
 
     if (!hasSupabaseAuth()) {
       showSupabaseConfigMessage();
@@ -357,7 +365,7 @@
       if (error) throw error;
 
       setStatus(
-        "If password login is available for this email, reset instructions have been sent. Google users can continue with Google.",
+        "Reset link sent. Check your email and open the link to set a new password. Google users can continue with Google.",
       );
     } catch (error) {
       setStatus(friendlyAuthError(error), true);
@@ -391,7 +399,7 @@
       setStatus("Password updated. Redirecting to login...");
       await supabaseAuth.client.auth.signOut();
       window.setTimeout(() => {
-        window.location.href = "login.html";
+        window.location.href = supabaseAuth.pageUrl("login.html");
       }, 900);
     } catch (error) {
       setStatus(friendlyAuthError(error), true);
@@ -475,7 +483,7 @@
     event.preventDefault();
 
     if (awaitingEmailConfirmation && formType === "register") {
-      window.location.href = "login.html";
+      window.location.href = supabaseAuth.pageUrl("login.html");
       return;
     }
 

@@ -12,7 +12,25 @@
     anonKey &&
     anonKey !== "YOUR_SUPABASE_ANON_KEY";
 
+  const cleanRoutes = {
+    "register.html": "/register",
+    "login.html": "/login",
+    "onboarding.html": "/onboarding",
+    "dashboard.html": "/dashboard",
+    "reset-password.html": "/reset-password",
+  };
+
+  function shouldUseCleanRoutes() {
+    return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  }
+
   function pageUrl(pageName) {
+    const routeName = pageName.replace(/^\/?(pages\/)?/, "");
+
+    if (shouldUseCleanRoutes() && cleanRoutes[routeName]) {
+      return new URL(cleanRoutes[routeName], window.location.origin).href;
+    }
+
     const normalizedPath = pageName.startsWith("/") ? pageName : `/pages/${pageName}`;
     return new URL(normalizedPath, window.location.origin).href;
   }
