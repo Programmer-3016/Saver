@@ -8,3 +8,6 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+
+# Netlify local metadata
+.netlify/
