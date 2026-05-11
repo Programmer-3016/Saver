@@ -3,6 +3,11 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/pages",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/pages/index",
       "destination": "/",
       "permanent": true
