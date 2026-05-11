@@ -8,6 +8,8 @@
   const submitButton = form.querySelector("button[type='submit']");
   const googleButton = document.querySelector("[data-google-auth]");
   const supabaseAuth = window.saverSupabase;
+  let submitButtonState = null;
+  let googleButtonState = null;
 
   const rules = {
     login: [
@@ -107,6 +109,24 @@
     else if (originalState?.text) button.textContent = originalState.text;
   }
 
+  function restoreTransientState() {
+    restoreButton(submitButton, submitButtonState);
+    restoreButton(googleButton, googleButtonState);
+    submitButtonState = null;
+    googleButtonState = null;
+  }
+
+  function friendlyAuthError(error) {
+    const message = error?.message || "Authentication failed. Please try again.";
+    const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i);
+
+    if (waitMatch && message.toLowerCase().includes("security purposes")) {
+      return `Please wait ${waitMatch[1]} seconds before trying again. This protects your account from repeated signup requests.`;
+    }
+
+    return message;
+  }
+
   function persistUserProfile(user) {
     const email = user?.email || value("email");
     const fullName =
@@ -132,7 +152,7 @@
       return;
     }
 
-    const originalText = setButtonLoading(
+    submitButtonState = setButtonLoading(
       submitButton,
       formType === "register" ? "Creating account..." : "Logging in...",
     );
@@ -161,7 +181,8 @@
         }
 
         setStatus("Account created. Check your email to confirm your account, then log in.");
-        restoreButton(submitButton, originalText);
+        restoreButton(submitButton, submitButtonState);
+        submitButtonState = null;
         return;
       }
 
@@ -176,8 +197,9 @@
       setStatus("Login successful. Opening setup...");
       window.location.href = "onboarding.html";
     } catch (error) {
-      setStatus(error.message || "Authentication failed. Please try again.", true);
-      restoreButton(submitButton, originalText);
+      setStatus(friendlyAuthError(error), true);
+      restoreButton(submitButton, submitButtonState);
+      submitButtonState = null;
     }
   }
 
@@ -189,7 +211,7 @@
       return;
     }
 
-    const originalText = setButtonLoading(googleButton, "Opening Google...");
+    googleButtonState = setButtonLoading(googleButton, "Opening Google...");
 
     const { error } = await supabaseAuth.client.auth.signInWithOAuth({
       provider: "google",
@@ -199,8 +221,9 @@
     });
 
     if (error) {
-      setStatus(error.message || "Google sign-in failed. Please try again.", true);
-      restoreButton(googleButton, originalText);
+      setStatus(friendlyAuthError(error), true);
+      restoreButton(googleButton, googleButtonState);
+      googleButtonState = null;
     }
   }
 
@@ -264,4 +287,10 @@
   if (googleButton) {
     googleButton.addEventListener("click", continueWithGoogle);
   }
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted || submitButton?.disabled || googleButton?.disabled) {
+      restoreTransientState();
+    }
+  });
 })();
