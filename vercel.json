@@ -96,23 +96,23 @@
   "rewrites": [
     {
       "source": "/register",
-      "destination": "/pages/register.html"
+      "destination": "/pages/register"
     },
     {
       "source": "/login",
-      "destination": "/pages/login.html"
+      "destination": "/pages/login"
     },
     {
       "source": "/onboarding",
-      "destination": "/pages/onboarding.html"
+      "destination": "/pages/onboarding"
     },
     {
       "source": "/dashboard",
-      "destination": "/pages/dashboard.html"
+      "destination": "/pages/dashboard"
     },
     {
       "source": "/reset-password",
-      "destination": "/pages/reset-password.html"
+      "destination": "/pages/reset-password"
     }
   ]
 }
