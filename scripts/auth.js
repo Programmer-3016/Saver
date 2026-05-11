@@ -10,6 +10,7 @@
   const supabaseAuth = window.saverSupabase;
   let submitButtonState = null;
   let googleButtonState = null;
+  let awaitingEmailConfirmation = false;
 
   const rules = {
     login: [
@@ -110,18 +111,53 @@
   }
 
   function restoreTransientState() {
+    if (awaitingEmailConfirmation) return;
+
     restoreButton(submitButton, submitButtonState);
     restoreButton(googleButton, googleButtonState);
     submitButtonState = null;
     googleButtonState = null;
   }
 
+  function resetEmailConfirmationState() {
+    if (!awaitingEmailConfirmation || formType !== "register") return;
+
+    awaitingEmailConfirmation = false;
+    submitButton.disabled = false;
+    submitButton.textContent = "Create account";
+  }
+
+  function showEmailConfirmationState() {
+    awaitingEmailConfirmation = true;
+    restoreButton(submitButton, submitButtonState);
+    submitButtonState = null;
+    submitButton.disabled = true;
+    submitButton.textContent = "Check your email";
+  }
+
   function friendlyAuthError(error) {
     const message = error?.message || "Authentication failed. Please try again.";
+    const lowerMessage = message.toLowerCase();
     const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i);
 
-    if (waitMatch && message.toLowerCase().includes("security purposes")) {
+    if (waitMatch && lowerMessage.includes("security purposes")) {
       return `Please wait ${waitMatch[1]} seconds before trying again. This protects your account from repeated signup requests.`;
+    }
+
+    if (lowerMessage.includes("email rate limit") || lowerMessage.includes("rate limit")) {
+      return "Too many confirmation emails were requested. Please wait a minute, then check Inbox and Spam before trying again.";
+    }
+
+    if (lowerMessage.includes("already registered") || lowerMessage.includes("already exists")) {
+      return "This email already has an account. Please log in instead.";
+    }
+
+    if (lowerMessage.includes("email not confirmed")) {
+      return "Please confirm your email first, then log in.";
+    }
+
+    if (lowerMessage.includes("invalid login credentials")) {
+      return "Email or password is incorrect.";
     }
 
     return message;
@@ -180,9 +216,8 @@
           return;
         }
 
-        setStatus("Account created. Check your email to confirm your account, then log in.");
-        restoreButton(submitButton, submitButtonState);
-        submitButtonState = null;
+        setStatus(`Account created. Check ${value("email")} for the confirmation link, then log in.`);
+        showEmailConfirmationState();
         return;
       }
 
@@ -251,6 +286,7 @@
   form.addEventListener("input", (event) => {
     const input = event.target;
     if (!input.name) return;
+    resetEmailConfirmationState();
 
     const activeRule = (rules[formType] || []).find(([name]) => name === input.name);
     if (!activeRule) return;
@@ -265,6 +301,7 @@
   form.addEventListener("change", (event) => {
     const input = event.target;
     if (!input.name) return;
+    resetEmailConfirmationState();
 
     const activeRule = (rules[formType] || []).find(([name]) => name === input.name);
     if (!activeRule) return;

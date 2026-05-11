@@ -27,6 +27,17 @@ Until `supabase/config.js` has real values, login/register show a configuration 
    - Enable Google.
    - Add the Google OAuth client ID and client secret in the Supabase dashboard.
 
+## Email Delivery Notes
+
+Supabase's built-in auth email service is only for demos and early testing. It has strict hourly limits and can fail to deliver to addresses outside the project team. For production, configure a custom SMTP provider under Authentication > Email.
+
+For local testing, if an email/password user was created but no confirmation email arrives, you can either:
+
+- Check Inbox, Spam, and Promotions for the confirmation email.
+- Manually confirm the test user in the Supabase dashboard.
+- Temporarily disable email confirmation while testing the UI flow.
+- Configure custom SMTP before testing with real users.
+
 ## Why `verify.html` Was Removed
 
 Saver should not own a fake OTP screen. Supabase Auth already handles email confirmation links, OAuth redirects, session persistence, and token parsing. If the product later needs a status screen, use a small "check your email" or callback status page instead of manual verification logic.
