@@ -3,6 +3,31 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/register.html",
+      "destination": "/register",
+      "permanent": true
+    },
+    {
+      "source": "/login.html",
+      "destination": "/login",
+      "permanent": true
+    },
+    {
+      "source": "/onboarding.html",
+      "destination": "/onboarding",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/reset-password.html",
+      "destination": "/reset-password",
+      "permanent": true
+    },
+    {
       "source": "/pages",
       "destination": "/",
       "permanent": true
@@ -16,6 +41,78 @@
       "source": "/pages/index.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/pages/register",
+      "destination": "/register",
+      "permanent": true
+    },
+    {
+      "source": "/pages/register.html",
+      "destination": "/register",
+      "permanent": true
+    },
+    {
+      "source": "/pages/login",
+      "destination": "/login",
+      "permanent": true
+    },
+    {
+      "source": "/pages/login.html",
+      "destination": "/login",
+      "permanent": true
+    },
+    {
+      "source": "/pages/onboarding",
+      "destination": "/onboarding",
+      "permanent": true
+    },
+    {
+      "source": "/pages/onboarding.html",
+      "destination": "/onboarding",
+      "permanent": true
+    },
+    {
+      "source": "/pages/dashboard",
+      "destination": "/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/pages/dashboard.html",
+      "destination": "/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/pages/reset-password",
+      "destination": "/reset-password",
+      "permanent": true
+    },
+    {
+      "source": "/pages/reset-password.html",
+      "destination": "/reset-password",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/register",
+      "destination": "/pages/register.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/pages/login.html"
+    },
+    {
+      "source": "/onboarding",
+      "destination": "/pages/onboarding.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/pages/dashboard.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/pages/reset-password.html"
     }
   ]
 }
