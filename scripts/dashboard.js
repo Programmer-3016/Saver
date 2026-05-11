@@ -628,19 +628,18 @@ function initDashboardEvents() {
   const resetBtn = $("#profile-reset-btn");
 
   if (resetBtn)
-    resetBtn.addEventListener("click", () => {
+    resetBtn.addEventListener("click", async () => {
       if (
         confirm(
           "Are you sure? This will clear ALL your data — transactions, goals, and settings. This cannot be undone.",
         )
       ) {
-        [
-          "saver_onboarding",
-          "saver_transactions",
-          "saverUserEmail",
-          "saverUserName",
-          "saverAuthProvider",
-        ].forEach((key) => localStorage.removeItem(key));
+        try {
+          await resetDashboardData(window.currentSaverSession || null);
+        } catch (error) {
+          console.error("Could not reset profile data", error);
+          clearSaverLocalData();
+        }
         window.location.href = "onboarding.html";
       }
     });
@@ -951,6 +950,31 @@ function showExpenseFormView() {
   formView.classList.remove("hidden");
 }
 
+async function loadDashboardState(session) {
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.loadOnboarding) {
+    try {
+      const remoteState = await window.saverSupabase.loadOnboarding(session);
+      if (remoteState) {
+        applyStateSnapshot(remoteState);
+        saveState();
+        return true;
+      }
+    } catch (error) {
+      console.error("Could not load dashboard profile", error);
+    }
+  }
+
+  return loadState();
+}
+
+async function resetDashboardData(session) {
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.resetOnboarding) {
+    await window.saverSupabase.resetOnboarding(session);
+  }
+
+  clearSaverLocalData();
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════
@@ -964,12 +988,16 @@ function showExpenseFormView() {
  */
 
 async function init() {
+  let authSession = null;
+
   if (window.saverSupabase?.requireSession) {
-    const isAuthenticated = await window.saverSupabase.requireSession();
-    if (!isAuthenticated) return;
+    const session = await window.saverSupabase.requireSession();
+    if (!session) return;
+    authSession = session === true ? null : session;
+    window.currentSaverSession = authSession;
   }
 
-  const hadState = loadState();
+  const hadState = await loadDashboardState(authSession);
 
   // If not onboarded yet, redirect to onboarding
 

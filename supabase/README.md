@@ -8,6 +8,7 @@ This folder is for Saver's Supabase project setup, public browser config, and fu
 - Client bootstrap: `scripts/supabase-client.js`
 - Login/register actions: `scripts/auth.js`
 - Protected page session checks: `scripts/onboarding.js`, `scripts/dashboard.js`
+- Database profile schema: `supabase/schema.sql`
 
 Until `supabase/config.js` has real values, login/register show a configuration message and protected pages remain previewable for local UI work. Once the URL and anon/public key are set, Supabase session checks become active.
 
@@ -28,6 +29,16 @@ Until `supabase/config.js` has real values, login/register show a configuration 
    - Enable Email.
    - Enable Google.
    - Add the Google OAuth client ID and client secret in the Supabase dashboard.
+
+## Required Database Setup
+
+Run `supabase/schema.sql` in Supabase SQL Editor. It creates the `profiles` table,
+RLS policies, and the auth trigger that gives every Supabase Auth user a matching
+profile row.
+
+Saver uses `profiles.onboarding_completed` as the dashboard gate. Browser
+localStorage is only a per-user cache, so one account cannot inherit another
+account's onboarding state on the same device.
 
 ## Email Delivery Notes
 

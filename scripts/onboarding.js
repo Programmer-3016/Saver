@@ -367,6 +367,28 @@ function syncFinalSummary() {
   dom.finalSummary.textContent = `Based on your ${modeLabel} setup, you have ${formatCurrency(p.freeMoney)} to spend freely. Saver will help you track spending on your dashboard.`;
 }
 
+async function loadInitialState(session) {
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.loadOnboarding) {
+    try {
+      const remoteState = await window.saverSupabase.loadOnboarding(session);
+      if (remoteState) return applyStateSnapshot(remoteState);
+    } catch (error) {
+      console.error("Could not load onboarding profile", error);
+    }
+  }
+
+  return loadState();
+}
+
+async function saveCompletedOnboarding(session) {
+  state.onboardingComplete = true;
+  saveState();
+
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveOnboarding) {
+    await window.saverSupabase.saveOnboarding(state, session);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  EVENT HANDLERS
 // ═══════════════════════════════════════════════════════════════════
@@ -499,12 +521,15 @@ function goBack() {
  */
 
 async function init() {
+  let authSession = null;
+
   if (window.saverSupabase?.requireSession) {
-    const isAuthenticated = await window.saverSupabase.requireSession();
-    if (!isAuthenticated) return;
+    const session = await window.saverSupabase.requireSession();
+    if (!session) return;
+    authSession = session === true ? null : session;
   }
 
-  const hadState = loadState();
+  const hadState = await loadInitialState(authSession);
 
   // If onboarding was already completed, go straight to dashboard
 
@@ -586,10 +611,22 @@ async function init() {
 
   // Completion — Start Dashboard button redirects to dashboard
 
-  dom.startDashboardBtn.addEventListener("click", () => {
-    state.onboardingComplete = true;
-    saveState();
-    window.location.href = "dashboard.html";
+  dom.startDashboardBtn.addEventListener("click", async () => {
+    const originalText = dom.startDashboardBtn.textContent;
+    dom.startDashboardBtn.disabled = true;
+    dom.startDashboardBtn.textContent = "Saving...";
+
+    try {
+      await saveCompletedOnboarding(authSession);
+      window.location.href = "dashboard.html";
+    } catch (error) {
+      console.error("Could not save onboarding profile", error);
+      state.onboardingComplete = false;
+      saveState();
+      dom.startDashboardBtn.disabled = false;
+      dom.startDashboardBtn.textContent = originalText;
+      alert("We could not save your setup. Please try again.");
+    }
   });
 
   // ── Restore saved state to UI ──────────────────────────────────

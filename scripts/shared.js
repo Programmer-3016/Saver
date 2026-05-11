@@ -46,7 +46,7 @@ function animateValue(el, text) {
 // Central state object that tracks every user choice during onboarding.
 // Persisted to localStorage so progress survives page refreshes.
 
-const state = {
+const defaultState = {
   step: 1,
   mode: "", // "fixed" | "irregular" | "allowance"
   totalMoney: 0, // how much money the user currently has
@@ -58,26 +58,57 @@ const state = {
   onboardingComplete: false, // true after completing all onboarding steps
 };
 
+const state = { ...defaultState };
+
 // ── State Persistence ────────────────────────────────────────────
 // Saves/loads onboarding progress to localStorage.
-// Users can close the tab and resume exactly where they left off.
+// Authenticated users get user-scoped keys so one account cannot inherit
+// another account's setup state from the same browser.
+
+let saverStorageOwnerId = "";
+
+function setSaverStorageOwner(ownerId) {
+  saverStorageOwnerId = ownerId || "";
+}
+
+function saverStorageKey(baseKey) {
+  return saverStorageOwnerId ? `${baseKey}:${saverStorageOwnerId}` : baseKey;
+}
+
+function applyStateSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return false;
+  Object.assign(state, defaultState, snapshot);
+  return true;
+}
 
 function saveState() {
   try {
-    localStorage.setItem("saver_onboarding", JSON.stringify(state));
+    localStorage.setItem(saverStorageKey("saver_onboarding"), JSON.stringify(state));
   } catch (_) {}
 }
 
 function loadState() {
   try {
-    const saved = localStorage.getItem("saver_onboarding");
+    const saved = localStorage.getItem(saverStorageKey("saver_onboarding"));
     if (saved) {
       const parsed = JSON.parse(saved);
-      Object.assign(state, parsed);
-      return true;
+      return applyStateSnapshot(parsed);
     }
   } catch (_) {}
   return false;
+}
+
+function clearSaverLocalData() {
+  try {
+    ["saver_onboarding", "saver_transactions"].forEach((baseKey) => {
+      localStorage.removeItem(saverStorageKey(baseKey));
+      localStorage.removeItem(baseKey);
+    });
+
+    ["saverUserEmail", "saverUserName", "saverAuthProvider"].forEach((key) =>
+      localStorage.removeItem(key),
+    );
+  } catch (_) {}
 }
 
 // ── Transaction Storage ──────────────────────────────────────────
@@ -85,7 +116,7 @@ function loadState() {
 
 function loadTransactions() {
   try {
-    const parsed = JSON.parse(localStorage.getItem("saver_transactions") || "[]");
+    const parsed = JSON.parse(localStorage.getItem(saverStorageKey("saver_transactions")) || "[]");
     if (!Array.isArray(parsed)) return [];
 
     return parsed
@@ -112,6 +143,6 @@ function loadTransactions() {
 
 function saveTransactions(txns) {
   try {
-    localStorage.setItem("saver_transactions", JSON.stringify(txns));
+    localStorage.setItem(saverStorageKey("saver_transactions"), JSON.stringify(txns));
   } catch (_) {}
 }
