@@ -129,7 +129,7 @@ body[data-ui="app"] {
 }
 
 /*
-  Marketing mode keeps the original landing/verify scale and palette.
+  Marketing mode keeps the original landing scale and palette.
 */
 
 [data-ui="marketing"] {

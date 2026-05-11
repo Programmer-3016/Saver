@@ -25,6 +25,7 @@ A personal money clarity app that helps you understand how much you can freely s
 
 - HTML5, Vanilla JS, CSS
 - Tailwind CSS (CDN)
+- Supabase Auth
 - Google Material Symbols
 - Plus Jakarta Sans + Inter typography
 
@@ -38,11 +39,14 @@ Saver/
 ├── architecture.md             # Technical architecture document
 ├── .prettierrc.json            # Prettier config (2-space, 100 width)
 │
+├── supabase/
+│   ├── config.js               # Public Supabase browser config
+│   └── README.md               # Supabase Auth setup notes
+│
 ├── pages/
 │   ├── index.html              # Landing page (marketing)
 │   ├── login.html              # User login
 │   ├── register.html           # User registration
-│   ├── verify.html             # Email/OTP verification
 │   ├── onboarding.html         # Setup wizard (Mode → Money → Goal → Done)
 │   └── dashboard.html          # Dashboard (Overview, Transactions, Goals, Profile)
 │
@@ -50,7 +54,8 @@ Saver/
 │   ├── shared.js               # Shared utilities ($, $$, formatCurrency, state)
 │   ├── onboarding.js           # Onboarding wizard logic + step navigation
 │   ├── dashboard.js            # Dashboard logic + transactions + expense modal
-│   ├── auth.js                 # Auth form validation (login + register)
+│   ├── auth.js                 # Supabase auth form validation + redirects
+│   ├── supabase-client.js      # Supabase client bootstrap
 │   ├── tailwind-theme.js       # Tailwind design token config
 │   └── reveal.js               # FOUC prevention (reveals page after load)
 │
@@ -73,6 +78,7 @@ Saver/
    ```bash
    npx serve .
    ```
+3. For real auth, add your Supabase Project URL and anon/public key in `supabase/config.js`, then configure the redirect URLs listed in `supabase/README.md`.
 
 ---
 
@@ -89,12 +95,12 @@ Saver/
 
 After onboarding, users land on a tabbed dashboard:
 
-| Tab              | Content                                                   |
-|------------------|-----------------------------------------------------------|
-| **Overview**     | Hero stats, spending chart, budget pulse, categories       |
-| **Transactions** | Full expense history with floating add button             |
-| **Goals**        | Saving goal progress with progress bar                    |
-| **Profile**      | User summary, saved/spent stats, and settings actions     |
+| Tab              | Content                                               |
+| ---------------- | ----------------------------------------------------- |
+| **Overview**     | Hero stats, spending chart, budget pulse, categories  |
+| **Transactions** | Full expense history with floating add button         |
+| **Goals**        | Saving goal progress with progress bar                |
+| **Profile**      | User summary, saved/spent stats, and settings actions |
 
 - **Tablet/Desktop** — Top nav pills for tab switching, with a floating add button
 - **Phone** — Fixed bottom nav bar with 4 tabs and a centered add button

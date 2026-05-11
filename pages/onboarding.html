@@ -28,7 +28,6 @@
   </head>
   <body data-ui="app" class="min-h-screen">
     <div id="onboarding-section">
-
       <!-- Header -->
 
       <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-100">
@@ -57,12 +56,10 @@
       <!-- Main Content -->
 
       <main class="max-w-6xl mx-auto px-5 md:px-8 py-6 md:py-10">
-
         <!-- Segmented Step Progress -->
 
         <div class="mb-6 md:mb-10" id="step-progress">
           <div class="flex items-center justify-between max-w-md">
-
             <!-- Step 1 -->
 
             <div class="flex items-center gap-2 step-node is-active" data-step-node="1">
@@ -104,11 +101,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 lg:gap-14 items-start">
-
           <!-- LEFT: Form Content -->
 
           <div>
-
             <!-- Step Title -->
 
             <div class="mb-6 md:mb-8">
@@ -127,7 +122,6 @@
 
             <div class="step-panel is-active" data-step="1">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
                 <!-- Fixed Income -->
 
                 <button
@@ -236,7 +230,6 @@
             <!-- ===== STEP 2: Set Your Money ===== -->
 
             <div class="step-panel" data-step="2">
-
               <!-- Contextual Note -->
 
               <div class="insight-box mb-5">
@@ -281,7 +274,6 @@
                     >How much do you want to save?</label
                   >
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
                     <!-- Custom -->
 
                     <button
@@ -396,7 +388,6 @@
 
             <div class="step-panel" data-step="3">
               <div class="space-y-5">
-
                 <!-- Goal Type Cards -->
 
                 <div>
@@ -405,7 +396,6 @@
                     >Why do you want to save?</label
                   >
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
                     <!-- Specific Item -->
 
                     <button
@@ -602,7 +592,6 @@
           <!-- RIGHT: Live Preview Panel -->
 
           <aside class="onboarding-preview hidden lg:block">
-
             <!-- Soft ambient column background -->
 
             <div
@@ -610,7 +599,6 @@
               aria-hidden="true"
             ></div>
             <div class="preview-card p-7">
-
               <!-- Header -->
 
               <div class="flex items-center gap-2 mb-6">
@@ -794,6 +782,9 @@
       </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabase/config.js"></script>
+    <script src="../scripts/supabase-client.js"></script>
     <script src="../scripts/shared.js"></script>
     <script src="../scripts/onboarding.js"></script>
     <script src="../scripts/reveal.js"></script>

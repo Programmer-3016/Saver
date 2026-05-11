@@ -1,5 +1,4 @@
-// Shared auth validation for the static Saver prototype.
-// This keeps login/register behavior consistent until a real backend is added.
+// Shared auth validation and Supabase Auth wiring for login/register.
 
 (function () {
   const form = document.querySelector("[data-auth-form]");
@@ -8,6 +7,7 @@
   const formType = form.dataset.authForm;
   const submitButton = form.querySelector("button[type='submit']");
   const googleButton = document.querySelector("[data-google-auth]");
+  const supabaseAuth = window.saverSupabase;
 
   const rules = {
     login: [
@@ -33,7 +33,7 @@
   }
 
   function validateName() {
-    return value("fullName").length >= 2 ? "" : "Please enter your full name.";
+    return value("fullName").replace(/\s+/g, " ").length >= 2 ? "" : "Please enter your full name.";
   }
 
   function validateEmail() {
@@ -46,6 +46,7 @@
   }
 
   function validatePasswordMatch() {
+    if (!value("confirmPassword")) return "Please confirm your password.";
     return value("password") === value("confirmPassword") ? "" : "Passwords do not match.";
   }
 
@@ -59,11 +60,17 @@
     const error = wrapper.querySelector("[data-error]");
 
     input.style.boxShadow = message ? "0 0 0 2px #ba1a1a" : "";
+    input.setAttribute("aria-invalid", String(Boolean(message)));
 
     if (error) {
+      if (!error.id && input.id) error.id = `${input.id}-error`;
+      if (error.id) input.setAttribute("aria-describedby", error.id);
+      error.setAttribute("role", "alert");
       error.textContent = message;
       error.classList.toggle("hidden", !message);
     }
+
+    if (!message) input.removeAttribute("aria-describedby");
   }
 
   function setStatus(message, isError = false) {
@@ -74,6 +81,127 @@
     status.classList.toggle("hidden", !message);
     status.classList.toggle("text-error", isError);
     status.classList.toggle("text-primary-container", !isError);
+  }
+
+  function hasSupabaseAuth() {
+    return Boolean(supabaseAuth?.isConfigured && supabaseAuth.client?.auth);
+  }
+
+  function setButtonLoading(button, loadingText) {
+    if (!button) return "";
+
+    const originalState = {
+      html: button.innerHTML,
+      text: button.textContent.trim(),
+    };
+    button.disabled = true;
+    button.textContent = loadingText;
+    return originalState;
+  }
+
+  function restoreButton(button, originalState) {
+    if (!button) return;
+
+    button.disabled = false;
+    if (originalState?.html) button.innerHTML = originalState.html;
+    else if (originalState?.text) button.textContent = originalState.text;
+  }
+
+  function persistUserProfile(user) {
+    const email = user?.email || value("email");
+    const fullName =
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.user_metadata?.display_name ||
+      value("fullName");
+
+    if (email) localStorage.setItem("saverUserEmail", email);
+    if (fullName) localStorage.setItem("saverUserName", fullName);
+  }
+
+  function showSupabaseConfigMessage() {
+    setStatus(
+      "Supabase is not configured yet. Add your project URL and anon key in supabase/config.js.",
+      true,
+    );
+  }
+
+  async function submitWithSupabase() {
+    if (!hasSupabaseAuth()) {
+      showSupabaseConfigMessage();
+      return;
+    }
+
+    const originalText = setButtonLoading(
+      submitButton,
+      formType === "register" ? "Creating account..." : "Logging in...",
+    );
+
+    try {
+      if (formType === "register") {
+        const { data, error } = await supabaseAuth.client.auth.signUp({
+          email: value("email"),
+          password: value("password"),
+          options: {
+            data: {
+              full_name: value("fullName"),
+            },
+            emailRedirectTo: supabaseAuth.pageUrl("onboarding.html"),
+          },
+        });
+
+        if (error) throw error;
+
+        persistUserProfile(data.user);
+
+        if (data.session) {
+          setStatus("Account created. Opening setup...");
+          window.location.href = "onboarding.html";
+          return;
+        }
+
+        setStatus("Account created. Check your email to confirm your account, then log in.");
+        restoreButton(submitButton, originalText);
+        return;
+      }
+
+      const { data, error } = await supabaseAuth.client.auth.signInWithPassword({
+        email: value("email"),
+        password: value("password"),
+      });
+
+      if (error) throw error;
+
+      persistUserProfile(data.user);
+      setStatus("Login successful. Opening setup...");
+      window.location.href = "onboarding.html";
+    } catch (error) {
+      setStatus(error.message || "Authentication failed. Please try again.", true);
+      restoreButton(submitButton, originalText);
+    }
+  }
+
+  async function continueWithGoogle() {
+    setStatus("");
+
+    if (!hasSupabaseAuth()) {
+      showSupabaseConfigMessage();
+      return;
+    }
+
+    const originalText = setButtonLoading(googleButton, "Opening Google...");
+
+    const { error } = await supabaseAuth.client.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: supabaseAuth.pageUrl("onboarding.html"),
+      },
+    });
+
+    if (error) {
+      setStatus(error.message || "Google sign-in failed. Please try again.", true);
+      restoreButton(googleButton, originalText);
+    }
   }
 
   function validateForm() {
@@ -111,6 +239,16 @@
     }
   });
 
+  form.addEventListener("change", (event) => {
+    const input = event.target;
+    if (!input.name) return;
+
+    const activeRule = (rules[formType] || []).find(([name]) => name === input.name);
+    if (!activeRule) return;
+
+    setError(input, activeRule[1]());
+  });
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     setStatus("");
@@ -120,25 +258,10 @@
       return;
     }
 
-    localStorage.setItem("saverUserEmail", value("email"));
-    if (value("fullName")) localStorage.setItem("saverUserName", value("fullName"));
-
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = formType === "register" ? "Creating account..." : "Logging in...";
-    }
-
-    setStatus("Looks good. Taking you to verification...");
-    const destination = formType === "register" ? "verify.html" : "onboarding.html";
-    setTimeout(() => {
-      window.location.href = destination;
-    }, 650);
+    submitWithSupabase();
   });
 
   if (googleButton) {
-    googleButton.addEventListener("click", () => {
-      localStorage.setItem("saverAuthProvider", "google");
-      window.location.href = "onboarding.html";
-    });
+    googleButton.addEventListener("click", continueWithGoogle);
   }
 })();

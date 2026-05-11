@@ -2,7 +2,7 @@
 
 <!--
   Register page.
-  Shares the login visual system, then hands users to verify.html through auth.js.
+  Shares the login visual system, then hands users to Supabase Auth through auth.js.
 -->
 
 <html class="light" lang="en">
@@ -28,79 +28,89 @@
     data-ui="auth"
     class="min-h-screen overflow-hidden selection:bg-primary-container selection:text-white"
   >
-    <main class="flex min-h-screen lg:h-screen w-full overflow-hidden">
-
+    <main class="auth-shell flex min-h-[100dvh] lg:h-screen w-full overflow-hidden">
       <!-- Left Side: Register Form -->
 
       <section
-        class="auth-panel w-full min-w-0 flex-1 flex flex-col justify-center items-center px-gutter py-5 lg:py-6 bg-surface min-h-screen lg:min-h-0 lg:h-screen overflow-y-auto lg:overflow-hidden"
+        class="auth-panel auth-panel-register w-full min-w-0 flex-1 flex flex-col justify-center items-center px-gutter py-4 lg:py-6 bg-surface min-h-[100dvh] lg:min-h-0 lg:h-screen overflow-hidden"
       >
-        <div class="auth-form-content w-full max-w-[440px] space-y-4">
-          <div class="mb-1">
+        <div
+          class="auth-form-content auth-form-content-register w-full max-w-[440px] space-y-3.5 md:space-y-4"
+        >
+          <div class="auth-brand-row mb-0.5">
             <a
               class="font-display text-h2 font-bold tracking-tighter text-primary-container"
               href="index.html"
               >Saver</a
             >
           </div>
-          <div class="space-y-2.5">
+          <div class="auth-intro space-y-2">
             <span
-              class="inline-block px-4 py-1.5 rounded-full bg-secondary-container text-primary-container font-label-caps text-label-caps"
+              class="auth-eyebrow hidden sm:inline-block px-4 py-1.5 rounded-full bg-secondary-container text-primary-container font-label-caps text-label-caps"
             >
               Start fresh
             </span>
-            <h1 class="font-h1 text-[28px] leading-[1.12] md:text-[30px] text-on-surface">
+            <h1
+              class="auth-title font-h1 text-[28px] leading-[1.12] md:text-[30px] text-on-surface"
+            >
               Create your Saver account
             </h1>
-            <p class="font-body-sm text-body-sm text-secondary">
+            <p class="auth-subcopy hidden sm:block font-body-sm text-body-sm text-secondary">
               Set up your account first. Money setup comes next.
             </p>
           </div>
-          <form class="space-y-3" data-auth-form="register" novalidate>
-            <div class="space-y-1.5" data-field>
+          <form
+            class="auth-form auth-form-register space-y-2.5 md:space-y-3"
+            data-auth-form="register"
+            novalidate
+          >
+            <div class="auth-field space-y-1" data-field>
               <label class="font-label-caps text-label-caps text-secondary ml-1" for="fullName"
                 >Full name</label
               >
               <input
                 autocomplete="name"
-                class="w-full px-6 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                class="auth-input w-full px-6 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
                 id="fullName"
                 name="fullName"
                 placeholder="Your name"
                 type="text"
               />
-              <p class="hidden font-body-sm text-body-sm text-error ml-1" data-error></p>
+              <p class="hidden auth-error font-body-sm text-body-sm text-error ml-1" data-error></p>
             </div>
-            <div class="space-y-1.5" data-field>
+            <div class="auth-field space-y-1" data-field>
               <label class="font-label-caps text-label-caps text-secondary ml-1" for="email"
                 >Email address</label
               >
               <input
                 autocomplete="email"
-                class="w-full px-6 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                class="auth-input w-full px-6 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
                 id="email"
                 name="email"
                 placeholder="email@address.com"
                 type="email"
               />
-              <p class="hidden font-body-sm text-body-sm text-error ml-1" data-error></p>
+              <p class="hidden auth-error font-body-sm text-body-sm text-error ml-1" data-error></p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1.5" data-field>
+              <div class="auth-field space-y-1" data-field>
                 <label class="font-label-caps text-label-caps text-secondary ml-1" for="password"
                   >Password</label
                 >
                 <input
                   autocomplete="new-password"
-                  class="w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                  class="auth-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
                   id="password"
                   name="password"
                   placeholder="Create"
                   type="password"
                 />
-                <p class="hidden font-body-sm text-body-sm text-error ml-1" data-error></p>
+                <p
+                  class="hidden auth-error font-body-sm text-body-sm text-error ml-1"
+                  data-error
+                ></p>
               </div>
-              <div class="space-y-1.5" data-field>
+              <div class="auth-field space-y-1" data-field>
                 <label
                   class="font-label-caps text-label-caps text-secondary ml-1"
                   for="confirmPassword"
@@ -108,17 +118,20 @@
                 >
                 <input
                   autocomplete="new-password"
-                  class="w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
+                  class="auth-input w-full px-5 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container text-on-surface font-body-md placeholder:text-outline-variant transition-all"
                   id="confirmPassword"
                   name="confirmPassword"
                   placeholder="Repeat"
                   type="password"
                 />
-                <p class="hidden font-body-sm text-body-sm text-error ml-1" data-error></p>
+                <p
+                  class="hidden auth-error font-body-sm text-body-sm text-error ml-1"
+                  data-error
+                ></p>
               </div>
             </div>
-            <div data-field>
-              <label class="flex items-start gap-3 cursor-pointer group pt-1">
+            <div class="auth-field auth-terms-field" data-field>
+              <label class="flex items-start gap-3 cursor-pointer group pt-0.5">
                 <input
                   class="mt-0.5 w-5 h-5 rounded border-outline-variant text-primary-container focus:ring-primary-container"
                   id="terms"
@@ -137,17 +150,23 @@
                   >.</span
                 >
               </label>
-              <p class="hidden font-body-sm text-body-sm text-error ml-8 mt-1" data-error></p>
+              <p
+                class="hidden auth-error font-body-sm text-body-sm text-error ml-8 mt-1"
+                data-error
+              ></p>
             </div>
-            <p class="hidden font-body-sm text-body-sm text-primary-container" data-form-status></p>
+            <p
+              class="hidden auth-status font-body-sm text-body-sm text-primary-container"
+              data-form-status
+            ></p>
             <button
-              class="w-full py-3 bg-primary-container text-white font-display font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all mt-2 disabled:opacity-70 disabled:hover:translate-y-0"
+              class="auth-primary-action w-full py-3 bg-primary-container text-white font-display font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all mt-1 disabled:opacity-70 disabled:hover:translate-y-0"
               type="submit"
             >
               Create account
             </button>
           </form>
-          <div class="relative flex items-center py-1.5">
+          <div class="auth-divider relative hidden sm:flex items-center py-1">
             <div class="flex-grow border-t border-surface-container-highest"></div>
             <span class="flex-shrink mx-4 font-label-caps text-label-caps text-outline-variant"
               >OR</span
@@ -155,7 +174,7 @@
             <div class="flex-grow border-t border-surface-container-highest"></div>
           </div>
           <button
-            class="w-full flex items-center justify-center gap-3 px-6 py-2.5 border border-outline-variant rounded-full font-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+            class="auth-google-button w-full flex items-center justify-center gap-3 px-6 py-2.5 border border-outline-variant rounded-full font-body-md text-on-surface hover:bg-surface-container-low transition-colors"
             data-google-auth
             type="button"
           >
@@ -179,7 +198,7 @@
             </svg>
             <span>Continue with Google</span>
           </button>
-          <p class="text-center font-body-md text-body-md text-secondary pt-1">
+          <p class="auth-switch-copy text-center font-body-md text-body-md text-secondary pt-0.5">
             Already have an account?
             <a class="text-primary-container font-bold hover:underline" href="login.html">Log in</a>
           </p>
@@ -311,7 +330,7 @@
                 <div>
                   <p class="font-h3 text-body-md font-bold text-on-surface">Ready for setup</p>
                   <p class="font-body-sm text-[12px] text-secondary">
-                    Verify once, then personalize money mode.
+                    Authenticate once, then personalize money mode.
                   </p>
                 </div>
               </div>
@@ -328,6 +347,9 @@
         ></div>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabase/config.js"></script>
+    <script src="../scripts/supabase-client.js"></script>
     <script src="../scripts/auth.js"></script>
     <script src="../scripts/reveal.js"></script>
   </body>

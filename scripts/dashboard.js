@@ -90,10 +90,7 @@ function populateDashboard() {
   // Days elapsed in cycle (simplified: days since first transaction or 1)
 
   const cycleStart = txns.length > 0 ? startOfDay(txns[0].ts) : today;
-  const daysElapsed = Math.min(
-    Math.floor((today - cycleStart) / 86400000) + 1,
-    cycleLength
-  );
+  const daysElapsed = Math.min(Math.floor((today - cycleStart) / 86400000) + 1, cycleLength);
   const daysLeft = cycleLength - daysElapsed;
 
   // ── Hero Cards ───────────────────────────────────────────────
@@ -142,8 +139,14 @@ function populateDashboard() {
 //  HERO CARDS
 // ═══════════════════════════════════════════════════════════════════
 
-function populateHeroCards(dailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength) {
-
+function populateHeroCards(
+  dailyLimit,
+  todaySpent,
+  todayLeft,
+  freeToSpend,
+  daysElapsed,
+  cycleLength,
+) {
   // Card 1: Today's Limit
 
   const limitEl = $("#hero-daily-limit");
@@ -253,7 +256,6 @@ function populateSpendingChart(txns, dailyLimit) {
             label: (ctx) => formatCurrency(ctx.raw),
           },
         },
-
       },
       scales: {
         x: {
@@ -548,7 +550,6 @@ function renderAllTransactions(txns) {
 // ═══════════════════════════════════════════════════════════════════
 
 function populateProfileTab(txns, effectiveSave) {
-
   // Avatar initial
 
   const profileAvatar = $("#profile-avatar");
@@ -594,7 +595,6 @@ function populateProfileTab(txns, effectiveSave) {
 // Binds all dashboard-specific event listeners. Called once on init.
 
 function initDashboardEvents() {
-
   // Nav pill switching (top bar)
 
   $$(".nav-pill").forEach((pill) => {
@@ -618,26 +618,32 @@ function initDashboardEvents() {
 
   const editBtn = $("#profile-edit-btn");
 
-  if (editBtn) editBtn.addEventListener("click", () => {
-    window.location.href = "onboarding.html";
-  });
+  if (editBtn)
+    editBtn.addEventListener("click", () => {
+      window.location.href = "onboarding.html";
+    });
 
   // Profile — Reset All Data
 
   const resetBtn = $("#profile-reset-btn");
 
-  if (resetBtn) resetBtn.addEventListener("click", () => {
-    if (confirm("Are you sure? This will clear ALL your data — transactions, goals, and settings. This cannot be undone.")) {
-      [
-        "saver_onboarding",
-        "saver_transactions",
-        "saverUserEmail",
-        "saverUserName",
-        "saverAuthProvider",
-      ].forEach((key) => localStorage.removeItem(key));
-      window.location.href = "onboarding.html";
-    }
-  });
+  if (resetBtn)
+    resetBtn.addEventListener("click", () => {
+      if (
+        confirm(
+          "Are you sure? This will clear ALL your data — transactions, goals, and settings. This cannot be undone.",
+        )
+      ) {
+        [
+          "saver_onboarding",
+          "saver_transactions",
+          "saverUserEmail",
+          "saverUserName",
+          "saverAuthProvider",
+        ].forEach((key) => localStorage.removeItem(key));
+        window.location.href = "onboarding.html";
+      }
+    });
 
   // FAB — opens the expense modal (desktop)
 
@@ -719,25 +725,26 @@ function initDashboardEvents() {
 
   const returnBtn = $("#success-return-btn");
 
-  if (returnBtn) returnBtn.addEventListener("click", () => {
-    closeExpenseModal();
-    populateDashboard();
-  });
+  if (returnBtn)
+    returnBtn.addEventListener("click", () => {
+      closeExpenseModal();
+      populateDashboard();
+    });
 
   // Success screen — Add Another expense
 
   const addAnotherBtn = $("#success-add-another-btn");
 
-  if (addAnotherBtn) addAnotherBtn.addEventListener("click", () => {
-    showExpenseFormView();
-    openExpenseModal();
-  });
+  if (addAnotherBtn)
+    addAnotherBtn.addEventListener("click", () => {
+      showExpenseFormView();
+      openExpenseModal();
+    });
 }
 
 // ── Tab Switching ────────────────────────────────────────────────
 
 function switchTab(tabName) {
-
   // Update desktop nav pills
 
   $$(".nav-pill").forEach((p) => {
@@ -914,7 +921,11 @@ function showExpenseSuccessView() {
 
   if (timeEl) {
     const now = new Date();
-    const time = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+    const time = now.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
     timeEl.textContent = `Today, ${time}`;
   }
 
@@ -952,7 +963,12 @@ function showExpenseFormView() {
  * 4. Binds event listeners
  */
 
-function init() {
+async function init() {
+  if (window.saverSupabase?.requireSession) {
+    const isAuthenticated = await window.saverSupabase.requireSession();
+    if (!isAuthenticated) return;
+  }
+
   const hadState = loadState();
 
   // If not onboarded yet, redirect to onboarding

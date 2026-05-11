@@ -498,7 +498,12 @@ function goBack() {
  * 5. Runs initial sync to render the correct step
  */
 
-function init() {
+async function init() {
+  if (window.saverSupabase?.requireSession) {
+    const isAuthenticated = await window.saverSupabase.requireSession();
+    if (!isAuthenticated) return;
+  }
+
   const hadState = loadState();
 
   // If onboarding was already completed, go straight to dashboard
