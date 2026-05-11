@@ -46,6 +46,8 @@ Supabase's built-in auth email service is only for demos and early testing. It h
 
 Forgot-password emails use `pages/reset-password.html` as their redirect target. Add this page to Supabase Authentication > URL Configuration before testing reset links.
 
+Signup confirmation emails use `pages/login.html` as their redirect target. After a user confirms email, Saver signs out the temporary confirmation session and asks the user to log in manually before onboarding.
+
 For local testing, if an email/password user was created but no confirmation email arrives, you can either:
 
 - Check Inbox, Spam, and Promotions for the confirmation email.

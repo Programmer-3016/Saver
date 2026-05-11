@@ -139,8 +139,8 @@
     awaitingEmailConfirmation = true;
     restoreButton(submitButton, submitButtonState);
     submitButtonState = null;
-    submitButton.disabled = true;
-    submitButton.textContent = "Check your email";
+    submitButton.disabled = false;
+    submitButton.textContent = "Go to login";
   }
 
   function initPasswordToggles() {
@@ -207,6 +207,67 @@
     );
   }
 
+  function authRedirectType() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
+    return queryParams.get("type") || hashParams.get("type") || "";
+  }
+
+  async function handleLoginConfirmationRedirect() {
+    if (formType !== "login" || !hasSupabaseAuth() || authRedirectType() !== "signup") return;
+
+    setStatus("Email confirmed. Log in to continue.");
+
+    let handled = false;
+    let authSubscription = null;
+
+    function cleanConfirmationUrl() {
+      if (window.history?.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    async function finishConfirmationRedirect() {
+      if (handled) return;
+      handled = true;
+      authSubscription?.unsubscribe();
+
+      try {
+        await supabaseAuth.client.auth.signOut();
+      } catch (_) {
+        // The confirmation URL can be opened after the session token is already consumed.
+      } finally {
+        cleanConfirmationUrl();
+      }
+    }
+
+    const { data } = supabaseAuth.client.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
+        window.setTimeout(finishConfirmationRedirect, 0);
+      }
+    });
+
+    authSubscription = data?.subscription || null;
+
+    try {
+      const {
+        data: { session },
+      } = await supabaseAuth.client.auth.getSession();
+
+      if (session) await finishConfirmationRedirect();
+    } catch (_) {
+      cleanConfirmationUrl();
+    }
+
+    window.setTimeout(() => {
+      if (!handled) {
+        authSubscription?.unsubscribe();
+        cleanConfirmationUrl();
+      }
+    }, 1500);
+  }
+
   async function submitWithSupabase() {
     if (!hasSupabaseAuth()) {
       showSupabaseConfigMessage();
@@ -232,7 +293,7 @@
             data: {
               full_name: value("fullName"),
             },
-            emailRedirectTo: supabaseAuth.pageUrl("onboarding.html"),
+            emailRedirectTo: supabaseAuth.pageUrl("login.html"),
           },
         });
 
@@ -241,14 +302,13 @@
         persistUserProfile(data.user);
 
         if (data.session) {
-          setStatus("Account created. Opening setup...");
-          window.location.href = "onboarding.html";
+          await supabaseAuth.client.auth.signOut();
+          setStatus("Account created. Redirecting to login...");
+          window.location.href = "login.html";
           return;
         }
 
-        setStatus(
-          `If ${value("email")} is new, check your inbox for a confirmation link. If you already signed in before, log in or continue with Google.`,
-        );
+        setStatus("Account created. Check your email, then log in.");
         showEmailConfirmationState();
         return;
       }
@@ -413,6 +473,12 @@
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+
+    if (awaitingEmailConfirmation && formType === "register") {
+      window.location.href = "login.html";
+      return;
+    }
+
     setStatus("");
 
     if (!validateForm()) {
@@ -432,6 +498,7 @@
   }
 
   initPasswordToggles();
+  handleLoginConfirmationRedirect();
 
   window.addEventListener("pageshow", (event) => {
     if (
