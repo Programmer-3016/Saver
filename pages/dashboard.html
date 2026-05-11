@@ -3,7 +3,7 @@
 <!--
   Saver — Dashboard.
   Premium bento-grid dashboard with hero stats, spending chart,
-  budget pulse, quick log, category breakdown, and expense modal.
+  budget pulse, category breakdown, and expense modal.
   Redirects to onboarding.html if setup is not complete.
 -->
 
@@ -52,27 +52,35 @@
           Saver
         </a>
 
-        <!-- Nav Pills (desktop) -->
+        <!-- Nav Pills (tablet + desktop) -->
 
         <nav
-          class="hidden md:flex items-center gap-1 bg-surface-container-low rounded-full p-1"
+          class="hidden sm:flex items-center gap-1 bg-surface-container-low rounded-full p-1"
           id="dash-nav"
         >
           <button
             class="nav-pill is-active font-label-pill text-label-pill"
             data-tab="overview"
+            type="button"
+            aria-pressed="true"
           >Overview</button>
           <button
-            class="nav-pill text-gray-500 font-label-pill text-label-pill"
+            class="nav-pill font-label-pill text-label-pill"
             data-tab="transactions"
+            type="button"
+            aria-pressed="false"
           >Transactions</button>
           <button
-            class="nav-pill text-gray-500 font-label-pill text-label-pill"
+            class="nav-pill font-label-pill text-label-pill"
             data-tab="goals"
+            type="button"
+            aria-pressed="false"
           >Goals</button>
           <button
-            class="nav-pill text-gray-500 font-label-pill text-label-pill"
+            class="nav-pill font-label-pill text-label-pill"
             data-tab="profile"
+            type="button"
+            aria-pressed="false"
           >Profile</button>
         </nav>
 
@@ -81,20 +89,25 @@
         <div class="flex items-center gap-4">
           <button
             class="text-on-surface-variant hover:text-primary-container transition-colors p-2 rounded-full hover:bg-surface-container"
+            type="button"
+            aria-label="Notifications"
           >
             <span class="material-symbols-outlined">notifications</span>
           </button>
-          <div
-            class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-body-lg text-body-lg font-bold cursor-pointer"
+          <button
+            class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-body-lg text-body-lg font-bold cursor-pointer border-0"
+            data-tab="profile"
+            type="button"
+            aria-label="Open profile"
             id="dash-avatar"
-          >S</div>
+          >S</button>
         </div>
       </div>
     </header>
 
     <!-- Main Content Canvas -->
 
-    <main class="w-full max-w-7xl mx-auto flex-1 pb-28 md:pb-16 overflow-x-hidden">
+    <main class="w-full max-w-7xl mx-auto flex-1 pb-28 sm:pb-16 overflow-x-hidden">
 
       <!-- ═══════════════════════════════════════════════════════════
            OVERVIEW PANEL
@@ -430,11 +443,13 @@
       </div>
     </main>
 
-    <!-- Floating Action Button (Desktop only) -->
+    <!-- Floating Action Button (tablet + desktop only) -->
 
     <button
-      class="hidden md:flex fixed bottom-8 right-8 w-12 h-12 rounded-full bg-primary-container text-white items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 z-50"
+      class="hidden sm:flex fixed bottom-8 right-8 w-12 h-12 rounded-full bg-primary-container text-white items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 z-50"
       id="fab-add-expense"
+      type="button"
+      aria-label="Add expense"
     >
       <span class="material-symbols-outlined">add</span>
     </button>
@@ -442,19 +457,23 @@
     <!-- Mobile Bottom Nav Bar -->
 
     <nav
-      class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-white border-t border-stone-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-[28px]"
+      class="sm:hidden fixed z-50"
       id="mobile-bottom-nav"
     >
       <button
-        class="mobile-nav-tab is-active flex flex-col items-center justify-center px-3 py-2 transition-all active:scale-95 duration-150"
+        class="mobile-nav-tab is-active"
         data-tab="overview"
+        type="button"
+        aria-pressed="true"
       >
         <span class="material-symbols-outlined">home</span>
         <span class="font-display text-[11px] font-semibold mt-1">Home</span>
       </button>
       <button
-        class="mobile-nav-tab flex flex-col items-center justify-center px-3 py-2 transition-all active:scale-95 duration-150"
+        class="mobile-nav-tab"
         data-tab="transactions"
+        type="button"
+        aria-pressed="false"
       >
         <span class="material-symbols-outlined">receipt_long</span>
         <span class="font-display text-[11px] font-semibold mt-1">History</span>
@@ -463,23 +482,28 @@
       <!-- Centered Add Expense Button -->
 
       <button
-        class="mobile-add-button active:scale-95 transition-all"
+        class="mobile-add-button"
         aria-label="Add expense"
         id="mobile-add-expense"
+        type="button"
       >
         <span class="material-symbols-outlined text-[28px]">add</span>
       </button>
 
       <button
-        class="mobile-nav-tab flex flex-col items-center justify-center px-3 py-2 transition-all active:scale-95 duration-150"
+        class="mobile-nav-tab"
         data-tab="goals"
+        type="button"
+        aria-pressed="false"
       >
         <span class="material-symbols-outlined">flag</span>
         <span class="font-display text-[11px] font-semibold mt-1">Goals</span>
       </button>
       <button
-        class="mobile-nav-tab flex flex-col items-center justify-center px-3 py-2 transition-all active:scale-95 duration-150"
+        class="mobile-nav-tab"
         data-tab="profile"
+        type="button"
+        aria-pressed="false"
       >
         <span class="material-symbols-outlined">person</span>
         <span class="font-display text-[11px] font-semibold mt-1">Profile</span>
@@ -495,7 +519,7 @@
       <!-- Backdrop -->
 
       <div
-        class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        class="absolute inset-0 expense-modal-backdrop"
         id="expense-modal-backdrop"
       ></div>
 

@@ -59,7 +59,6 @@ Both share a unified design system but serve different UX goals.
 |-------|------|---------|
 | `/app/dashboard` | Dashboard | Main overview with spending tracker |
 | `/app/transactions` | Transactions | Full spending history |
-| `/app/add-expense` | Add Expense | Quick expense entry |
 | `/app/goals` | Goals | Savings goal tracking |
 | `/app/profile` | Profile | User settings |
 
@@ -91,10 +90,10 @@ Displays: Logo, headline, form, and alternate auth link.
 
 Top navigation bar with:
 - Logo ("Saver")
-- Tab pills: **Overview** (active) | **Transactions** | **Goals**
+- Tab pills: **Overview** (active) | **Transactions** | **Goals** | **Profile**
 - Notification bell + user avatar
 
-No sidebar navigation. Mobile uses a fixed bottom nav bar for tab switching. Tabs switch content in-place.
+No sidebar navigation. Phone layouts use a fixed bottom nav bar for tab switching; tablet and desktop use the top nav. Tabs switch content in-place.
 
 ---
 
@@ -147,7 +146,7 @@ These pages share styles via `design-system.css`, `shared.css`, and `tailwind-th
 
 Authenticated features are split across two pages:
 - `pages/onboarding.html` — Setup wizard (Mode → Money → Goal → Done)
-- `pages/dashboard.html` — Dashboard (tabbed: Overview, Transactions, Goals)
+- `pages/dashboard.html` — Dashboard (tabbed: Overview, Transactions, Goals, Profile)
 
 Onboarding redirects to dashboard on completion. Dashboard redirects back to onboarding if setup is incomplete. Tab switching within the dashboard uses `dash-panel` + `data-panel` attributes — no page reloads inside the dashboard.
 

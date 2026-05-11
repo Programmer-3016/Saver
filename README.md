@@ -44,7 +44,7 @@ Saver/
 │   ├── register.html           # User registration
 │   ├── verify.html             # Email/OTP verification
 │   ├── onboarding.html         # Setup wizard (Mode → Money → Goal → Done)
-│   └── dashboard.html          # Dashboard (Overview, Transactions, Goals)
+│   └── dashboard.html          # Dashboard (Overview, Transactions, Goals, Profile)
 │
 ├── scripts/
 │   ├── shared.js               # Shared utilities ($, $$, formatCurrency, state)
@@ -91,12 +91,13 @@ After onboarding, users land on a tabbed dashboard:
 
 | Tab              | Content                                                   |
 |------------------|-----------------------------------------------------------|
-| **Overview**     | Hero stats, spending chart, budget pulse, quick log, categories |
+| **Overview**     | Hero stats, spending chart, budget pulse, categories       |
 | **Transactions** | Full expense history with floating add button             |
 | **Goals**        | Saving goal progress with progress bar                    |
+| **Profile**      | User summary, saved/spent stats, and settings actions     |
 
-- **Desktop** — Top nav pills for tab switching
-- **Mobile** — Fixed bottom nav bar with 3 tabs
+- **Tablet/Desktop** — Top nav pills for tab switching, with a floating add button
+- **Phone** — Fixed bottom nav bar with 4 tabs and a centered add button
 
 ---
 

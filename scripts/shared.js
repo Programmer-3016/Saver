@@ -85,7 +85,26 @@ function loadState() {
 
 function loadTransactions() {
   try {
-    return JSON.parse(localStorage.getItem("saver_transactions") || "[]");
+    const parsed = JSON.parse(localStorage.getItem("saver_transactions") || "[]");
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((txn) => {
+        if (!txn || typeof txn !== "object") return null;
+
+        const amount = Number(txn.amount);
+        const ts = Number(txn.ts);
+        if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(ts)) return null;
+
+        return {
+          amount,
+          desc: typeof txn.desc === "string" ? txn.desc : "",
+          category: typeof txn.category === "string" ? txn.category : "other",
+          source: typeof txn.source === "string" ? txn.source : "savings",
+          ts,
+        };
+      })
+      .filter(Boolean);
   } catch (_) {
     return [];
   }

@@ -2,7 +2,7 @@
  * Saver — Dashboard
  *
  * Powers the premium bento-grid dashboard in dashboard.html.
- * Handles hero stats, spending chart, budget pulse, quick log,
+ * Handles hero stats, spending chart, budget pulse,
  * category breakdown, tab switching, expense modal, and goal tracking.
  *
  * Depends on: shared.js (must be loaded first)
@@ -20,6 +20,15 @@ const categoryConfig = {
   other: { label: "Other", icon: "receipt_long", color: "#e8e8e5" },
   income: { label: "Income", icon: "payments", color: "#059669" },
 };
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 // ── Relative Date Label ──────────────────────────────────────────
 
@@ -392,7 +401,7 @@ function populateCategoryBreakdown(txns) {
     .map(([cat, amt]) => {
       const pct = Math.round((amt / grandTotal) * 100);
       const color = categoryConfig[cat]?.color || "#717973";
-      const label = categoryConfig[cat]?.label || cat;
+      const label = escapeHTML(categoryConfig[cat]?.label || cat);
       return `
         <div class="bg-[#f5f3ee] px-3 py-2 rounded-lg flex items-center gap-2 min-w-[120px]">
           <div class="w-3 h-3 rounded-full" style="background:${color}"></div>
@@ -474,6 +483,9 @@ function populateGoalCard(effectiveSave) {
 function buildTransactionHTML(t, index) {
   const cat = categoryConfig[t.category] || categoryConfig.other;
   const isIncome = t.category === "income";
+  const description = escapeHTML(t.desc || cat.label);
+  const categoryLabel = escapeHTML(cat.label);
+  const categoryIcon = escapeHTML(cat.icon);
 
   // Alternating icon background for visual rhythm
 
@@ -495,11 +507,11 @@ function buildTransactionHTML(t, index) {
     <div class="flex items-center justify-between group hover:bg-surface-container-low p-2 -m-2 rounded-xl transition-colors">
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 ${iconBg} rounded-full flex items-center justify-center ${iconColor}">
-          <span class="material-symbols-outlined">${cat.icon}</span>
+          <span class="material-symbols-outlined">${categoryIcon}</span>
         </div>
         <div>
-          <p class="font-bold text-primary-container">${t.desc || cat.label}</p>
-          <p class="text-xs ${categoryColor}">${cat.label}</p>
+          <p class="font-bold text-primary-container">${description}</p>
+          <p class="text-xs ${categoryColor}">${categoryLabel}</p>
         </div>
       </div>
       <div class="text-right">
@@ -616,7 +628,13 @@ function initDashboardEvents() {
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
     if (confirm("Are you sure? This will clear ALL your data — transactions, goals, and settings. This cannot be undone.")) {
-      localStorage.clear();
+      [
+        "saver_onboarding",
+        "saver_transactions",
+        "saverUserEmail",
+        "saverUserName",
+        "saverAuthProvider",
+      ].forEach((key) => localStorage.removeItem(key));
       window.location.href = "onboarding.html";
     }
   });
@@ -722,11 +740,19 @@ function switchTab(tabName) {
 
   // Update desktop nav pills
 
-  $$(".nav-pill").forEach((p) => p.classList.toggle("is-active", p.dataset.tab === tabName));
+  $$(".nav-pill").forEach((p) => {
+    const isActive = p.dataset.tab === tabName;
+    p.classList.toggle("is-active", isActive);
+    p.setAttribute("aria-pressed", String(isActive));
+  });
 
   // Update mobile bottom nav tabs
 
-  $$(".mobile-nav-tab").forEach((t) => t.classList.toggle("is-active", t.dataset.tab === tabName));
+  $$(".mobile-nav-tab").forEach((t) => {
+    const isActive = t.dataset.tab === tabName;
+    t.classList.toggle("is-active", isActive);
+    t.setAttribute("aria-pressed", String(isActive));
+  });
 
   // Update panels
 
@@ -810,9 +836,12 @@ function openExpenseModal(preCategory) {
   });
 
   validateExpenseForm();
-  modal.classList.remove("hidden");
   lockBodyScroll();
-  if (amtInput) setTimeout(() => amtInput.focus(), 100);
+  requestAnimationFrame(() => modal.classList.remove("hidden"));
+
+  if (amtInput && window.matchMedia("(min-width: 640px)").matches) {
+    setTimeout(() => amtInput.focus(), 120);
+  }
 }
 
 function closeExpenseModal() {
