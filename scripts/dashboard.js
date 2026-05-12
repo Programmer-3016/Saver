@@ -1,14 +1,14 @@
 /**
  * Saver — Dashboard
  *
- * Powers the premium bento-grid dashboard in dashboard.html.
+ * Powers the premium bento-grid dashboard.
  * Handles hero stats, spending chart, budget pulse,
  * category breakdown, tab switching, expense modal, and goal tracking.
  *
  * Depends on: shared.js (must be loaded first)
  */
 
-// ── Category Config ──────────────────────────────────────────────
+// Category config
 // Label + icon mapping for each expense/income category.
 
 const categoryConfig = {
@@ -30,8 +30,11 @@ function escapeHTML(value) {
     .replace(/'/g, "&#39;");
 }
 
-// ── Relative Date Label ──────────────────────────────────────────
+function appRoute(pageName) {
+  return window.saverSupabase?.pageUrl?.(pageName) || pageName;
+}
 
+// Relative date label
 function relativeDate(ts) {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
@@ -44,8 +47,7 @@ function relativeDate(ts) {
   return `${days} days ago`;
 }
 
-// ── Date Helpers ─────────────────────────────────────────────────
-
+// Date helpers
 function startOfDay(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -56,10 +58,7 @@ function getDayName(date) {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  POPULATE DASHBOARD
-// ═══════════════════════════════════════════════════════════════════
-
+// Populate dashboard
 // Reads onboarding state + transactions to fill all dashboard elements.
 
 function populateDashboard() {
@@ -93,36 +92,28 @@ function populateDashboard() {
   const daysElapsed = Math.min(Math.floor((today - cycleStart) / 86400000) + 1, cycleLength);
   const daysLeft = cycleLength - daysElapsed;
 
-  // ── Hero Cards ───────────────────────────────────────────────
-
+  // Hero cards
   populateHeroCards(dailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength);
 
-  // ── Spending Chart ───────────────────────────────────────────
-
+  // Spending chart
   populateSpendingChart(txns, dailyLimit);
 
-  // ── Budget Pulse ─────────────────────────────────────────────
-
+  // Budget pulse
   populateBudgetPulse(txns, dailyLimit, todaySpent);
 
-  // ── Category Breakdown ───────────────────────────────────────
-
+  // Category breakdown
   populateCategoryBreakdown(txns);
 
-  // ── Awareness Nudge ──────────────────────────────────────────
-
+  // Awareness nudge
   populateNudge(todaySpent, dailyLimit, todayLeft, daysLeft);
 
-  // ── Goals Tab ────────────────────────────────────────────────
-
+  // Goals tab
   populateGoalCard(effectiveSave);
 
-  // ── Transactions Tab ─────────────────────────────────────────
-
+  // Transactions tab
   renderAllTransactions(txns);
 
-  // ── Avatar ───────────────────────────────────────────────────
-
+  // Avatar
   const avatar = $("#dash-avatar");
 
   if (avatar && state.mode) {
@@ -130,15 +121,11 @@ function populateDashboard() {
     avatar.textContent = initials[state.mode] || "S";
   }
 
-  // ── Profile Tab ───────────────────────────────────────────────
-
+  // Profile tab
   populateProfileTab(txns, effectiveSave);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  HERO CARDS
-// ═══════════════════════════════════════════════════════════════════
-
+// Hero cards
 function populateHeroCards(
   dailyLimit,
   todaySpent,
@@ -173,10 +160,7 @@ function populateHeroCards(
   if (daysBarEl) daysBarEl.style.width = `${progress}%`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  SPENDING CHART
-// ═══════════════════════════════════════════════════════════════════
-
+// Spending chart
 // Holds the Chart.js instance so it can be destroyed on re-render
 
 let spendingChartInstance = null;
@@ -307,10 +291,7 @@ function populateSpendingChart(txns, dailyLimit) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  BUDGET PULSE
-// ═══════════════════════════════════════════════════════════════════
-
+// Budget pulse
 function populateBudgetPulse(txns, dailyLimit, todaySpent) {
   const statusEl = $("#budget-pulse-status");
   const streakEl = $("#budget-pulse-streak");
@@ -355,10 +336,7 @@ function populateBudgetPulse(txns, dailyLimit, todaySpent) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  CATEGORY BREAKDOWN
-// ═══════════════════════════════════════════════════════════════════
-
+// Category breakdown
 function populateCategoryBreakdown(txns) {
   const barEl = $("#category-stacked-bar");
   const chipsEl = $("#category-chips");
@@ -416,10 +394,7 @@ function populateCategoryBreakdown(txns) {
     .join("");
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  AWARENESS NUDGE
-// ═══════════════════════════════════════════════════════════════════
-
+// Awareness nudge
 function populateNudge(todaySpent, dailyLimit, todayLeft, daysLeft) {
   const titleEl = $("#nudge-title");
   const textEl = $("#nudge-text");
@@ -438,10 +413,7 @@ function populateNudge(todaySpent, dailyLimit, todayLeft, daysLeft) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  GOAL CARD
-// ═══════════════════════════════════════════════════════════════════
-
+// Goal card
 function populateGoalCard(effectiveSave) {
   const isSpecific = state.goalType === "specific";
   const goalName = isSpecific ? state.goalItem || "Your Item" : "Safety Buffer";
@@ -478,10 +450,7 @@ function populateGoalCard(effectiveSave) {
         : "Complete onboarding to set your saving goal.";
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TRANSACTION RENDERING
-// ═══════════════════════════════════════════════════════════════════
-
+// Transaction rendering
 function buildTransactionHTML(t, index) {
   const cat = categoryConfig[t.category] || categoryConfig.other;
   const isIncome = t.category === "income";
@@ -545,10 +514,7 @@ function renderAllTransactions(txns) {
     .join("")}</div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  PROFILE TAB
-// ═══════════════════════════════════════════════════════════════════
-
+// Profile tab
 function populateProfileTab(txns, effectiveSave) {
   // Avatar initial
 
@@ -588,10 +554,7 @@ function populateProfileTab(txns, effectiveSave) {
   if (countEl) countEl.textContent = txns.filter((t) => t.category !== "income").length;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  DASHBOARD EVENTS
-// ═══════════════════════════════════════════════════════════════════
-
+// Dashboard events
 // Binds all dashboard-specific event listeners. Called once on init.
 
 function initDashboardEvents() {
@@ -620,7 +583,7 @@ function initDashboardEvents() {
 
   if (editBtn)
     editBtn.addEventListener("click", () => {
-      window.location.href = "onboarding.html";
+      window.location.href = appRoute("onboarding.html");
     });
 
   // Profile — Reset All Data
@@ -640,7 +603,7 @@ function initDashboardEvents() {
           console.error("Could not reset profile data", error);
           clearSaverLocalData();
         }
-        window.location.href = "onboarding.html";
+        window.location.href = appRoute("onboarding.html");
       }
     });
 
@@ -741,8 +704,7 @@ function initDashboardEvents() {
     });
 }
 
-// ── Tab Switching ────────────────────────────────────────────────
-
+// Tab switching
 function switchTab(tabName) {
   // Update desktop nav pills
 
@@ -767,8 +729,7 @@ function switchTab(tabName) {
   });
 }
 
-// ── Expense Modal ────────────────────────────────────────────────
-
+// Expense modal
 const modalState = { amount: 0, desc: "", category: "", source: "savings" };
 
 // Saved scroll position — used to restore after closing the modal
@@ -885,8 +846,7 @@ function submitExpense() {
   showExpenseSuccessView();
 }
 
-// ── Success View Helpers ─────────────────────────────────────────
-
+// Success view helpers
 const sourceLabels = {
   savings: "Savings Account",
   credit: "Credit Card",
@@ -975,14 +935,11 @@ async function resetDashboardData(session) {
   clearSaverLocalData();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  INITIALIZATION
-// ═══════════════════════════════════════════════════════════════════
-
+// Initialization
 /**
  * Boots the dashboard:
- * 1. Loads onboarding state from localStorage
- * 2. If not onboarded, redirects to onboarding.html
+ * 1. Loads onboarding state from Supabase with local cache fallback
+ * 2. If not onboarded, redirects to onboarding
  * 3. Populates all dashboard data
  * 4. Binds event listeners
  */
@@ -1002,7 +959,7 @@ async function init() {
   // If not onboarded yet, redirect to onboarding
 
   if (!hadState || !state.onboardingComplete) {
-    window.location.replace("onboarding.html");
+    window.location.replace(appRoute("onboarding.html"));
     return;
   }
 
@@ -1010,6 +967,5 @@ async function init() {
   initDashboardEvents();
 }
 
-// ── Start the dashboard ──────────────────────────────────────────
-
+// Start the dashboard
 init();

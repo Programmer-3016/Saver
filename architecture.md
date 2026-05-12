@@ -1,187 +1,118 @@
-# Saver Architecture v2
+# Saver Architecture
 
 ## Core Concept
 
-Saver is designed as two distinct surfaces:
+Saver has two surfaces:
 
-1. **Public marketing website** — Educates users and drives sign-ups
-2. **Authenticated app** — Provides daily money clarity and spending tracking
+1. Public marketing pages that explain the product and drive sign-ups.
+2. Authenticated app pages that guide setup and show daily money clarity.
 
-Both share a unified design system but serve different UX goals.
-
----
+Both surfaces share the same design tokens, typography, and route helper layer.
 
 ## User Journey
 
 ### New User
 
-1. User lands on the marketing page
-2. User explores features, testimonials, and pricing
-3. User clicks "Get Started" or "Register"
-4. User creates an account on the register page
-5. Supabase Auth creates a session or sends the confirmation email
-6. User enters the onboarding flow
-7. User completes 3-step setup
-8. User lands on the dashboard
+1. User lands on `/`.
+2. User opens `/register` or continues with Google.
+3. Email/password signup sends a Supabase confirmation email.
+4. The confirmation link returns the user to `/login`.
+5. User logs in and moves to `/onboarding`.
+6. User completes setup.
+7. User lands on `/dashboard`.
+
+Google OAuth users skip the email confirmation step and go directly to `/onboarding`.
 
 ### Returning User
 
-1. User visits the landing page or direct app URL
-2. If logged out → redirected to login page
-3. If logged in but onboarding incomplete → onboarding resumes
-4. If logged in and onboarded → direct to dashboard
-
----
+1. User opens `/login`, `/onboarding`, or `/dashboard`.
+2. If logged out, protected pages send the user to `/login`.
+3. If logged in but onboarding is incomplete, `/dashboard` sends the user to `/onboarding`.
+4. If logged in and onboarded, `/onboarding` sends the user to `/dashboard`.
 
 ## Route Architecture
 
-### Public Routes
+Production uses Vercel clean URLs. The source files stay under `pages/` because this is still a static frontend.
 
-| Route             | Page           | Purpose                        |
-| ----------------- | -------------- | ------------------------------ |
-| `/`               | Landing page   | Marketing and product overview |
-| `/register`       | Register page  | New user account creation      |
-| `/login`          | Login page     | Existing user authentication   |
-| `/reset-password` | Reset password | Password recovery completion   |
+| Public route      | Source file                 | Purpose                          |
+| ----------------- | --------------------------- | -------------------------------- |
+| `/`               | `index.html`                | Landing page                     |
+| `/register`       | `pages/register.html`       | Email/password and Google signup |
+| `/login`          | `pages/login.html`          | Email/password and Google login  |
+| `/reset-password` | `pages/reset-password.html` | Password reset completion        |
 
-### Protected Setup Routes
+| Protected route | Source file             | Purpose                 |
+| --------------- | ----------------------- | ----------------------- |
+| `/onboarding`   | `pages/onboarding.html` | Financial setup wizard  |
+| `/dashboard`    | `pages/dashboard.html`  | Main dashboard and tabs |
 
-| Route               | Page              | Purpose                               |
-| ------------------- | ----------------- | ------------------------------------- |
-| `/onboarding`       | Multi-step wizard | User financial setup                  |
-| `/onboarding/mode`  | Step 1            | Income type selection                 |
-| `/onboarding/money` | Step 2            | Available money and saving preference |
-| `/onboarding/goal`  | Step 3            | Saving goal type                      |
-
-### Protected App Routes
-
-| Route               | Page         | Purpose                             |
-| ------------------- | ------------ | ----------------------------------- |
-| `/app/dashboard`    | Dashboard    | Main overview with spending tracker |
-| `/app/transactions` | Transactions | Full spending history               |
-| `/app/goals`        | Goals        | Savings goal tracking               |
-| `/app/profile`      | Profile      | User settings                       |
-
----
+Legacy `/pages/*.html` paths redirect to the clean routes in `vercel.json`.
 
 ## Access Rules
 
-| User State                   | Can Access                 | Redirected From                          |
-| ---------------------------- | -------------------------- | ---------------------------------------- |
-| Guest                        | `/`, `/register`, `/login`, `/reset-password` | `/onboarding`, `/app/*`                  |
-| Authenticated, not onboarded | `/onboarding/*`            | `/app/*` → `/onboarding`                 |
-| Fully authenticated          | `/app/*`                   | `/login`, `/register` → `/app/dashboard` |
-
----
+| User state                   | Can access                                    | Redirect behavior                  |
+| ---------------------------- | --------------------------------------------- | ---------------------------------- |
+| Guest                        | `/`, `/register`, `/login`, `/reset-password` | Protected pages go to `/login`     |
+| Authenticated, not onboarded | `/onboarding`                                 | `/dashboard` goes to `/onboarding` |
+| Authenticated and onboarded  | `/dashboard`                                  | `/onboarding` goes to `/dashboard` |
 
 ## Navigation Rules
 
 ### Landing Page
 
-Header displays: Logo, Features, Testimonials, Login, Get Started.
-No bottom app navigation on the landing page.
+The landing page is the canonical root page. Header and footer links scroll to stable section IDs.
 
-### Auth Pages (Login/Register/Reset)
+### Auth Pages
 
-Displays: Logo, headline, form, and alternate auth link.
+Login, register, and reset password share the auth layout, Supabase auth script, password visibility controls, and clean alternate links.
 
-### In-App (Dashboard)
+### Dashboard
 
-Top navigation bar with:
-
-- Logo ("Saver")
-- Tab pills: **Overview** (active) | **Transactions** | **Goals** | **Profile**
-- Notification bell + user avatar
-
-No sidebar navigation. Phone layouts use a fixed bottom nav bar for tab switching; tablet and desktop use the top nav. Tabs switch content in-place.
-
----
+Dashboard tab switching happens in-place with `dash-panel` and `data-panel` attributes. Desktop and tablet use the top tab bar; phones use the bottom navigation bar.
 
 ## Onboarding Flow
 
-Three lightweight steps designed to feel conversational, not like a finance form:
+The setup wizard has three active steps plus a completion screen:
 
-### Step 1 — Money Mode
+1. Money mode: fixed income, irregular income, or allowance.
+2. Available money and saving amount.
+3. Saving goal type and optional goal details.
+4. Summary screen that persists the profile and enters the dashboard.
 
-User selects how money comes to them:
+## Implementation Model
 
-- **Fixed Income** — Regular salary or stipend
-- **Irregular Income** — Freelance or project-based
-- **Allowance** — Pocket money or travel savings
+### Static Pages
 
-### Step 2 — Set Your Money
+Every route is backed by a static HTML file. Page-specific behavior lives in page-specific scripts:
 
-User answers two questions:
+- `scripts/auth.js` for login, registration, reset password, and OAuth redirects.
+- `scripts/onboarding.js` for setup steps and profile persistence.
+- `scripts/dashboard.js` for dashboard data, transactions, modal UI, and logout/reset actions.
 
-1. "How much money do you have right now?" → Single currency input
-2. "How much do you want to save?" → Two options:
-   - **Custom** — User enters a specific amount
-   - **Smart Suggest** — App recommends 30% of total
+Shared helpers live in:
 
-### Step 3 — Why Save?
-
-User picks a saving motivation:
-
-- **Saving for something specific** — User enters item name and price. App calculates the timeline.
-- **Just for the future** — No input needed. App auto-tracks toward a safety buffer.
-
-### Completion
-
-Shows the calculated "Free to Spend" amount and transitions to the dashboard.
-
----
-
-## Implementation Architecture
-
-### Two-Zone Approach
-
-**Zone 1 — Multi-Page (Public Site)**
-
-Each public page is a separate HTML file:
-
-- `pages/index.html` — Landing page
-- `pages/login.html` — Login
-- `pages/register.html` — Register
-- `pages/reset-password.html` — Password reset completion
-
-These pages share styles via `design-system.css`, `shared.css`, and `tailwind-theme.js`. Login, register, and password reset use Supabase Auth through `supabase/config.js`, `scripts/supabase-client.js`, and `scripts/auth.js`.
-
-**Zone 2 — Multi-Page (Authenticated App)**
-
-Authenticated features are split across two pages:
-
-- `pages/onboarding.html` — Setup wizard (Mode → Money → Goal → Done)
-- `pages/dashboard.html` — Dashboard (tabbed: Overview, Transactions, Goals, Profile)
-
-Onboarding redirects to dashboard on completion. Dashboard redirects back to onboarding if setup is incomplete. Tab switching within the dashboard uses `dash-panel` + `data-panel` attributes — no page reloads inside the dashboard.
-
-Shared logic lives in `scripts/shared.js` (DOM helpers, currency formatting, state persistence). Each page has its own script (`onboarding.js`, `dashboard.js`).
-
-### Design System Modes
-
-- `data-ui="marketing"` — Landing page
-- `data-ui="auth"` — Login, register, reset password pages
-- `data-ui="app"` — Authenticated app shell
+- `scripts/shared.js` for DOM helpers, formatting, local cache, and transaction utilities.
+- `scripts/supabase-client.js` for Supabase bootstrap, auth guards, and clean route mapping.
 
 ### State Model
 
-Stored in `localStorage`:
+Supabase is the source of truth for account and onboarding profile state:
 
-- `saver_onboarding` — Onboarding wizard state (mode, money, saving, goal)
-- `saver_transactions` — Array of expense/income objects `{ desc, amount, category, ts }`
-- `saverUserEmail` — User email from auth
-- `saverUserName` — User name from auth
+- `auth.users` stores authenticated users.
+- `public.profiles` stores display name, onboarding data, and `onboarding_completed`.
 
----
+Browser storage is a cache/fallback only:
+
+- `saver_onboarding:<user-key>` stores the current user's setup cache.
+- `saver_transactions:<user-key>` stores the current user's prototype transaction list.
+- `saverUserEmail` and `saverUserName` support UI fallback text.
+
+Transactions are still local-only prototype data. Moving them to Supabase should be a separate schema migration.
 
 ## Implemented Flow
 
-```
-Landing → Register/Login → Supabase Auth → onboarding.html (Wizard) → dashboard.html (Dashboard)
+```text
+Landing -> Register/Login -> Supabase Auth -> Onboarding -> Dashboard
 ```
 
-Returning users:
-
-```
-Landing or direct URL → Login → onboarding.html (auto-redirects to dashboard.html)
-```
+Email signup confirmation intentionally lands on `/login` so the user starts a normal login session before onboarding.

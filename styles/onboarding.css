@@ -1,12 +1,10 @@
 /*
-  Saver — Onboarding Styles
+  Saver - onboarding styles.
   Step panels, progress bar, mode cards, preview panel,
   form cards, input fields, and completion animation.
 */
 
-/* ========================
-   Step Panels
-   ======================== */
+/* Step panels */
 
 .step-panel {
   display: none;
@@ -17,7 +15,7 @@
   animation: step-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Direction-aware animations: set data-direction on parent */
+/* Direction-aware animations use data-direction on the parent. */
 
 [data-direction="forward"] .step-panel.is-active {
   animation-name: step-slide-left;
@@ -27,7 +25,7 @@
   animation-name: step-slide-right;
 }
 
-/* Default: slide in from right (forward) */
+/* Default forward slide. */
 
 @keyframes step-slide-left {
   from {
@@ -40,7 +38,7 @@
   }
 }
 
-/* Slide in from left (backward) */
+/* Backward slide. */
 
 @keyframes step-slide-right {
   from {
@@ -53,7 +51,7 @@
   }
 }
 
-/* Fallback fade */
+/* Fallback fade. */
 
 @keyframes step-slide-in {
   from {
@@ -66,11 +64,9 @@
   }
 }
 
-/* ========================
-   Segmented Step Progress
-   ======================== */
+/* Segmented step progress */
 
-/* Step node — wrapper for circle + label */
+/* Step node wrapper for circle and label. */
 
 .step-node {
   display: flex;
@@ -79,7 +75,7 @@
   flex-shrink: 0;
 }
 
-/* Numbered circle */
+/* Numbered circle. */
 
 .step-circle {
   width: 32px;
@@ -116,7 +112,7 @@
   transition: opacity 0.3s ease;
 }
 
-/* Step label text */
+/* Step label text. */
 
 .step-label {
   font-family: "Inter", sans-serif;
@@ -128,7 +124,7 @@
     font-weight 0.3s ease;
 }
 
-/* Connector line between steps */
+/* Connector line between steps. */
 
 .step-connector {
   height: 2px;
@@ -146,7 +142,7 @@
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Active step ── */
+/* Active step. */
 
 .step-node.is-active .step-circle {
   background: #0a4d3c;
@@ -164,7 +160,7 @@
   font-weight: 600;
 }
 
-/* ── Completed step ── */
+/* Completed step. */
 
 .step-node.is-done .step-circle {
   background: #0a4d3c;
@@ -185,15 +181,13 @@
   color: #5a7d6f;
 }
 
-/* Filled connector (between completed steps) */
+/* Filled connector between completed steps. */
 
 .step-connector.is-filled .step-connector-fill {
   width: 100%;
 }
 
-/* ========================
-   Mode Cards
-   ======================== */
+/* Mode cards */
 
 .mode-card {
   position: relative;
@@ -208,9 +202,7 @@
     0 0 0 1px rgb(10 77 60 / 0.05);
 }
 
-/* ========================
-   Completion Animation
-   ======================== */
+/* Completion animation */
 
 .completion-check {
   animation: check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
@@ -227,9 +219,7 @@
   }
 }
 
-/* ========================
-   Preview Card — Premium
-   ======================== */
+/* Preview card */
 
 .preview-card {
   background: white;
@@ -259,7 +249,7 @@
   line-height: 1.1;
 }
 
-/* Desktop preview sticky */
+/* Desktop preview sticky. */
 
 @media (min-width: 1024px) {
   .onboarding-preview {
@@ -268,11 +258,9 @@
   }
 }
 
-/* ========================
-   Onboarding Input Fields — Premium
-   ======================== */
+/* Onboarding input fields */
 
-/* The input-group is now a flex row — no absolute positioning needed */
+/* The input group is a flex row, so no absolute positioning is needed. */
 
 .input-group {
   display: flex;
@@ -337,7 +325,7 @@
   --tw-ring-color: transparent !important;
 }
 
-/* When input is the only child (no ₹ prefix), restore left padding */
+/* Restore left padding when the input has no prefix. */
 
 .input-group > .onboarding-input:first-child {
   padding-left: 14px;
@@ -348,9 +336,7 @@
   font-weight: 400;
 }
 
-/* ========================
-   Onboarding Form Card
-   ======================== */
+/* Onboarding form card */
 
 .form-card {
   background: white;
@@ -360,9 +346,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
-/* ========================
-   Insight Box
-   ======================== */
+/* Insight box */
 
 .insight-box {
   background: rgba(178, 239, 216, 0.08);
@@ -385,9 +369,7 @@
   flex-shrink: 0;
 }
 
-/* ========================
-   Responsive: MOBILE (< 640px)
-   ======================== */
+/* Mobile responsive */
 
 @media (max-width: 639px) {
   body[data-ui="app"] {
@@ -418,9 +400,7 @@
   }
 }
 
-/* ========================
-   Responsive: TABLET (640px - 1023px)
-   ======================== */
+/* Tablet responsive */
 
 @media (min-width: 640px) and (max-width: 1023px) {
   .preview-value {
@@ -432,9 +412,7 @@
   }
 }
 
-/* ========================
-   Responsive: DESKTOP (>= 1024px)
-   ======================== */
+/* Desktop responsive */
 
 @media (min-width: 1024px) {
   .form-card {

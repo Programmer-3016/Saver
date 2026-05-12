@@ -1,119 +1,98 @@
 # Saver
 
-A personal money clarity app that helps you understand how much you can freely spend and how much stays safe.
+Saver is a static money clarity app that helps users understand what they can spend freely and what should stay safe.
 
-🔗 **Live Demo:** [voluble-lebkuchen-4e3e1a.netlify.app](https://voluble-lebkuchen-4e3e1a.netlify.app/)
+**Live site:** [savers.dev](https://savers.dev/)
 
----
+## Current Scope
 
-## Features
-
-- **3-Step Onboarding** — Quick setup: money mode → set your money → saving goal
-- **Smart Suggest** — Auto-recommends a sustainable saving amount (30%)
-- **Live Preview** — Real-time calculations update as you enter data
-- **Premium Dashboard** — Bento-grid layout with hero stats, spending chart, budget pulse, and category breakdown
-- **Expense Tracking** — Add expenses with category tags, view full transaction history
-- **Income Support** — Log income entries that display in green with `+` prefix
-- **Segmented Progress Bar** — Visual step tracker with animated connectors
-- **Slide Animations** — Directional transitions between onboarding steps
-- **Responsive Design** — Desktop nav pills + mobile bottom nav bar
-- **FOUC Prevention** — No flash of unstyled content on page load
-
----
+- Public landing page with feature, trust, demo, and CTA sections.
+- Supabase-powered login, registration, Google OAuth, and password reset flows.
+- Three-step onboarding for money mode, available money, and saving goal.
+- Authenticated dashboard with overview, transactions, goals, profile, and mobile bottom navigation.
+- Supabase `profiles` table for onboarding state, with local storage only as a browser cache/fallback.
 
 ## Tech Stack
 
-- HTML5, Vanilla JS, CSS
-- Tailwind CSS (CDN)
-- Supabase Auth
+- HTML5, Vanilla JavaScript, CSS
+- Tailwind CSS CDN
+- Supabase Auth and Postgres
+- Vercel hosting with clean URL rewrites
 - Google Material Symbols
-- Plus Jakarta Sans + Inter typography
-
----
+- Plus Jakarta Sans and Inter typography
 
 ## Project Structure
 
-```
+```text
 Saver/
-├── index.html                  # Root redirect → pages/index.html
-├── architecture.md             # Technical architecture document
-├── .prettierrc.json            # Prettier config (2-space, 100 width)
-│
-├── supabase/
-│   ├── config.js               # Public Supabase browser config
-│   └── README.md               # Supabase Auth setup notes
-│
-├── pages/
-│   ├── index.html              # Landing page (marketing)
-│   ├── login.html              # User login
-│   ├── register.html           # User registration
-│   ├── reset-password.html     # Password reset completion
-│   ├── onboarding.html         # Setup wizard (Mode → Money → Goal → Done)
-│   └── dashboard.html          # Dashboard (Overview, Transactions, Goals, Profile)
-│
-├── scripts/
-│   ├── shared.js               # Shared utilities ($, $$, formatCurrency, state)
-│   ├── onboarding.js           # Onboarding wizard logic + step navigation
-│   ├── dashboard.js            # Dashboard logic + transactions + expense modal
-│   ├── auth.js                 # Supabase auth form validation + redirects
-│   ├── supabase-client.js      # Supabase client bootstrap
-│   ├── tailwind-theme.js       # Tailwind design token config
-│   └── reveal.js               # FOUC prevention (reveals page after load)
-│
-└── styles/
-    ├── design-system.css       # CSS variables, base tokens, FOUC guard
-    ├── shared.css              # Auth visuals, glass cards, animations
-    ├── onboarding.css          # Step panels, progress bar, mode cards, inputs
-    └── dashboard.css           # Glass panels, bento cards, nav pills, modal
+|-- index.html                  # Canonical landing page
+|-- architecture.md             # Technical architecture notes
+|-- vercel.json                 # Clean URL redirects and rewrites
+|-- .prettierrc.json            # Prettier config
+|
+|-- supabase/
+|   |-- config.js               # Public Supabase browser config
+|   |-- schema.sql              # profiles table, RLS, and auth trigger
+|   `-- README.md               # Supabase dashboard setup notes
+|
+|-- pages/
+|   |-- index.html              # Legacy /pages landing redirect fallback
+|   |-- login.html              # User login
+|   |-- register.html           # User registration
+|   |-- reset-password.html     # Password reset completion
+|   |-- onboarding.html         # Setup wizard
+|   `-- dashboard.html          # Authenticated dashboard
+|
+|-- scripts/
+|   |-- auth.js                 # Supabase auth form validation and redirects
+|   |-- dashboard.js            # Dashboard state, transactions, and modal logic
+|   |-- onboarding.js           # Onboarding wizard and profile persistence
+|   |-- reveal.js               # FOUC prevention
+|   |-- shared.js               # Shared DOM, formatting, and local cache helpers
+|   |-- supabase-client.js      # Supabase client bootstrap and route helpers
+|   `-- tailwind-theme.js       # Tailwind design token config
+|
+`-- styles/
+    |-- dashboard.css           # Dashboard shell, panels, bottom nav, modal
+    |-- design-system.css       # CSS variables and base tokens
+    |-- onboarding.css          # Onboarding panels, cards, and inputs
+    `-- shared.css              # Shared auth/marketing visuals
 ```
 
----
+## Local Development
 
-## Getting Started
+```bash
+npx serve .
+```
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/Programmer-3016/Saver.git
-   ```
-2. Open `index.html` in a browser or start a local server:
-   ```bash
-   npx serve .
-   ```
-3. For real auth, add your Supabase Project URL and anon/public key in `supabase/config.js`, then configure the redirect URLs listed in `supabase/README.md`.
+Then open `http://localhost:3000/` or use a Vite/static server on `http://localhost:5173/` if you are testing the Supabase redirect URLs already configured for local auth.
 
----
+## Routing
 
-## Onboarding Flow
+Production is hosted on Vercel. Clean URLs are the public contract:
 
-1. **Money Mode** — Fixed Income / Irregular / Allowance
-2. **Set Your Money** — Enter available money + choose saving method
-3. **Why Save?** — Saving for something specific or building a safety buffer
-4. **Completion** — Personalized summary → redirects to dashboard
+| Clean URL         | Source file                 |
+| ----------------- | --------------------------- |
+| `/`               | `index.html`                |
+| `/register`       | `pages/register.html`       |
+| `/login`          | `pages/login.html`          |
+| `/reset-password` | `pages/reset-password.html` |
+| `/onboarding`     | `pages/onboarding.html`     |
+| `/dashboard`      | `pages/dashboard.html`      |
 
----
+Legacy `/pages/*.html` URLs are redirected in `vercel.json` so old links and email redirects do not break.
 
-## Dashboard (Premium Bento Grid)
+## Auth And Data
 
-After onboarding, users land on a tabbed dashboard:
+Real authentication requires valid Supabase values in `supabase/config.js`.
 
-| Tab              | Content                                               |
-| ---------------- | ----------------------------------------------------- |
-| **Overview**     | Hero stats, spending chart, budget pulse, categories  |
-| **Transactions** | Full expense history with floating add button         |
-| **Goals**        | Saving goal progress with progress bar                |
-| **Profile**      | User summary, saved/spent stats, and settings actions |
-
-- **Tablet/Desktop** — Top nav pills for tab switching, with a floating add button
-- **Phone** — Fixed bottom nav bar with 4 tabs and a centered add button
-
----
+Run `supabase/schema.sql` in the Supabase SQL Editor before testing production auth. The dashboard gate uses `profiles.onboarding_completed`; local storage is only a cache so one account cannot inherit another account's onboarding state on the same device.
 
 ## Deployment
 
-- **Hosting:** Netlify (auto-deploys from `main` branch)
+- **Hosting:** Vercel
+- **Production domain:** [savers.dev](https://savers.dev/)
 - **Repo:** [github.com/Programmer-3016/Saver](https://github.com/Programmer-3016/Saver)
-
----
 
 ## License
 

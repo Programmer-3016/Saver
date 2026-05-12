@@ -1,10 +1,10 @@
 <!doctype html>
 
 <!--
-  Saver — Dashboard.
+  Saver dashboard.
   Premium bento-grid dashboard with hero stats, spending chart,
   budget pulse, category breakdown, and expense modal.
-  Redirects to onboarding.html if setup is not complete.
+  Redirects to onboarding if setup is not complete.
 -->
 
 <html class="light" lang="en">
@@ -114,9 +114,7 @@
     <!-- Main Content Canvas -->
 
     <main class="w-full max-w-7xl mx-auto flex-1 pb-28 sm:pb-16 overflow-x-hidden">
-      <!-- ═══════════════════════════════════════════════════════════
-           OVERVIEW PANEL
-           ═══════════════════════════════════════════════════════════ -->
+      <!-- Overview panel -->
 
       <div class="dash-panel is-active" data-panel="overview">
         <!-- Hero Section -->
@@ -316,9 +314,7 @@
         </section>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════════
-           TRANSACTIONS PANEL
-           ═══════════════════════════════════════════════════════════ -->
+      <!-- Transactions panel -->
 
       <div class="dash-panel" data-panel="transactions">
         <section class="px-6 pt-8 max-w-2xl mx-auto">
@@ -336,9 +332,7 @@
         </section>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════════
-           GOALS PANEL
-           ═══════════════════════════════════════════════════════════ -->
+      <!-- Goals panel -->
 
       <div class="dash-panel" data-panel="goals">
         <section class="px-6 pt-8 max-w-2xl mx-auto">
@@ -387,9 +381,7 @@
         </section>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════════
-           PROFILE PANEL
-           ═══════════════════════════════════════════════════════════ -->
+      <!-- Profile panel -->
 
       <div class="dash-panel" data-panel="profile">
         <section class="px-6 pt-8 max-w-2xl mx-auto">
@@ -535,9 +527,7 @@
       </button>
     </nav>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         EXPENSE MODAL
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- Expense modal -->
 
     <div class="fixed inset-0 z-[60] hidden overflow-hidden" id="expense-modal">
       <!-- Backdrop -->
@@ -549,7 +539,7 @@
       <div
         class="absolute bottom-0 left-0 right-0 max-h-[100dvh] overflow-hidden md:bottom-auto md:top-1/2 md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md md:max-h-none md:overflow-visible md:rounded-3xl bg-white rounded-t-3xl p-5 pb-6 md:p-8 shadow-2xl expense-modal-content"
       >
-        <!-- ═══ FORM VIEW ═══ -->
+        <!-- Form view -->
 
         <div id="expense-form-view">
           <!-- Modal Header -->
@@ -728,7 +718,7 @@
           </button>
         </div>
 
-        <!-- ═══ SUCCESS VIEW ═══ -->
+        <!-- Success view -->
 
         <div
           class="hidden flex-col items-center text-center py-4 md:py-6"

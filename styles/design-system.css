@@ -1,11 +1,9 @@
 /*
-  Shared design tokens for the static Saver prototype.
+  Shared design tokens for the static Saver app.
   Tailwind utilities read these variables through scripts/tailwind-theme.js.
 */
 
-/* ── FOUC Prevention ──
-   Hide page until fonts + Tailwind load to prevent
-   raw icon text and unstyled layout flash. */
+/* Hide the page until fonts and Tailwind load. */
 
 body:not(.is-ready) {
   opacity: 0;
@@ -75,7 +73,7 @@ html {
   overflow-x: hidden;
 }
 
-/* Applied via JS when the expense modal is open */
+/* Applied through JS when the expense modal is open. */
 
 html.scroll-locked {
   overflow: hidden !important;

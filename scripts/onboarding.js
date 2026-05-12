@@ -1,16 +1,16 @@
 /**
  * Saver — Onboarding Wizard
  *
- * Powers the multi-step onboarding wizard in onboarding.html.
+ * Powers the multi-step onboarding wizard.
  * Manages step transitions, user state, the live preview panel,
- * and persists progress to localStorage so users can resume later.
+ * and persists progress to Supabase with local cache fallback.
  *
- * Flow: Step 1 (Mode) → Step 2 (Money) → Step 3 (Goal) → Step 4 (Done) → dashboard.html
+ * Flow: Step 1 (Mode) → Step 2 (Money) → Step 3 (Goal) → Step 4 (Done) → dashboard
  *
  * Depends on: shared.js (must be loaded first)
  */
 
-// ── Mode Configurations ──────────────────────────────────────────
+// Mode configurations
 // Each income type has a label and contextual note shown in Step 2.
 // These notes help the user understand how Saver will use their data.
 
@@ -29,7 +29,11 @@ const modeConfig = {
   },
 };
 
-// ── Step Metadata ────────────────────────────────────────────────
+function appRoute(pageName) {
+  return window.saverSupabase?.pageUrl?.(pageName) || pageName;
+}
+
+// Step metadata
 // Title and subtitle for each step, displayed in the header area.
 // Step 4 is the completion screen — subtitle is empty by design.
 
@@ -52,7 +56,7 @@ const stepMeta = {
   },
 };
 
-// ── DOM References ───────────────────────────────────────────────
+// DOM references
 // All DOM elements cached once at startup to avoid repeated lookups.
 // Grouped by the step/section they belong to for readability.
 
@@ -121,10 +125,7 @@ const dom = {
   startDashboardBtn: $("#start-dashboard-btn"),
 };
 
-// ═══════════════════════════════════════════════════════════════════
-//  PROGRESS INDICATOR
-// ═══════════════════════════════════════════════════════════════════
-
+// Progress indicator
 /**
  * Updates the segmented step progress bar (1 Mode → 2 Money → 3 Goal).
  *
@@ -161,10 +162,7 @@ function syncStepProgress(step) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  PREVIEW COMPUTATION
-// ═══════════════════════════════════════════════════════════════════
-
+// Preview computation
 /**
  * Calculates all preview values from the current state.
  *
@@ -236,9 +234,8 @@ function computePreview() {
   return { effectiveSave, freeMoney, caption, insight, goalName, goalMeta, goalIcon };
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  SYNC FUNCTIONS — Keep DOM in sync with state
-// ═══════════════════════════════════════════════════════════════════
+// Sync functions
+// Keep DOM output aligned with the current onboarding state.
 
 /**
  * Updates the live preview panel (both desktop and mobile) with
@@ -389,10 +386,7 @@ async function saveCompletedOnboarding(session) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  EVENT HANDLERS
-// ═══════════════════════════════════════════════════════════════════
-
+// Event handlers
 // Step 1 — Selects the user's income mode (fixed, irregular, allowance).
 // Highlights the chosen card and shows a contextual note in Step 2.
 
@@ -507,14 +501,11 @@ function goBack() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  INITIALIZATION
-// ═══════════════════════════════════════════════════════════════════
-
+// Initialization
 /**
  * Boots the onboarding wizard:
- * 1. Loads any saved progress from localStorage
- * 2. If already completed, redirects to dashboard.html
+ * 1. Loads saved progress from Supabase with local cache fallback
+ * 2. If already completed, redirects to dashboard
  * 3. Binds click/input event listeners to all interactive elements
  * 4. Restores UI state to match the loaded data
  * 5. Runs initial sync to render the correct step
@@ -534,7 +525,7 @@ async function init() {
   // If onboarding was already completed, go straight to dashboard
 
   if (hadState && state.onboardingComplete) {
-    window.location.replace("dashboard.html");
+    window.location.replace(appRoute("dashboard.html"));
     return;
   }
 
@@ -618,7 +609,7 @@ async function init() {
 
     try {
       await saveCompletedOnboarding(authSession);
-      window.location.href = "dashboard.html";
+      window.location.href = appRoute("dashboard.html");
     } catch (error) {
       console.error("Could not save onboarding profile", error);
       state.onboardingComplete = false;
@@ -629,7 +620,7 @@ async function init() {
     }
   });
 
-  // ── Restore saved state to UI ──────────────────────────────────
+  // Restore saved state to UI
   // If the user previously completed some steps, re-apply their
   // selections so the UI matches what they see in the progress bar.
 
@@ -673,6 +664,5 @@ async function init() {
   syncPreview();
 }
 
-// ── Start the wizard ─────────────────────────────────────────────
-
+// Start the wizard
 init();

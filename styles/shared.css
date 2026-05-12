@@ -1,5 +1,5 @@
 /*
-  Saver — Shared Component Styles
+  Saver - shared component styles.
   Auth visuals, glass cards, floating animations, and auth responsive rules.
   Used by login, register, reset password, and marketing pages.
 */
@@ -114,9 +114,7 @@
   }
 }
 
-/* ========================
-   Auth responsive
-   ======================== */
+/* Auth responsive */
 
 @media (max-width: 767px) {
   html:has(body[data-ui="auth"]) {
@@ -327,10 +325,7 @@
   }
 }
 
-/* ========================
-   Number flip animation
-   Shared by onboarding preview and dashboard metrics.
-   ======================== */
+/* Number flip animation shared by onboarding preview and dashboard metrics. */
 
 @keyframes number-pop {
   0% {

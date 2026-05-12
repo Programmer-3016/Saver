@@ -58,8 +58,7 @@
             "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
           "inverse-primary": "rgb(var(--color-inverse-primary) / <alpha-value>)",
           "secondary-fixed-dim": "rgb(var(--color-secondary-fixed-dim) / <alpha-value>)",
-          "on-primary-fixed-variant":
-            "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
+          "on-primary-fixed-variant": "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
         },
         borderRadius: {
           DEFAULT: "var(--radius-default)",

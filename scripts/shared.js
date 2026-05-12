@@ -5,7 +5,7 @@
  * Loaded first in every authenticated page's <script> tags.
  */
 
-// ── DOM Shorthand ────────────────────────────────────────────────
+// DOM shorthand
 // $ = single element, $$ = array of elements.
 // Keeps DOM queries at the top so they're easy to find and update.
 
@@ -17,7 +17,7 @@ function $$(sel) {
   return [...document.querySelectorAll(sel)];
 }
 
-// ── Currency Formatting ──────────────────────────────────────────
+// Currency formatting
 // Formats a number as Indian Rupee currency (₹1,500).
 // Returns ₹0 for invalid values to prevent NaN in the UI.
 
@@ -26,7 +26,7 @@ function formatCurrency(value) {
   return "\u20B9" + new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(num);
 }
 
-// ── Value Animation ──────────────────────────────────────────────
+// Value animation
 // Applies a pop animation when a displayed value changes.
 // Prevents re-triggering if the text hasn't actually changed.
 
@@ -42,7 +42,7 @@ function animateValue(el, text) {
   el.classList.add("number-updated");
 }
 
-// ── Onboarding State ─────────────────────────────────────────────
+// Onboarding state
 // Central state object that tracks every user choice during onboarding.
 // Persisted to localStorage so progress survives page refreshes.
 
@@ -60,8 +60,8 @@ const defaultState = {
 
 const state = { ...defaultState };
 
-// ── State Persistence ────────────────────────────────────────────
-// Saves/loads onboarding progress to localStorage.
+// State persistence
+// Saves and loads onboarding progress from localStorage.
 // Authenticated users get user-scoped keys so one account cannot inherit
 // another account's setup state from the same browser.
 
@@ -111,7 +111,7 @@ function clearSaverLocalData() {
   } catch (_) {}
 }
 
-// ── Transaction Storage ──────────────────────────────────────────
+// Transaction storage
 // Expenses/income are stored in localStorage as an array of objects.
 
 function loadTransactions() {
