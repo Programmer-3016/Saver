@@ -119,7 +119,7 @@ function populateDashboard() {
   const todayLeft = Math.max(rolloverDailyLimit - todaySpent, 0);
 
   // Hero cards
-  populateHeroCards(rolloverDailyLimit, dailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength, remainingBudget);
+  populateHeroCards(rolloverDailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength, remainingBudget);
 
   // Spending chart (uses base dailyLimit for reference line)
   populateSpendingChart(txns, dailyLimit);
@@ -130,8 +130,11 @@ function populateDashboard() {
   // Category breakdown
   populateCategoryBreakdown(txns);
 
-  // Awareness nudge
-  populateNudge(todaySpent, rolloverDailyLimit, todayLeft, daysRemaining);
+  // Weekly report card
+  populateWeeklyReport(txns, dailyLimit);
+
+  // Evening check-in (shows after 7 PM)
+  populateEveningCheckin(todaySpent, rolloverDailyLimit);
 
   // Goals tab
   populateGoalCard(effectiveSave);
@@ -152,9 +155,9 @@ function populateDashboard() {
 }
 
 // Hero cards
+
 function populateHeroCards(
   rolloverDailyLimit,
-  baseDailyLimit,
   todaySpent,
   todayLeft,
   freeToSpend,
@@ -338,7 +341,8 @@ function populateSpendingChart(txns, dailyLimit) {
   });
 }
 
-// Budget pulse
+// Budget pulse — enhanced streak system
+
 function populateBudgetPulse(txns, dailyLimit, todaySpent) {
   const statusEl = $("#budget-pulse-status");
   const streakEl = $("#budget-pulse-streak");
@@ -366,24 +370,45 @@ function populateBudgetPulse(txns, dailyLimit, todaySpent) {
 
   const isUnder = todaySpent <= dailyLimit;
 
-  // Populate
+  // Streak fire levels
+
+  let fireIcon = "🔥";
+  let streakLabel = "streak";
+  if (streak >= 30) { fireIcon = "🏆"; streakLabel = "LEGENDARY streak"; }
+  else if (streak >= 14) { fireIcon = "🔥🔥🔥"; streakLabel = "fire streak"; }
+  else if (streak >= 7) { fireIcon = "🔥🔥"; streakLabel = "hot streak"; }
+  else if (streak >= 3) { fireIcon = "🔥"; streakLabel = "streak"; }
+
+  // Populate status
 
   statusEl.textContent = isUnder ? "Under Limit ✓" : "Over Limit ✗";
-  if (streakEl) streakEl.textContent = streak > 0 ? `${streak} day streak` : "";
+
+  if (streakEl) {
+    streakEl.textContent = streak > 0 ? `${fireIcon} ${streak} day ${streakLabel}` : "";
+  }
+
+  // Contextual tips based on streak milestones
 
   if (tipEl) {
     if (txns.length === 0) {
       tipEl.textContent = "Start logging expenses to see your streak!";
-    } else if (isUnder) {
+    } else if (!isUnder) {
+      tipEl.textContent = `You're ${formatCurrency(todaySpent - dailyLimit)} over today. Try to balance tomorrow.`;
+    } else if (streak >= 14) {
+      tipEl.textContent = `${streak} days strong! You're building real financial discipline.`;
+    } else if (streak >= 7) {
+      tipEl.textContent = `A full week under budget! Keep this momentum going.`;
+    } else if (streak >= 3) {
+      tipEl.textContent = `${streak} days in a row — a habit is forming!`;
+    } else {
       const avgSaved = Math.round(dailyLimit - todaySpent);
       tipEl.textContent = `Keep it up! You're saving ~${formatCurrency(avgSaved)} today.`;
-    } else {
-      tipEl.textContent = `You're ${formatCurrency(todaySpent - dailyLimit)} over today. Try to balance tomorrow.`;
     }
   }
 }
 
 // Category breakdown
+
 function populateCategoryBreakdown(txns) {
   const barEl = $("#category-stacked-bar");
   const chipsEl = $("#category-chips");
@@ -441,26 +466,143 @@ function populateCategoryBreakdown(txns) {
     .join("");
 }
 
-// Awareness nudge
-function populateNudge(todaySpent, dailyLimit, todayLeft, daysLeft) {
-  const titleEl = $("#nudge-title");
-  const textEl = $("#nudge-text");
+// Weekly report card
 
-  if (!titleEl || !textEl) return;
+function populateWeeklyReport(txns, dailyLimit) {
+  const gradeEl = $("#report-grade");
+  const gradeBg = $("#report-grade-bg");
+  const subtitleEl = $("#report-subtitle");
+  const daysPill = $("#report-days-pill");
+  const spendPill = $("#report-spend-pill");
+
+  if (!gradeEl) return;
+
+  // Calculate last 7 days performance
+
+  const today = startOfDay(new Date());
+  let daysUnder = 0;
+  let weeklySpend = 0;
+  let activeDays = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dayStart = startOfDay(d).getTime();
+
+    const daySpent = txns
+      .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === dayStart)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    weeklySpend += daySpent;
+    if (daySpent > 0 || i === 0) activeDays++;
+    if (daySpent <= dailyLimit) daysUnder++;
+  }
+
+  // Assign grade based on days under budget
+
+  let grade, gradeColor, subtitle;
+
+  if (activeDays === 0) {
+    grade = "—";
+    gradeColor = "#717973";
+    subtitle = "Log expenses to see your grade";
+  } else if (daysUnder === 7) {
+    grade = "A+";
+    gradeColor = "#1b4332";
+    subtitle = "Perfect week! You're a budgeting pro 🌟";
+  } else if (daysUnder >= 6) {
+    grade = "A";
+    gradeColor = "#1b4332";
+    subtitle = "Excellent discipline this week!";
+  } else if (daysUnder >= 5) {
+    grade = "B";
+    gradeColor = "#3f6653";
+    subtitle = "Good week — small room to improve";
+  } else if (daysUnder >= 4) {
+    grade = "C";
+    gradeColor = "#e6a817";
+    subtitle = "Average week — let's tighten up!";
+  } else if (daysUnder >= 2) {
+    grade = "D";
+    gradeColor = "#ba1a1a";
+    subtitle = "Tough week — tomorrow is a fresh start";
+  } else {
+    grade = "F";
+    gradeColor = "#ba1a1a";
+    subtitle = "Over budget most days — time to reset";
+  }
+
+  // Populate
+
+  gradeEl.textContent = grade;
+  gradeEl.style.color = gradeColor;
+  if (gradeBg) gradeBg.style.backgroundColor = `${gradeColor}10`;
+  if (subtitleEl) subtitleEl.textContent = subtitle;
+
+  if (daysPill) {
+    daysPill.childNodes[daysPill.childNodes.length - 1].textContent = ` ${daysUnder}/7 under budget`;
+  }
+
+  if (spendPill) {
+    spendPill.childNodes[spendPill.childNodes.length - 1].textContent = ` ${formatCurrency(weeklySpend)} this week`;
+  }
+}
+
+// Evening check-in — shows after 7 PM
+
+function populateEveningCheckin(todaySpent, dailyLimit) {
+  const checkinEl = $("#evening-checkin");
+  const titleEl = $("#checkin-title");
+  const summaryEl = $("#checkin-summary");
+  const dismissBtn = $("#checkin-dismiss");
+
+  if (!checkinEl) return;
+
+  const hour = new Date().getHours();
+  const todayKey = `checkin-dismissed-${new Date().toDateString()}`;
+
+  // Only show after 7 PM and if not dismissed today
+
+  if (hour < 19 || sessionStorage.getItem(todayKey)) {
+    checkinEl.classList.add("hidden");
+    return;
+  }
+
+  checkinEl.classList.remove("hidden");
+
+  // Contextual title based on time
+
+  if (hour >= 22) {
+    titleEl.textContent = "Late night check! 🌙";
+  } else if (hour >= 19) {
+    titleEl.textContent = "Good evening! Here's your day ✨";
+  }
+
+  // Summary
+
+  const saved = Math.max(dailyLimit - todaySpent, 0);
 
   if (todaySpent === 0) {
-    titleEl.textContent = "Fresh start!";
-    textEl.textContent = "No spending logged today yet. Enjoy your day wisely!";
+    summaryEl.textContent = "No expenses logged today — nothing spent!";
   } else if (todaySpent <= dailyLimit) {
-    titleEl.textContent = "Good pace!";
-    textEl.textContent = `You are ${formatCurrency(todayLeft)} under today's limit. Keep it up!`;
+    summaryEl.textContent = `You spent ${formatCurrency(todaySpent)} today — ${formatCurrency(saved)} saved! 🎉`;
   } else {
-    titleEl.textContent = "Heads up!";
-    textEl.textContent = `You're ${formatCurrency(todaySpent - dailyLimit)} over today's limit. Try to cut back tomorrow.`;
+    const over = todaySpent - dailyLimit;
+    summaryEl.textContent = `You spent ${formatCurrency(todaySpent)} today — ${formatCurrency(over)} over budget.`;
+  }
+
+  // Dismiss handler
+
+  if (dismissBtn) {
+    dismissBtn.addEventListener("click", () => {
+      checkinEl.classList.add("hidden");
+      sessionStorage.setItem(todayKey, "1");
+    }, { once: true });
   }
 }
 
 // Goal card
+
 function populateGoalCard(effectiveSave) {
   const isSpecific = state.goalType === "specific";
   const goalName = isSpecific ? state.goalItem || "Your Item" : "Safety Buffer";
@@ -471,7 +613,7 @@ function populateGoalCard(effectiveSave) {
     goalTarget > 0 ? Math.min(Math.round((effectiveSave / goalTarget) * 100), 100) : 0;
   const cyclesNeeded = effectiveSave > 0 ? Math.ceil(goalTarget / effectiveSave) : 0;
 
-  // Goals tab — these IDs exist in dashboard.html
+  // Goals tab elements
 
   const gIds = [
     "goals-tab-icon",
@@ -493,11 +635,62 @@ function populateGoalCard(effectiveSave) {
   if (gEls[6])
     gEls[6].textContent =
       cyclesNeeded > 0
-        ? `At ${formatCurrency(effectiveSave)}/cycle, you'll reach ${formatCurrency(goalTarget)} in ~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""}. Keep going! 💪`
+        ? `~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to reach ${formatCurrency(goalTarget)} 💪`
         : "Complete onboarding to set your saving goal.";
+
+  // Goal progress ring
+
+  const goalRingArc = $("#goal-ring-arc");
+
+  if (goalRingArc) {
+    const circumference = 2 * Math.PI * 42;
+    const offset = circumference * (1 - progress / 100);
+    goalRingArc.style.strokeDashoffset = offset;
+  }
+
+  // Monthly summary
+
+  populateMonthlySummary(effectiveSave);
+}
+
+// Monthly summary
+
+function populateMonthlySummary(effectiveSave) {
+  const txns = loadTransactions();
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  // Filter this month's transactions
+
+  const monthTxns = txns.filter((t) => t.ts >= monthStart);
+  const expenses = monthTxns.filter((t) => t.category !== "income");
+
+  const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
+
+  // Top category
+
+  const catTotals = {};
+  expenses.forEach((t) => {
+    catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+  });
+  const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  const topCatLabel = topCat ? (categoryConfig[topCat[0]]?.label || topCat[0]) : "—";
+
+  // Populate
+
+  const spentEl = $("#monthly-total-spent");
+  const savedEl = $("#monthly-total-saved");
+  const catEl = $("#monthly-top-cat");
+  const countEl = $("#monthly-txn-count");
+
+  if (spentEl) spentEl.textContent = formatCurrency(totalSpent);
+  if (savedEl) savedEl.textContent = formatCurrency(effectiveSave);
+  if (catEl) catEl.textContent = topCatLabel;
+  if (countEl) countEl.textContent = expenses.length;
 }
 
 // Transaction rendering
+
 function buildTransactionHTML(t, index) {
   const cat = categoryConfig[t.category] || categoryConfig.other;
   const isIncome = t.category === "income";
@@ -562,6 +755,7 @@ function renderAllTransactions(txns) {
 }
 
 // Profile tab
+
 function populateProfileTab(txns, effectiveSave) {
   // Avatar initial
 
@@ -672,6 +866,34 @@ function initDashboardEvents() {
 
   if (addBtnAlt) addBtnAlt.addEventListener("click", () => openExpenseModal());
 
+  // Share Achievement button
+
+  const shareBtn = $("#share-achievement-btn");
+
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const grade = $("#report-grade")?.textContent || "—";
+      const streak = $("#budget-pulse-streak")?.textContent || "";
+      const daysPill = $("#report-days-pill")?.textContent?.trim() || "";
+
+      const shareText = `📊 My Saver Weekly Report Card\n\n🏅 Grade: ${grade}\n📅 ${daysPill}\n${streak ? `${streak}\n` : ""}\nTracking my budget with Saver — one day at a time! 💪`;
+
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Saver Report Card", text: shareText });
+        } else {
+          await navigator.clipboard.writeText(shareText);
+          shareBtn.textContent = "Copied!";
+          setTimeout(() => {
+            shareBtn.innerHTML = '<span class="material-symbols-outlined text-sm">share</span> Share';
+          }, 2000);
+        }
+      } catch (err) {
+        // User cancelled or error
+      }
+    });
+  }
+
   // Modal close
 
   const closeBtn = $("#expense-modal-close");
@@ -718,6 +940,7 @@ function initDashboardEvents() {
       amtInput.value = amtInput.value.replace(/[^0-9]/g, "");
       modalState.amount = Number(amtInput.value) || 0;
       validateExpenseForm();
+      checkImpulseGuard();
     });
   if (descInput)
     descInput.addEventListener("input", () => {
@@ -752,6 +975,7 @@ function initDashboardEvents() {
 }
 
 // Tab switching
+
 function switchTab(tabName) {
   // Update desktop nav pills
 
@@ -777,7 +1001,7 @@ function switchTab(tabName) {
 }
 
 // Expense modal
-const modalState = { amount: 0, desc: "", category: "", source: "savings" };
+const modalState = { amount: 0, desc: "", category: "", source: "savings", dailyLimit: 0 };
 
 // Saved scroll position — used to restore after closing the modal
 
@@ -825,6 +1049,12 @@ function openExpenseModal(preCategory) {
   modalState.desc = "";
   modalState.category = preCategory || "";
   modalState.source = "savings";
+
+  // Cache current rollover daily limit for impulse guard
+
+  const limitText = $("#hero-daily-limit")?.textContent?.replace(/[^0-9]/g, "") || "0";
+  modalState.dailyLimit = parseInt(limitText) || 0;
+
   const amtInput = $("#expense-amount-input");
   const descInput = $("#expense-desc-input");
 
@@ -865,6 +1095,32 @@ function closeExpenseModal() {
   unlockBodyScroll();
   showExpenseFormView();
   populateDashboard();
+}
+
+function checkImpulseGuard() {
+  const guardEl = $("#impulse-guard");
+  const guardText = $("#impulse-guard-text");
+
+  if (!guardEl) return;
+
+  const currentDailyLimit = modalState.dailyLimit;
+
+  // Show or hide warning
+
+  if (modalState.amount > currentDailyLimit && currentDailyLimit > 0) {
+    const daysWorth = Math.round(modalState.amount / currentDailyLimit * 10) / 10;
+    guardEl.classList.remove("hidden");
+
+    if (daysWorth >= 3) {
+      guardText.textContent = `⚠️ This is ${daysWorth} days of your budget! Are you sure?`;
+    } else if (daysWorth >= 2) {
+      guardText.textContent = `This costs ${daysWorth} days of budget. Think twice!`;
+    } else {
+      guardText.textContent = `This exceeds today's limit of ${formatCurrency(currentDailyLimit)}.`;
+    }
+  } else {
+    guardEl.classList.add("hidden");
+  }
 }
 
 function validateExpenseForm() {
