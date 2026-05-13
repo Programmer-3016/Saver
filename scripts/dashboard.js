@@ -64,18 +64,33 @@ function getDayName(date) {
 function populateDashboard() {
   const txns = loadTransactions();
 
-  // Compute effective save (same logic as onboarding)
+  // Compute effective save (mode-specific percentages)
+
+  const smartPercent = state.mode === "allowance" ? 0.2 : 0.3;
+  let baseMoney = state.totalMoney;
+
+  if (state.mode === "fixed") baseMoney = state.salary || state.totalMoney;
+  else if (state.mode === "allowance") baseMoney = state.allowanceAmount || state.totalMoney;
 
   const effectiveSave =
-    state.saveMode === "smart" ? Math.round(state.totalMoney * 0.3) : state.saveAmount;
+    state.saveMode === "smart" ? Math.round(baseMoney * smartPercent) : state.saveAmount;
 
-  // Free to spend = total money minus savings
+  // Free to spend — mode-specific deductions
 
-  const freeToSpend = state.totalMoney - effectiveSave;
+  let freeToSpend;
+  if (state.mode === "fixed") {
+    freeToSpend = baseMoney - (state.fixedExpenses || 0) - effectiveSave;
+  } else {
+    freeToSpend = baseMoney - effectiveSave;
+  }
+  freeToSpend = Math.max(freeToSpend, 0);
 
-  // Cycle length (default 30 days) and daily limit
+  // Cycle length — mode-specific durations
 
-  const cycleLength = 30;
+  let cycleLength = 30;
+  if (state.mode === "irregular") cycleLength = state.cycleLength || 30;
+  else if (state.mode === "allowance") cycleLength = state.cycleLength || 30;
+
   const dailyLimit = Math.round(freeToSpend / cycleLength);
 
   // Today's spending

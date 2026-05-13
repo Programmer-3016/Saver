@@ -336,6 +336,17 @@
   font-weight: 400;
 }
 
+/* Suffix text inside input groups (e.g. "of every month", "days") */
+
+.input-suffix {
+  padding: 0 14px 0 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #8e9892;
+  white-space: nowrap;
+}
+
 /* Onboarding form card */
 
 .form-card {

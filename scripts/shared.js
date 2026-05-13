@@ -52,6 +52,20 @@ const defaultState = {
   totalMoney: 0, // how much money the user currently has
   saveMode: "", // "custom" | "smart"
   saveAmount: 0, // how much they want to save per cycle
+
+  // Fixed Income fields
+  salary: 0, // monthly salary amount
+  payDay: 1, // salary credit date (1–31)
+  fixedExpenses: 0, // rent + EMI + subscriptions per month
+
+  // Irregular Income fields
+  avgIncome: 0, // approximate average monthly income
+  cycleLength: 30, // how many days the current money should last
+
+  // Allowance fields
+  allowanceAmount: 0, // pocket money received per cycle
+  allowanceFrequency: "monthly", // "weekly" | "monthly"
+
   goalType: "", // "specific" | "safety"
   goalItem: "", // what they want to buy (only for "specific")
   goalPrice: 0, // target price (only for "specific")

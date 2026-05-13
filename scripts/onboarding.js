@@ -78,13 +78,24 @@ const dom = {
   // Step 1 — Mode selection cards
   modeCards: $$(".mode-card"),
 
-  // Step 2 — Money inputs and save mode
+  // Step 2 — Mode-specific money inputs
+  modeSections: $$("[data-mode-section]"),
+  saveModeSection: $("#save-mode-section"),
+  salaryInput: $("#salary-input"),
+  payDayInput: $("#pay-day-input"),
+  fixedExpensesInput: $("#fixed-expenses-input"),
   totalMoneyInput: $("#total-money-input"),
+  cycleLengthInput: $("#cycle-length-input"),
+  allowanceInput: $("#allowance-input"),
+  allowanceDurationInput: $("#allowance-duration-input"),
+
+  // Step 2 — Save mode (shared across all modes)
   saveModeCards: $$(".save-mode-card"),
   customSaveSection: $("#custom-save-section"),
   customSaveInput: $("#custom-save-input"),
   smartSaveSection: $("#smart-save-section"),
   smartSaveAmount: $("#smart-save-amount"),
+  smartSaveLabel: $("#smart-save-label"),
   setupNote: $("#setup-note"),
 
   // Step 3 — Goal type and specific item fields
@@ -176,19 +187,46 @@ function syncStepProgress(step) {
  */
 
 function computePreview() {
-  // Calculate effective save amount based on mode (smart = 30% auto)
+
+  // Determine the base money amount based on mode
+
+  let baseMoney = state.totalMoney;
+  let cycleDays = 30;
+  const smartPercent = state.mode === "allowance" ? 0.2 : 0.3;
+
+  if (state.mode === "fixed") {
+    baseMoney = state.salary;
+    cycleDays = 30;
+  } else if (state.mode === "irregular") {
+    baseMoney = state.totalMoney;
+    cycleDays = state.cycleLength || 30;
+  } else if (state.mode === "allowance") {
+    baseMoney = state.allowanceAmount;
+    cycleDays = state.cycleLength || 30;
+  }
+
+  // Calculate effective save amount based on mode (smart = auto percentage)
 
   const effectiveSave =
-    state.saveMode === "smart" ? Math.round(state.totalMoney * 0.3) : state.saveAmount;
+    state.saveMode === "smart" ? Math.round(baseMoney * smartPercent) : state.saveAmount;
 
-  const freeMoney = Math.max(state.totalMoney - effectiveSave, 0);
+  // For fixed mode, subtract fixed expenses before calculating free money
+
+  let freeMoney;
+  if (state.mode === "fixed") {
+    freeMoney = Math.max(baseMoney - state.fixedExpenses - effectiveSave, 0);
+  } else {
+    freeMoney = Math.max(baseMoney - effectiveSave, 0);
+  }
+
+  const dailyLimit = cycleDays > 0 ? Math.round(freeMoney / cycleDays) : 0;
 
   // Generate contextual messages based on the user's numbers
 
   let caption = "Enter your available money to get started.";
   let insight = "Saver shows you clearly how much you can freely spend and how much stays safe.";
 
-  if (state.totalMoney > 0) {
+  if (baseMoney > 0) {
     caption = `${formatCurrency(effectiveSave)} saved, ${formatCurrency(freeMoney)} free to spend.`;
 
     if (freeMoney === 0) {
@@ -198,6 +236,8 @@ function computePreview() {
         "Nothing is being saved. Even a small amount set aside makes a difference over time.";
     } else if (state.mode === "allowance") {
       insight = "Saving from pocket money is tough, but small consistent savings add up fast.";
+    } else if (state.mode === "fixed" && state.fixedExpenses > 0) {
+      insight = `After ₹${state.fixedExpenses.toLocaleString("en-IN")} in fixed expenses, you have ${formatCurrency(dailyLimit)}/day to spend freely.`;
     } else {
       insight = "Good balance — you can spend comfortably while building your savings.";
     }
@@ -231,7 +271,7 @@ function computePreview() {
     }
   }
 
-  return { effectiveSave, freeMoney, caption, insight, goalName, goalMeta, goalIcon };
+  return { baseMoney, effectiveSave, freeMoney, dailyLimit, cycleDays, caption, insight, goalName, goalMeta, goalIcon };
 }
 
 // Sync functions
@@ -251,7 +291,7 @@ function syncPreview() {
   if (dom.previewFree) animateValue(dom.previewFree, formatCurrency(p.freeMoney));
   if (dom.previewCaption) dom.previewCaption.textContent = p.caption;
   if (dom.previewMode) dom.previewMode.textContent = config ? config.label : "Not selected";
-  if (dom.previewTotal) animateValue(dom.previewTotal, formatCurrency(state.totalMoney));
+  if (dom.previewTotal) animateValue(dom.previewTotal, formatCurrency(p.baseMoney));
   if (dom.previewSaving) animateValue(dom.previewSaving, formatCurrency(p.effectiveSave));
   if (dom.previewFreeAmount) animateValue(dom.previewFreeAmount, formatCurrency(p.freeMoney));
   if (dom.previewGoalIcon) dom.previewGoalIcon.textContent = p.goalIcon;
@@ -270,11 +310,19 @@ function syncPreview() {
     dom.mobilePreviewReserve.textContent = formatCurrency(p.effectiveSave);
   if (dom.mobilePreviewInsight) dom.mobilePreviewInsight.textContent = p.insight;
 
-  // Smart suggestion display — shows recommended 30% save amount
+  // Smart suggestion display — shows recommended save amount
 
-  if (dom.smartSaveAmount && state.totalMoney > 0) {
-    const smartAmount = Math.round(state.totalMoney * 0.3);
+  if (dom.smartSaveAmount && p.baseMoney > 0) {
+    const smartPercent = state.mode === "allowance" ? 0.2 : 0.3;
+    const smartAmount = Math.round(p.baseMoney * smartPercent);
     dom.smartSaveAmount.textContent = `Save ${formatCurrency(smartAmount)}`;
+  }
+
+  // Smart save label — show percentage based on mode
+
+  if (dom.smartSaveLabel) {
+    const pct = state.mode === "allowance" ? "20%" : "30%";
+    dom.smartSaveLabel.textContent = `${pct} saving — realistic and sustainable`;
   }
 
   // Safety plan text — calculates how long to build a ₹5,000 buffer
@@ -325,7 +373,15 @@ function syncStep() {
     dom.nextBtn.disabled = !state.mode;
   } else if (state.step === 2) {
     dom.nextBtn.textContent = "Continue";
-    dom.nextBtn.disabled = state.totalMoney <= 0 || !state.saveMode;
+
+    // Mode-specific validation for Step 2
+
+    let moneyEntered = false;
+    if (state.mode === "fixed") moneyEntered = state.salary > 0;
+    else if (state.mode === "irregular") moneyEntered = state.totalMoney > 0;
+    else if (state.mode === "allowance") moneyEntered = state.allowanceAmount > 0;
+
+    dom.nextBtn.disabled = !moneyEntered || !state.saveMode;
   } else if (state.step === 3) {
     dom.nextBtn.textContent = "Finish Setup";
     dom.nextBtn.disabled = !state.goalType;
@@ -403,6 +459,25 @@ function setMode(mode) {
     dom.setupNote.textContent = modeConfig[mode].note;
   }
 
+  // Show/hide mode-specific form sections in Step 2
+
+  dom.modeSections.forEach((sec) => {
+    sec.classList.toggle("hidden", sec.dataset.modeSection !== mode);
+  });
+
+  // Show the shared save-mode section once a mode is selected
+
+  if (dom.saveModeSection) {
+    dom.saveModeSection.classList.remove("hidden");
+  }
+
+  // Default allowance duration to 30 days if switching to allowance
+
+  if (mode === "allowance" && !state.cycleLength) {
+    state.allowanceFrequency = "monthly";
+    state.cycleLength = 30;
+  }
+
   syncStep();
   syncPreview();
 }
@@ -422,10 +497,15 @@ function setSaveMode(mode) {
   dom.customSaveSection.classList.toggle("hidden", mode !== "custom");
   dom.smartSaveSection.classList.toggle("hidden", mode !== "smart");
 
-  // Auto-calculate 30% when smart mode is selected
+  // Auto-calculate smart save when smart mode is selected
 
   if (mode === "smart") {
-    state.saveAmount = Math.round(state.totalMoney * 0.3);
+    const smartPercent = state.mode === "allowance" ? 0.2 : 0.3;
+    let baseMoney = state.totalMoney;
+    if (state.mode === "fixed") baseMoney = state.salary;
+    else if (state.mode === "allowance") baseMoney = state.allowanceAmount;
+
+    state.saveAmount = Math.round(baseMoney * smartPercent);
   }
 
   syncStep();
@@ -535,21 +615,97 @@ async function init() {
     card.addEventListener("click", () => setMode(card.dataset.mode));
   });
 
-  // Step 2 — Total money input
+  // Step 2 — Fixed Income: Salary input
 
-  dom.totalMoneyInput.addEventListener("input", () => {
-    dom.totalMoneyInput.value = dom.totalMoneyInput.value.replace(/[^0-9]/g, "");
-    state.totalMoney = Number(dom.totalMoneyInput.value) || 0;
+  if (dom.salaryInput) {
+    dom.salaryInput.addEventListener("input", () => {
+      dom.salaryInput.value = dom.salaryInput.value.replace(/[^0-9]/g, "");
+      state.salary = Number(dom.salaryInput.value) || 0;
+      state.totalMoney = state.salary;
 
-    // Recalculate smart suggestion if smart mode is active
+      if (state.saveMode === "smart") {
+        state.saveAmount = Math.round(state.salary * 0.3);
+      }
 
-    if (state.saveMode === "smart") {
-      state.saveAmount = Math.round(state.totalMoney * 0.3);
-    }
+      syncStep();
+      syncPreview();
+    });
+  }
 
-    syncStep();
-    syncPreview();
-  });
+  // Step 2 — Fixed Income: Pay day input (1-31)
+
+  if (dom.payDayInput) {
+    dom.payDayInput.addEventListener("input", () => {
+      dom.payDayInput.value = dom.payDayInput.value.replace(/[^0-9]/g, "");
+      let val = Number(dom.payDayInput.value) || 0;
+      if (val > 31) { val = 31; dom.payDayInput.value = "31"; }
+      state.payDay = val;
+      syncPreview();
+    });
+  }
+
+  // Step 2 — Fixed Income: Fixed expenses input
+
+  if (dom.fixedExpensesInput) {
+    dom.fixedExpensesInput.addEventListener("input", () => {
+      dom.fixedExpensesInput.value = dom.fixedExpensesInput.value.replace(/[^0-9]/g, "");
+      state.fixedExpenses = Number(dom.fixedExpensesInput.value) || 0;
+      syncPreview();
+    });
+  }
+
+  // Step 2 — Irregular Income: Available money input
+
+  if (dom.totalMoneyInput) {
+    dom.totalMoneyInput.addEventListener("input", () => {
+      dom.totalMoneyInput.value = dom.totalMoneyInput.value.replace(/[^0-9]/g, "");
+      state.totalMoney = Number(dom.totalMoneyInput.value) || 0;
+
+      if (state.saveMode === "smart") {
+        state.saveAmount = Math.round(state.totalMoney * 0.3);
+      }
+
+      syncStep();
+      syncPreview();
+    });
+  }
+
+  // Step 2 — Irregular Income: Cycle length input (days)
+
+  if (dom.cycleLengthInput) {
+    dom.cycleLengthInput.addEventListener("input", () => {
+      dom.cycleLengthInput.value = dom.cycleLengthInput.value.replace(/[^0-9]/g, "");
+      state.cycleLength = Number(dom.cycleLengthInput.value) || 0;
+      syncPreview();
+    });
+  }
+
+  // Step 2 — Allowance: Amount input
+
+  if (dom.allowanceInput) {
+    dom.allowanceInput.addEventListener("input", () => {
+      dom.allowanceInput.value = dom.allowanceInput.value.replace(/[^0-9]/g, "");
+      state.allowanceAmount = Number(dom.allowanceInput.value) || 0;
+      state.totalMoney = state.allowanceAmount;
+
+      if (state.saveMode === "smart") {
+        state.saveAmount = Math.round(state.allowanceAmount * 0.2);
+      }
+
+      syncStep();
+      syncPreview();
+    });
+  }
+
+  // Step 2 — Allowance: Duration input (days)
+
+  if (dom.allowanceDurationInput) {
+    dom.allowanceDurationInput.addEventListener("input", () => {
+      dom.allowanceDurationInput.value = dom.allowanceDurationInput.value.replace(/[^0-9]/g, "");
+      state.cycleLength = Number(dom.allowanceDurationInput.value) || 0;
+      syncPreview();
+    });
+  }
 
   // Step 2 — Save mode card selection (custom vs smart)
 
@@ -625,15 +781,27 @@ async function init() {
   // selections so the UI matches what they see in the progress bar.
 
   if (hadState && state.mode) {
-    // Restore mode card selection
 
-    dom.modeCards.forEach((card) => {
-      card.classList.toggle("is-selected", card.dataset.mode === state.mode);
-    });
+    // Restore mode card selection + show correct mode section
 
-    // Restore money + save mode
+    setMode(state.mode);
 
-    if (state.totalMoney) dom.totalMoneyInput.value = state.totalMoney;
+    // Restore mode-specific input values
+
+    if (state.mode === "fixed") {
+      if (state.salary && dom.salaryInput) dom.salaryInput.value = state.salary;
+      if (state.payDay && dom.payDayInput) dom.payDayInput.value = state.payDay;
+      if (state.fixedExpenses && dom.fixedExpensesInput) dom.fixedExpensesInput.value = state.fixedExpenses;
+    } else if (state.mode === "irregular") {
+      if (state.totalMoney && dom.totalMoneyInput) dom.totalMoneyInput.value = state.totalMoney;
+      if (state.cycleLength && dom.cycleLengthInput) dom.cycleLengthInput.value = state.cycleLength;
+    } else if (state.mode === "allowance") {
+      if (state.allowanceAmount && dom.allowanceInput) dom.allowanceInput.value = state.allowanceAmount;
+      if (state.cycleLength && dom.allowanceDurationInput) dom.allowanceDurationInput.value = state.cycleLength;
+    }
+
+    // Restore save mode
+
     if (state.saveMode) {
       setSaveMode(state.saveMode);
       if (state.saveMode === "custom" && state.saveAmount) {

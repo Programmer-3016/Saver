@@ -226,10 +226,10 @@
                 </button>
               </div>
             </div>
-
             <!-- Step 2: Set your money -->
 
             <div class="step-panel" data-step="2">
+
               <!-- Contextual Note -->
 
               <div class="insight-box mb-5">
@@ -245,35 +245,160 @@
                 </p>
               </div>
 
-              <!-- Money Input -->
+              <!-- Fixed Income Section -->
 
-              <div class="form-card space-y-6">
+              <div class="form-card space-y-6 hidden" data-mode-section="fixed">
                 <div class="space-y-2">
                   <label
                     class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
-                    for="total-money-input"
-                    >How much money do you have right now?</label
+                    for="salary-input"
+                    >What's your monthly salary?</label
                   >
                   <div class="input-group">
                     <span class="input-prefix">&#8377;</span>
                     <input
                       class="onboarding-input"
-                      id="total-money-input"
+                      id="salary-input"
                       inputmode="numeric"
-                      placeholder="2,000"
+                      placeholder="25,000"
                       type="text"
                     />
                   </div>
                 </div>
 
-                <!-- Save Mode Selection -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="pay-day-input"
+                      >Pay day</label
+                    >
+                    <div class="input-group">
+                      <input
+                        class="onboarding-input"
+                        id="pay-day-input"
+                        inputmode="numeric"
+                        placeholder="1"
+                        type="text"
+                      />
+                      <span class="input-suffix">of every month</span>
+                    </div>
+                  </div>
 
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="fixed-expenses-input"
+                      >Fixed expenses</label
+                    >
+                    <div class="input-group">
+                      <span class="input-prefix">&#8377;</span>
+                      <input
+                        class="onboarding-input"
+                        id="fixed-expenses-input"
+                        inputmode="numeric"
+                        placeholder="8,000"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Irregular Income Section -->
+
+              <div class="form-card space-y-6 hidden" data-mode-section="irregular">
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="total-money-input"
+                      >Money you have right now</label
+                    >
+                    <div class="input-group">
+                      <span class="input-prefix">&#8377;</span>
+                      <input
+                        class="onboarding-input"
+                        id="total-money-input"
+                        inputmode="numeric"
+                        placeholder="15,000"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="cycle-length-input"
+                      >How long should this last?</label
+                    >
+                    <div class="input-group">
+                      <input
+                        class="onboarding-input"
+                        id="cycle-length-input"
+                        inputmode="numeric"
+                        placeholder="30"
+                        type="text"
+                      />
+                      <span class="input-suffix">days</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Allowance Section -->
+
+              <div class="form-card space-y-6 hidden" data-mode-section="allowance">
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="allowance-input"
+                      >Money you currently have</label
+                    >
+                    <div class="input-group">
+                      <span class="input-prefix">&#8377;</span>
+                      <input
+                        class="onboarding-input"
+                        id="allowance-input"
+                        inputmode="numeric"
+                        placeholder="2,000"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label
+                      class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
+                      for="allowance-duration-input"
+                      >How long should this last?</label
+                    >
+                    <div class="input-group">
+                      <input
+                        class="onboarding-input"
+                        id="allowance-duration-input"
+                        inputmode="numeric"
+                        placeholder="30"
+                        type="text"
+                      />
+                      <span class="input-suffix">days</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save Mode Selection (shared by all modes) -->
+
+              <div class="form-card space-y-6 mt-5 hidden" id="save-mode-section">
                 <div class="space-y-3">
                   <label
                     class="font-label-caps text-label-caps text-secondary tracking-widest uppercase block"
                     >How much do you want to save?</label
                   >
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                     <!-- Custom -->
 
                     <button
@@ -331,7 +456,7 @@
                       <h3 class="font-h3 text-[15px] font-bold text-on-surface mb-1">
                         Smart Suggest
                       </h3>
-                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed">
+                      <p class="font-body-sm text-[12px] text-secondary leading-relaxed" id="smart-suggest-label">
                         Saver will recommend how much to save
                       </p>
                     </button>
@@ -377,7 +502,7 @@
                   <p class="font-h3 text-h3 text-primary-container" id="smart-save-amount">
                     Save &#8377;0
                   </p>
-                  <p class="font-body-sm text-[12px] text-secondary mt-1">
+                  <p class="font-body-sm text-[12px] text-secondary mt-1" id="smart-save-label">
                     30% saving — realistic and sustainable
                   </p>
                 </div>
