@@ -313,18 +313,6 @@
   }
 }
 
-@media (max-width: 380px) and (max-height: 780px) {
-  .auth-form-content-register .auth-switch-copy {
-    display: none !important;
-  }
-}
-
-@media (max-width: 380px) {
-  .auth-form-content-register .auth-switch-copy {
-    display: none !important;
-  }
-}
-
 /* Number flip animation shared by onboarding preview and dashboard metrics. */
 
 @keyframes number-pop {
