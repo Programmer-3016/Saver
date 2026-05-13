@@ -36,11 +36,12 @@ Saver/
 |   `-- README.md               # Supabase dashboard setup notes
 |
 |-- pages/
-|   |-- index.html              # Legacy /pages landing redirect fallback
 |   |-- login.html              # User login
 |   |-- register.html           # User registration
 |   |-- reset-password.html     # Password reset completion
 |   |-- onboarding.html         # Setup wizard
+|   |-- privacy.html            # Privacy Policy
+|   |-- terms.html              # Terms of Service
 |   `-- dashboard.html          # Authenticated dashboard
 |
 |-- scripts/
@@ -77,6 +78,8 @@ Production is hosted on Vercel. Clean URLs are the public contract:
 | `/register`       | `pages/register.html`       |
 | `/login`          | `pages/login.html`          |
 | `/reset-password` | `pages/reset-password.html` |
+| `/privacy`        | `pages/privacy.html`        |
+| `/terms`          | `pages/terms.html`          |
 | `/onboarding`     | `pages/onboarding.html`     |
 | `/dashboard`      | `pages/dashboard.html`      |
 

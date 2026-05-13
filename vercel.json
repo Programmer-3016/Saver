@@ -28,6 +28,16 @@
       "permanent": true
     },
     {
+      "source": "/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/terms.html",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
       "source": "/pages",
       "destination": "/",
       "permanent": true
@@ -91,6 +101,26 @@
       "source": "/pages/reset-password.html",
       "destination": "/reset-password",
       "permanent": true
+    },
+    {
+      "source": "/pages/privacy",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/pages/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/pages/terms",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
+      "source": "/pages/terms.html",
+      "destination": "/terms",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -113,6 +143,14 @@
     {
       "source": "/reset-password",
       "destination": "/pages/reset-password"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/pages/privacy"
+    },
+    {
+      "source": "/terms",
+      "destination": "/pages/terms"
     }
   ]
 }

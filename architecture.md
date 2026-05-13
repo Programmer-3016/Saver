@@ -40,6 +40,8 @@ Production uses Vercel clean URLs. The source files stay under `pages/` because 
 | `/register`       | `pages/register.html`       | Email/password and Google signup |
 | `/login`          | `pages/login.html`          | Email/password and Google login  |
 | `/reset-password` | `pages/reset-password.html` | Password reset completion        |
+| `/privacy`        | `pages/privacy.html`        | Privacy Policy                   |
+| `/terms`          | `pages/terms.html`          | Terms of Service                 |
 
 | Protected route | Source file             | Purpose                 |
 | --------------- | ----------------------- | ----------------------- |
@@ -50,11 +52,11 @@ Legacy `/pages/*.html` paths redirect to the clean routes in `vercel.json`.
 
 ## Access Rules
 
-| User state                   | Can access                                    | Redirect behavior                  |
-| ---------------------------- | --------------------------------------------- | ---------------------------------- |
-| Guest                        | `/`, `/register`, `/login`, `/reset-password` | Protected pages go to `/login`     |
-| Authenticated, not onboarded | `/onboarding`                                 | `/dashboard` goes to `/onboarding` |
-| Authenticated and onboarded  | `/dashboard`                                  | `/onboarding` goes to `/dashboard` |
+| User state                   | Can access                                                          | Redirect behavior                  |
+| ---------------------------- | ------------------------------------------------------------------- | ---------------------------------- |
+| Guest                        | `/`, `/register`, `/login`, `/reset-password`, `/privacy`, `/terms` | Protected pages go to `/login`     |
+| Authenticated, not onboarded | `/onboarding`                                                       | `/dashboard` goes to `/onboarding` |
+| Authenticated and onboarded  | `/dashboard`                                                        | `/onboarding` goes to `/dashboard` |
 
 ## Navigation Rules
 
