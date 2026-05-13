@@ -183,26 +183,57 @@
               </div>
             </div>
 
-            <!-- Card 3: Days Left -->
+            <!-- Card 3: Budget Health Ring -->
 
-            <div class="glass-panel flex flex-col gap-2 justify-between">
-              <div class="flex items-center justify-between text-on-surface-variant">
+            <div class="glass-panel flex flex-col gap-2 justify-between items-center">
+              <div class="flex items-center justify-between w-full text-on-surface-variant">
                 <span class="font-label-pill text-label-pill uppercase tracking-wider"
-                  >Days Left</span
+                  >Budget Health</span
                 >
-                <span class="material-symbols-outlined text-xl">calendar_today</span>
+                <span class="material-symbols-outlined text-xl">monitor_heart</span>
               </div>
-              <div>
-                <div class="font-h2 text-h2 text-on-background mb-3" id="hero-days-text">
-                  0 of 30
+
+              <!-- SVG Ring -->
+
+              <div class="relative w-24 h-24 mt-1">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+
+                  <!-- Background track -->
+
+                  <circle
+                    cx="50" cy="50" r="42"
+                    fill="none"
+                    stroke="#e8e8e5"
+                    stroke-width="8"
+                  />
+
+                  <!-- Progress arc -->
+
+                  <circle
+                    id="health-ring-arc"
+                    cx="50" cy="50" r="42"
+                    fill="none"
+                    stroke="#1b4332"
+                    stroke-width="8"
+                    stroke-linecap="round"
+                    stroke-dasharray="263.89"
+                    stroke-dashoffset="0"
+                    class="transition-all duration-700 ease-out"
+                  />
+                </svg>
+
+                <!-- Center percentage -->
+
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="font-h2 text-h2 text-on-background leading-none" id="health-ring-pct">0%</span>
                 </div>
-                <div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-primary-container rounded-full transition-all duration-500"
-                    id="hero-days-bar"
-                    style="width: 0%"
-                  ></div>
-                </div>
+              </div>
+
+              <!-- Amount + Days -->
+
+              <div class="text-center w-full">
+                <p class="text-sm font-semibold text-on-background" id="health-ring-amount">₹0 left</p>
+                <p class="text-xs text-on-surface-variant mt-0.5" id="health-ring-days">Day 0 of 30</p>
               </div>
             </div>
           </div>

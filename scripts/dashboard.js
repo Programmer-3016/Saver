@@ -93,34 +93,45 @@ function populateDashboard() {
 
   const dailyLimit = Math.round(freeToSpend / cycleLength);
 
-  // Today's spending
+  // Days elapsed in cycle
 
   const today = startOfDay(new Date());
+  const cycleStart = txns.length > 0 ? startOfDay(txns[0].ts) : today;
+  const daysElapsed = Math.min(Math.floor((today - cycleStart) / 86400000) + 1, cycleLength);
+
+  // Total spent in entire cycle (for health ring + rollover)
+
+  const totalSpentInCycle = txns
+    .filter((t) => t.category !== "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+  const remainingBudget = Math.max(freeToSpend - totalSpentInCycle, 0);
+  const daysRemaining = Math.max(cycleLength - daysElapsed, 1);
+
+  // Rollover-adjusted daily limit — redistributes remaining budget across remaining days
+
+  const rolloverDailyLimit = Math.round(remainingBudget / daysRemaining);
+
+  // Today's spending
+
   const todaySpent = txns
     .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === today.getTime())
     .reduce((sum, t) => sum + t.amount, 0);
-  const todayLeft = Math.max(dailyLimit - todaySpent, 0);
-
-  // Days elapsed in cycle (simplified: days since first transaction or 1)
-
-  const cycleStart = txns.length > 0 ? startOfDay(txns[0].ts) : today;
-  const daysElapsed = Math.min(Math.floor((today - cycleStart) / 86400000) + 1, cycleLength);
-  const daysLeft = cycleLength - daysElapsed;
+  const todayLeft = Math.max(rolloverDailyLimit - todaySpent, 0);
 
   // Hero cards
-  populateHeroCards(dailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength);
+  populateHeroCards(rolloverDailyLimit, dailyLimit, todaySpent, todayLeft, freeToSpend, daysElapsed, cycleLength, remainingBudget);
 
-  // Spending chart
+  // Spending chart (uses base dailyLimit for reference line)
   populateSpendingChart(txns, dailyLimit);
 
-  // Budget pulse
-  populateBudgetPulse(txns, dailyLimit, todaySpent);
+  // Budget pulse (uses rollover limit for streak accuracy)
+  populateBudgetPulse(txns, rolloverDailyLimit, todaySpent);
 
   // Category breakdown
   populateCategoryBreakdown(txns);
 
   // Awareness nudge
-  populateNudge(todaySpent, dailyLimit, todayLeft, daysLeft);
+  populateNudge(todaySpent, rolloverDailyLimit, todayLeft, daysRemaining);
 
   // Goals tab
   populateGoalCard(effectiveSave);
@@ -142,20 +153,22 @@ function populateDashboard() {
 
 // Hero cards
 function populateHeroCards(
-  dailyLimit,
+  rolloverDailyLimit,
+  baseDailyLimit,
   todaySpent,
   todayLeft,
   freeToSpend,
   daysElapsed,
   cycleLength,
+  remainingBudget,
 ) {
-  // Card 1: Today's Limit
+  // Card 1: Today's Limit (rollover-adjusted)
 
   const limitEl = $("#hero-daily-limit");
   const spentEl = $("#hero-spent");
   const leftEl = $("#hero-left");
 
-  if (limitEl) limitEl.textContent = formatCurrency(dailyLimit);
+  if (limitEl) limitEl.textContent = formatCurrency(rolloverDailyLimit);
   if (spentEl) spentEl.textContent = `${formatCurrency(todaySpent)} spent`;
   if (leftEl) leftEl.textContent = `${formatCurrency(todayLeft)} left`;
 
@@ -165,14 +178,33 @@ function populateHeroCards(
 
   if (ftsEl) ftsEl.textContent = formatCurrency(freeToSpend);
 
-  // Card 3: Days Left
+  // Card 3: Budget Health Ring
 
-  const daysTextEl = $("#hero-days-text");
-  const daysBarEl = $("#hero-days-bar");
-  const progress = Math.round((daysElapsed / cycleLength) * 100);
+  const ringArc = $("#health-ring-arc");
+  const ringPct = $("#health-ring-pct");
+  const ringAmount = $("#health-ring-amount");
+  const ringDays = $("#health-ring-days");
 
-  if (daysTextEl) daysTextEl.textContent = `${daysElapsed} of ${cycleLength}`;
-  if (daysBarEl) daysBarEl.style.width = `${progress}%`;
+  const healthPct = freeToSpend > 0 ? Math.round((remainingBudget / freeToSpend) * 100) : 0;
+  const circumference = 2 * Math.PI * 42;
+  const offset = circumference * (1 - healthPct / 100);
+
+  // Ring color based on health: green > 60%, amber 30-60%, red < 30%
+
+  let ringColor = "#1b4332";
+  if (healthPct <= 30) ringColor = "#ba1a1a";
+  else if (healthPct <= 60) ringColor = "#e6a817";
+
+  if (ringArc) {
+    ringArc.style.strokeDashoffset = offset;
+    ringArc.style.stroke = ringColor;
+  }
+  if (ringPct) {
+    ringPct.textContent = `${healthPct}%`;
+    ringPct.style.color = ringColor;
+  }
+  if (ringAmount) ringAmount.textContent = `${formatCurrency(remainingBudget)} left`;
+  if (ringDays) ringDays.textContent = `Day ${daysElapsed} of ${cycleLength}`;
 }
 
 // Spending chart
