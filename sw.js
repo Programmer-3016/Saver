@@ -6,7 +6,7 @@
  * Offline fallback serves cached pages when network is unavailable.
  */
 
-const CACHE_NAME = "saver-v1";
+const CACHE_NAME = "saver-v2";
 
 // Static assets to pre-cache on install
 
@@ -18,6 +18,8 @@ const PRECACHE_ASSETS = [
   "/pages/login.html",
   "/pages/register.html",
   "/pages/reset-password.html",
+  "/pages/privacy.html",
+  "/pages/terms.html",
   "/styles/design-system.css",
   "/styles/shared.css",
   "/styles/dashboard.css",

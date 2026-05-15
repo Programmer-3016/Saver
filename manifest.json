@@ -2,7 +2,7 @@
   "name": "Saver — Financial Mindfulness",
   "short_name": "Saver",
   "description": "Your daily budget companion. Know what you can spend today, not what you spent yesterday.",
-  "start_url": "/pages/dashboard.html",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

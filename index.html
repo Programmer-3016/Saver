@@ -29,6 +29,21 @@
     <script src="/scripts/tailwind-theme.js"></script>
   </head>
   <body data-ui="marketing" class="bg-background text-on-background">
+
+    <!-- PWA Standalone Redirect -->
+
+    <script>
+      // If the app is running as an installed PWA, skip the landing page
+      // and go straight to the dashboard (which has its own auth guards).
+
+      if (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true
+      ) {
+        window.location.replace("/pages/dashboard.html");
+      }
+    </script>
+
     <!-- TopAppBar -->
 
     <header

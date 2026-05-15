@@ -848,6 +848,70 @@ function initDashboardEvents() {
       }
     });
 
+  // Profile — Export Data (CSV download)
+
+  const exportBtn = $("#profile-export-btn");
+
+  if (exportBtn)
+    exportBtn.addEventListener("click", () => {
+      const txns = loadTransactions();
+
+      if (!txns.length) {
+        alert("No transactions to export yet.");
+        return;
+      }
+
+      const header = "Date,Amount,Category,Source,Note";
+
+      const rows = txns.map((t) => {
+        const date = new Date(t.ts).toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        const desc = (t.desc || "").replace(/"/g, '""');
+        return `${date},${t.amount},${t.category},${t.source},"${desc}"`;
+      });
+
+      const csv = [header, ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `saver-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+
+  // Profile — Log Out
+
+  const logoutBtn = $("#profile-logout-btn");
+
+  if (logoutBtn)
+    logoutBtn.addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to log out?")) return;
+
+      try {
+        const supa = window.saverSupabase;
+
+        if (supa?.client) {
+          await supa.client.auth.signOut();
+        }
+      } catch (err) {
+        console.error("Sign-out error:", err);
+      }
+
+      // Clear session-related storage but keep preferences
+
+      localStorage.removeItem("saverUserEmail");
+      localStorage.removeItem("saverUserName");
+      sessionStorage.clear();
+
+      window.location.replace(appRoute("login.html"));
+    });
+
   // FAB — opens the expense modal (desktop)
 
   const fab = $("#fab-add-expense");
