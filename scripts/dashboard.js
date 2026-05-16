@@ -1208,6 +1208,20 @@ function submitExpense() {
 
   saveTransactions(txns);
 
+  // Check for overspend alert after saving
+
+  if (modalState.category !== "income") {
+    const today = startOfDay(new Date());
+
+    const todayTotal = txns
+      .filter((t) => t.category !== "income" && t.ts >= today.getTime())
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
+
+    triggerOverspendAlert(todayTotal, dailyLimit);
+  }
+
   // Show success screen instead of closing
 
   showExpenseSuccessView();
@@ -1303,6 +1317,377 @@ async function resetDashboardData(session) {
 }
 
 // Initialization
+// ─── Notification System ────────────────────────────────────────
+
+const NOTIF_PREFS_KEY = "saver-notif-prefs";
+const NOTIF_HISTORY_KEY = "saver-notif-history";
+const MAX_HISTORY = 15;
+
+// Default preferences
+
+function loadNotifPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY)) || {
+      morning: true,
+      evening: true,
+      overspend: true,
+    };
+  } catch (_) {
+    return { morning: true, evening: true, overspend: true };
+  }
+}
+
+function saveNotifPrefs(prefs) {
+  localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(prefs));
+}
+
+// Notification history
+
+function loadNotifHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTIF_HISTORY_KEY)) || [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveNotifToHistory(notif) {
+  const history = loadNotifHistory();
+
+  history.unshift({
+    title: notif.title,
+    body: notif.body,
+    icon: notif.icon || "notifications",
+    ts: Date.now(),
+  });
+
+  // Keep only the most recent entries
+
+  if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+  localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(history));
+}
+
+// Render notification history in the panel
+
+function renderNotifHistory() {
+  const container = $("#notif-history-list");
+  const emptyState = $("#notif-empty-state");
+  const history = loadNotifHistory();
+
+  if (!container) return;
+
+  // Clear existing items (keep empty state)
+
+  container.querySelectorAll(".notif-history-item").forEach((el) => el.remove());
+
+  if (history.length === 0) {
+    if (emptyState) emptyState.classList.remove("hidden");
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add("hidden");
+
+  history.forEach((item) => {
+    const iconColors = {
+      wb_sunny: "bg-amber-100 text-amber-700",
+      bedtime: "bg-indigo-100 text-indigo-700",
+      warning: "bg-red-100 text-red-700",
+      notifications: "bg-stone-100 text-stone-600",
+    };
+    const colorClass = iconColors[item.icon] || iconColors.notifications;
+
+    const el = document.createElement("div");
+    el.className = "notif-history-item flex items-start gap-3 p-3 rounded-2xl bg-surface-container-low/50";
+    el.innerHTML = `
+      <div class="w-8 h-8 rounded-full ${colorClass} flex items-center justify-center shrink-0 mt-0.5">
+        <span class="material-symbols-outlined text-base">${escapeHTML(item.icon)}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-on-surface">${escapeHTML(item.title)}</p>
+        <p class="text-xs text-on-surface-variant">${escapeHTML(item.body)}</p>
+        <p class="text-[10px] text-on-surface-variant/50 mt-1">${relativeDate(item.ts)}</p>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+// Update notification dot badge
+
+function updateNotifDot() {
+  const dot = $("#notif-dot");
+
+  if (!dot) return;
+
+  const history = loadNotifHistory();
+  const lastSeen = Number(localStorage.getItem("saver-notif-last-seen") || 0);
+  const hasUnread = history.some((n) => n.ts > lastSeen);
+
+  dot.classList.toggle("hidden", !hasUnread);
+}
+
+// Send a browser notification + save to history
+
+function sendSaverNotification(title, body, icon) {
+  const notifData = { title, body, icon: icon || "notifications" };
+
+  // Save to history regardless of permission
+
+  saveNotifToHistory(notifData);
+  updateNotifDot();
+  renderNotifHistory();
+
+  // Send browser notification if permitted
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      const notif = new Notification(title, {
+        body,
+        icon: "/icons/icon-192.svg",
+        badge: "/icons/icon-192.svg",
+        tag: `saver-${icon || "general"}`,
+        renotify: true,
+      });
+
+      notif.onclick = () => {
+        window.focus();
+        notif.close();
+      };
+    } catch (_) {
+      // Fallback: notification via service worker
+
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "SHOW_NOTIFICATION",
+          title,
+          body,
+          icon: "/icons/icon-192.svg",
+        });
+      }
+    }
+  }
+}
+
+// Smart notification triggers
+
+function triggerMorningBudget() {
+  const prefs = loadNotifPrefs();
+
+  if (!prefs.morning) return;
+
+  const hour = new Date().getHours();
+
+  if (hour < 6 || hour >= 10) return;
+
+  const todayKey = `saver-notif-morning-${new Date().toDateString()}`;
+
+  if (sessionStorage.getItem(todayKey)) return;
+
+  sessionStorage.setItem(todayKey, "1");
+
+  const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
+
+  if (dailyLimit <= 0) return;
+
+  sendSaverNotification(
+    "Good morning! ☀️",
+    `Your budget today is ${formatCurrency(dailyLimit)}. Spend wisely! 💚`,
+    "wb_sunny",
+  );
+}
+
+function triggerEveningSummary() {
+  const prefs = loadNotifPrefs();
+
+  if (!prefs.evening) return;
+
+  const hour = new Date().getHours();
+
+  if (hour < 19) return;
+
+  const todayKey = `saver-notif-evening-${new Date().toDateString()}`;
+
+  if (sessionStorage.getItem(todayKey)) return;
+
+  sessionStorage.setItem(todayKey, "1");
+
+  const txns = loadTransactions();
+  const today = startOfDay(new Date());
+
+  const todaySpent = txns
+    .filter((t) => t.category !== "income" && t.ts >= today.getTime())
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
+  const saved = Math.max(dailyLimit - todaySpent, 0);
+
+  let body;
+
+  if (todaySpent === 0) {
+    body = "No spending today — perfect saving day! 🎯";
+  } else if (todaySpent <= dailyLimit) {
+    body = `Spent ${formatCurrency(todaySpent)}, saved ${formatCurrency(saved)} today. Great job! 🎉`;
+  } else {
+    const over = todaySpent - dailyLimit;
+    body = `Spent ${formatCurrency(todaySpent)} — ${formatCurrency(over)} over budget today.`;
+  }
+
+  sendSaverNotification("Evening Summary 🌙", body, "bedtime");
+}
+
+function triggerOverspendAlert(newTotal, dailyLimit) {
+  const prefs = loadNotifPrefs();
+
+  if (!prefs.overspend) return;
+
+  if (newTotal <= dailyLimit || dailyLimit <= 0) return;
+
+  const todayKey = `saver-notif-overspend-${new Date().toDateString()}`;
+
+  if (sessionStorage.getItem(todayKey)) return;
+
+  sessionStorage.setItem(todayKey, "1");
+
+  const over = newTotal - dailyLimit;
+
+  sendSaverNotification(
+    "Budget Alert 🚨",
+    `You've crossed today's ${formatCurrency(dailyLimit)} budget by ${formatCurrency(over)}.`,
+    "warning",
+  );
+}
+
+// Notification Center panel
+
+function openNotifPanel() {
+  const panel = $("#notif-panel");
+
+  if (!panel) return;
+
+  panel.classList.remove("hidden");
+  lockBodyScroll();
+
+  // Mark all as seen
+
+  localStorage.setItem("saver-notif-last-seen", String(Date.now()));
+  updateNotifDot();
+
+  // Update permission cards
+
+  updateNotifPermissionUI();
+
+  // Load toggle states from prefs
+
+  const prefs = loadNotifPrefs();
+  const morningToggle = $("#notif-toggle-morning");
+  const eveningToggle = $("#notif-toggle-evening");
+  const overspendToggle = $("#notif-toggle-overspend");
+
+  if (morningToggle) morningToggle.checked = prefs.morning;
+  if (eveningToggle) eveningToggle.checked = prefs.evening;
+  if (overspendToggle) overspendToggle.checked = prefs.overspend;
+
+  // Render history
+
+  renderNotifHistory();
+}
+
+function closeNotifPanel() {
+  const panel = $("#notif-panel");
+
+  if (!panel) return;
+
+  panel.classList.add("hidden");
+  unlockBodyScroll();
+}
+
+function updateNotifPermissionUI() {
+  const permCard = $("#notif-permission-card");
+  const deniedCard = $("#notif-denied-card");
+
+  if (!("Notification" in window)) {
+    // Browser doesn't support notifications
+
+    if (permCard) permCard.classList.add("hidden");
+    if (deniedCard) deniedCard.classList.add("hidden");
+    return;
+  }
+
+  const perm = Notification.permission;
+
+  if (permCard) permCard.classList.toggle("hidden", perm !== "default");
+  if (deniedCard) deniedCard.classList.toggle("hidden", perm !== "denied");
+}
+
+function initNotificationCenter() {
+
+  // Bell button
+
+  const bellBtn = $("#notif-bell-btn");
+
+  if (bellBtn) bellBtn.addEventListener("click", openNotifPanel);
+
+  // Profile notification button
+
+  const profileNotifBtn = $("#profile-notif-btn");
+
+  if (profileNotifBtn) profileNotifBtn.addEventListener("click", openNotifPanel);
+
+  // Close panel
+
+  const closeBtn = $("#notif-panel-close");
+  const backdrop = $("#notif-panel-backdrop");
+
+  if (closeBtn) closeBtn.addEventListener("click", closeNotifPanel);
+  if (backdrop) backdrop.addEventListener("click", closeNotifPanel);
+
+  // Enable notifications button
+
+  const enableBtn = $("#notif-enable-btn");
+
+  if (enableBtn) {
+    enableBtn.addEventListener("click", async () => {
+      if (!("Notification" in window)) return;
+
+      const result = await Notification.requestPermission();
+
+      updateNotifPermissionUI();
+
+      if (result === "granted") {
+        sendSaverNotification(
+          "Notifications Enabled! 🔔",
+          "You'll now receive budget reminders and spending alerts.",
+          "notifications",
+        );
+      }
+    });
+  }
+
+  // Toggle switches — persist to localStorage
+
+  const morningToggle = $("#notif-toggle-morning");
+  const eveningToggle = $("#notif-toggle-evening");
+  const overspendToggle = $("#notif-toggle-overspend");
+
+  function onToggleChange() {
+    saveNotifPrefs({
+      morning: morningToggle?.checked ?? true,
+      evening: eveningToggle?.checked ?? true,
+      overspend: overspendToggle?.checked ?? true,
+    });
+  }
+
+  if (morningToggle) morningToggle.addEventListener("change", onToggleChange);
+  if (eveningToggle) eveningToggle.addEventListener("change", onToggleChange);
+  if (overspendToggle) overspendToggle.addEventListener("change", onToggleChange);
+
+  // Initial dot update
+
+  updateNotifDot();
+}
+
+// ─── End Notification System ────────────────────────────────────
+
 /**
  * Boots the dashboard:
  * 1. Loads onboarding state from Supabase with local cache fallback
@@ -1332,6 +1717,12 @@ async function init() {
 
   populateDashboard();
   initDashboardEvents();
+  initNotificationCenter();
+
+  // Fire time-based smart notifications
+
+  triggerMorningBudget();
+  triggerEveningSummary();
 }
 
 // Start the dashboard

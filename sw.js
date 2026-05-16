@@ -6,7 +6,7 @@
  * Offline fallback serves cached pages when network is unavailable.
  */
 
-const CACHE_NAME = "saver-v2";
+const CACHE_NAME = "saver-v3";
 
 // Static assets to pre-cache on install
 
@@ -110,4 +110,42 @@ self.addEventListener("fetch", (event) => {
       });
     }),
   );
+});
+
+// Notification click — open or focus the dashboard
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // If the dashboard is already open, focus it
+
+        for (const client of clientList) {
+          if (client.url.includes("/dashboard") && "focus" in client) {
+            return client.focus();
+          }
+        }
+
+        // Otherwise open a new window
+
+        if (clients.openWindow) {
+          return clients.openWindow("/pages/dashboard.html");
+        }
+      }),
+  );
+});
+
+// Message handler — show notification from main thread (fallback)
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SHOW_NOTIFICATION") {
+    self.registration.showNotification(event.data.title, {
+      body: event.data.body,
+      icon: event.data.icon || "/icons/icon-192.svg",
+      badge: "/icons/icon-192.svg",
+    });
+  }
 });

@@ -96,11 +96,16 @@
 
         <div class="flex items-center gap-4">
           <button
-            class="text-on-surface-variant hover:text-primary-container transition-colors p-2 rounded-full hover:bg-surface-container"
+            class="relative text-on-surface-variant hover:text-primary-container transition-colors p-2 rounded-full hover:bg-surface-container"
             type="button"
             aria-label="Notifications"
+            id="notif-bell-btn"
           >
             <span class="material-symbols-outlined">notifications</span>
+            <span
+              class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-error rounded-full hidden border-2 border-background"
+              id="notif-dot"
+            ></span>
           </button>
           <button
             class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-body-lg text-body-lg font-bold cursor-pointer border-0"
@@ -611,6 +616,23 @@
             </button>
             <button
               class="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-surface-container-high transition-colors text-left"
+              id="profile-notif-btn"
+            >
+              <div
+                class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center"
+              >
+                <span class="material-symbols-outlined text-on-secondary-container">notifications</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-on-surface">Notifications</p>
+                <p class="text-xs text-on-surface-variant">Manage reminders and alerts</p>
+              </div>
+              <span class="material-symbols-outlined text-on-surface-variant ml-auto"
+                >chevron_right</span
+              >
+            </button>
+            <button
+              class="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-surface-container-high transition-colors text-left"
               id="profile-reset-btn"
             >
               <div
@@ -1033,6 +1055,165 @@
     <script src="../scripts/shared.js"></script>
     <script src="../scripts/dashboard.js"></script>
     <script src="../scripts/reveal.js"></script>
+
+    <!-- Notification Center Panel -->
+
+    <div class="fixed inset-0 z-[60] hidden overflow-hidden" id="notif-panel">
+
+      <!-- Backdrop -->
+
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" id="notif-panel-backdrop"></div>
+
+      <!-- Panel Content -->
+
+      <div
+        class="absolute bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto md:bottom-auto md:top-1/2 md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md md:max-h-[80vh] md:rounded-3xl bg-white rounded-t-3xl p-5 pb-6 md:p-8 shadow-2xl transition-transform"
+      >
+
+        <!-- Panel Header -->
+
+        <div class="flex justify-between items-center mb-5">
+          <h2 class="font-h3 text-h3 text-on-background">Notifications</h2>
+          <button
+            class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            id="notif-panel-close"
+          >
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        <!-- Permission Card (shown when notifications not granted) -->
+
+        <div
+          class="bg-primary-container/10 border border-primary-container/20 rounded-2xl p-4 mb-5 hidden"
+          id="notif-permission-card"
+        >
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0 mt-0.5"
+            >
+              <span class="material-symbols-outlined text-on-primary-container">notifications_active</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-on-surface mb-1">Enable Notifications</p>
+              <p class="text-xs text-on-surface-variant mb-3">
+                Get morning budget reminders, evening summaries, and overspend alerts.
+              </p>
+              <button
+                class="bg-primary-container text-on-primary-container text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                id="notif-enable-btn"
+              >
+                Turn On
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permission Denied Card -->
+
+        <div
+          class="bg-error-container/10 border border-error-container/20 rounded-2xl p-4 mb-5 hidden"
+          id="notif-denied-card"
+        >
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0 mt-0.5"
+            >
+              <span class="material-symbols-outlined text-on-error-container">notifications_off</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-on-surface mb-1">Notifications Blocked</p>
+              <p class="text-xs text-on-surface-variant">
+                You've blocked notifications. To re-enable, go to your browser settings → Site Settings → Notifications.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Switches -->
+
+        <div class="space-y-1 mb-5">
+          <h3
+            class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-3"
+          >
+            Reminder Preferences
+          </h3>
+
+          <!-- Morning Reminder -->
+
+          <label class="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-container transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-amber-700 text-lg">wb_sunny</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-on-surface">Morning Budget</p>
+                <p class="text-xs text-on-surface-variant">Daily budget reminder (6–10 AM)</p>
+              </div>
+            </div>
+            <div class="relative">
+              <input type="checkbox" class="sr-only peer" id="notif-toggle-morning" checked />
+              <div class="w-11 h-6 bg-stone-300 peer-checked:bg-primary-container rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+            </div>
+          </label>
+
+          <!-- Evening Summary -->
+
+          <label class="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-container transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-indigo-700 text-lg">bedtime</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-on-surface">Evening Summary</p>
+                <p class="text-xs text-on-surface-variant">Spending recap after 7 PM</p>
+              </div>
+            </div>
+            <div class="relative">
+              <input type="checkbox" class="sr-only peer" id="notif-toggle-evening" checked />
+              <div class="w-11 h-6 bg-stone-300 peer-checked:bg-primary-container rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+            </div>
+          </label>
+
+          <!-- Overspend Alert -->
+
+          <label class="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-container transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-red-700 text-lg">warning</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-on-surface">Overspend Alert</p>
+                <p class="text-xs text-on-surface-variant">Warn when budget is exceeded</p>
+              </div>
+            </div>
+            <div class="relative">
+              <input type="checkbox" class="sr-only peer" id="notif-toggle-overspend" checked />
+              <div class="w-11 h-6 bg-stone-300 peer-checked:bg-primary-container rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Notification History -->
+
+        <div>
+          <h3
+            class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-3"
+          >
+            Recent
+          </h3>
+          <div class="space-y-2" id="notif-history-list">
+            <div class="flex flex-col items-center justify-center py-6 text-center" id="notif-empty-state">
+              <span class="material-symbols-outlined text-3xl text-on-surface-variant/30 mb-2">notifications_none</span>
+              <p class="text-sm text-on-surface-variant/50">No notifications yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- PWA Install Banner -->
 
