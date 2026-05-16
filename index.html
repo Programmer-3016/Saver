@@ -781,11 +781,6 @@
         e.preventDefault();
         deferredPrompt = e;
 
-        // Don't show if user dismissed recently (24h cooldown)
-
-        const dismissed = localStorage.getItem("pwa-install-dismissed");
-        if (dismissed && Date.now() - Number(dismissed) < 86400000) return;
-
         const banner = document.getElementById("pwa-install-banner");
         if (banner) banner.classList.remove("hidden");
       });
@@ -811,7 +806,6 @@
         dismissBtn.addEventListener("click", () => {
           const banner = document.getElementById("pwa-install-banner");
           if (banner) banner.classList.add("hidden");
-          localStorage.setItem("pwa-install-dismissed", String(Date.now()));
         });
       }
     </script>
