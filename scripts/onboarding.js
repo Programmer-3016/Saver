@@ -438,7 +438,12 @@ async function saveCompletedOnboarding(session) {
   saveState();
 
   if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveOnboarding) {
-    await window.saverSupabase.saveOnboarding(state, session);
+    const savedProfile = await window.saverSupabase.saveOnboarding(state, session);
+
+    if (savedProfile?.appData?.state) {
+      applyStateSnapshot({ ...state, ...savedProfile.appData.state });
+      saveState();
+    }
   }
 }
 

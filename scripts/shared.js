@@ -69,6 +69,11 @@ const defaultState = {
   goalType: "", // "specific" | "safety"
   goalItem: "", // what they want to buy (only for "specific")
   goalPrice: 0, // target price (only for "specific")
+  activeBudgetCycleId: null, // Supabase budget_cycles.id for the active setup
+  activeSavingsGoalId: null, // Supabase savings_goals.id for the active goal
+  dailyBudget: 0, // base daily budget derived from the active setup
+  rolloverDailyLimit: 0, // dashboard-adjusted daily limit after spending
+  freeToSpendAmount: 0, // computed free-to-spend amount for the current cycle
   onboardingComplete: false, // true after completing all onboarding steps
 };
 
@@ -141,13 +146,21 @@ function loadTransactions() {
         const ts = Number(txn.ts);
         if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(ts)) return null;
 
-        return {
+        const normalized = {
           amount,
           desc: typeof txn.desc === "string" ? txn.desc : "",
           category: typeof txn.category === "string" ? txn.category : "other",
           source: typeof txn.source === "string" ? txn.source : "savings",
           ts,
         };
+
+        if (typeof txn.remoteId === "string") normalized.remoteId = txn.remoteId;
+        if (typeof txn.id === "string") normalized.id = txn.id;
+        if (typeof txn.budgetCycleId === "string") {
+          normalized.budgetCycleId = txn.budgetCycleId;
+        }
+
+        return normalized;
       })
       .filter(Boolean);
   } catch (_) {

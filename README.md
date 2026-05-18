@@ -10,7 +10,7 @@ Saver is a static money clarity app that helps users understand what they can sp
 - Supabase-powered login, registration, Google OAuth, and password reset flows.
 - Three-step onboarding for money mode, available money, and saving goal.
 - Authenticated dashboard with overview, transactions, goals, profile, and mobile bottom navigation.
-- Supabase schema for profiles, budget cycles, transactions, and savings goals, with local storage still used as the current dashboard cache.
+- Supabase-backed profiles, budget cycles, transactions, and savings goals, with local storage used only as a per-user cache/fallback.
 
 ## Tech Stack
 
@@ -91,13 +91,13 @@ Real authentication requires valid Supabase values in `supabase/config.js`.
 
 Run `supabase/schema.sql` in the Supabase SQL Editor before testing production auth. The dashboard gate uses `profiles.onboarding_completed`; local storage is only a cache so one account cannot inherit another account's onboarding state on the same device.
 
-The schema also includes point-2 app data tables:
+The schema also includes app data tables used by onboarding and the dashboard:
 
 - `budget_cycles` stores each user's active money setup.
 - `transactions` stores expense and income rows.
 - `savings_goals` stores goal progress.
 
-Each public app table has explicit Data API grants for `authenticated` and `service_role`, RLS enabled, and owner-only policies based on `auth.uid()`. Dashboard read/write wiring for those tables is the next implementation step.
+Each public app table has explicit Data API grants for `authenticated` and `service_role`, RLS enabled, and owner-only policies based on `auth.uid()`. Onboarding creates or updates the active budget cycle and savings goal, while the dashboard loads and writes transactions through Supabase before caching them locally.
 
 ## Deployment
 

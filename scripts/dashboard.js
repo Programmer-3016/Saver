@@ -111,6 +111,10 @@ function populateDashboard() {
 
   const rolloverDailyLimit = Math.round(remainingBudget / daysRemaining);
 
+  state.dailyBudget = dailyLimit;
+  state.freeToSpendAmount = freeToSpend;
+  state.rolloverDailyLimit = rolloverDailyLimit;
+
   // Today's spending
 
   const todaySpent = txns
@@ -1193,38 +1197,68 @@ function validateExpenseForm() {
   if (btn) btn.disabled = !(modalState.amount > 0 && modalState.category);
 }
 
-function submitExpense() {
+async function submitExpense() {
   if (modalState.amount <= 0 || !modalState.category) return;
 
-  const txns = loadTransactions();
-
-  txns.push({
+  const submitBtn = $("#expense-submit-btn");
+  const originalSubmitText = submitBtn?.textContent || "Save";
+  const localTxn = {
     amount: modalState.amount,
     desc: modalState.desc || categoryConfig[modalState.category]?.label || "Expense",
     category: modalState.category,
     source: modalState.source,
     ts: Date.now(),
-  });
+    budgetCycleId: state.activeBudgetCycleId || null,
+  };
 
-  saveTransactions(txns);
-
-  // Check for overspend alert after saving
-
-  if (modalState.category !== "income") {
-    const today = startOfDay(new Date());
-
-    const todayTotal = txns
-      .filter((t) => t.category !== "income" && t.ts >= today.getTime())
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
-
-    triggerOverspendAlert(todayTotal, dailyLimit);
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
   }
 
-  // Show success screen instead of closing
+  try {
+    let savedTxn = localTxn;
 
-  showExpenseSuccessView();
+    if (window.saverSupabase?.isConfigured && window.saverSupabase?.addTransaction) {
+      const remoteTxn = await window.saverSupabase.addTransaction(
+        localTxn,
+        window.currentSaverSession || null,
+        state.activeBudgetCycleId || null,
+      );
+      if (remoteTxn) savedTxn = { ...localTxn, ...remoteTxn };
+    }
+
+    const txns = loadTransactions();
+    txns.push(savedTxn);
+
+    saveTransactions(txns);
+
+    // Check for overspend alert after saving
+
+    if (modalState.category !== "income") {
+      const today = startOfDay(new Date());
+
+      const todayTotal = txns
+        .filter((t) => t.category !== "income" && t.ts >= today.getTime())
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
+
+      triggerOverspendAlert(todayTotal, dailyLimit);
+    }
+
+    // Show success screen instead of closing
+
+    showExpenseSuccessView();
+  } catch (error) {
+    console.error("Could not save transaction", error);
+    alert("We could not save this transaction. Please try again.");
+  } finally {
+    if (submitBtn) {
+      submitBtn.textContent = originalSubmitText;
+      validateExpenseForm();
+    }
+  }
 }
 
 // Success view helpers
@@ -1292,6 +1326,24 @@ function showExpenseFormView() {
 }
 
 async function loadDashboardState(session) {
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.loadAppData) {
+    try {
+      const appData = await window.saverSupabase.loadAppData(session);
+      if (appData?.state) {
+        applyStateSnapshot(appData.state);
+        saveState();
+
+        if (Array.isArray(appData.transactions)) {
+          saveTransactions(appData.transactions);
+        }
+
+        return true;
+      }
+    } catch (error) {
+      console.error("Could not load dashboard app data", error);
+    }
+  }
+
   if (window.saverSupabase?.isConfigured && window.saverSupabase?.loadOnboarding) {
     try {
       const remoteState = await window.saverSupabase.loadOnboarding(session);

@@ -109,10 +109,10 @@ Supabase is the source of truth for account and onboarding profile state:
 Browser storage is a cache/fallback only:
 
 - `saver_onboarding:<user-key>` stores the current user's setup cache.
-- `saver_transactions:<user-key>` stores the current user's prototype transaction list.
+- `saver_transactions:<user-key>` stores the current user's cached transaction list.
 - `saverUserEmail` and `saverUserName` support UI fallback text.
 
-Point 2 has the Supabase data model in `supabase/schema.sql`. The dashboard still uses the local transaction cache until the next step wires `scripts/onboarding.js`, `scripts/dashboard.js`, and `scripts/supabase-client.js` to these tables.
+The Supabase data model lives in `supabase/schema.sql`. Onboarding writes the active setup into `budget_cycles` and `savings_goals`; the dashboard loads remote app state, syncs transactions from `transactions`, and writes new expense or income rows back to Supabase.
 
 Every public app data table must keep three database rules together:
 

@@ -59,6 +59,160 @@
     return error?.code === "42P01" || error?.code === "PGRST205" || error?.code === "PGRST204";
   }
 
+  function numericValue(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? Math.max(num, 0) : 0;
+  }
+
+  function localDateString(date) {
+    const copy = new Date(date);
+    copy.setHours(12, 0, 0, 0);
+    return copy.toISOString().slice(0, 10);
+  }
+
+  function computeSetupSnapshot(onboardingState = {}) {
+    const mode = onboardingState.mode || "";
+    const smartPercent = mode === "allowance" ? 0.2 : 0.3;
+    const cycleLength = Math.max(numericValue(onboardingState.cycleLength) || 30, 1);
+    const fixedExpenses = mode === "fixed" ? numericValue(onboardingState.fixedExpenses) : 0;
+
+    let baseMoney = numericValue(onboardingState.totalMoney);
+    let incomeAmount = numericValue(onboardingState.avgIncome);
+
+    if (mode === "fixed") {
+      incomeAmount = numericValue(onboardingState.salary);
+      baseMoney = incomeAmount || baseMoney;
+    } else if (mode === "allowance") {
+      incomeAmount = numericValue(onboardingState.allowanceAmount);
+      baseMoney = incomeAmount || baseMoney;
+    } else if (mode === "irregular") {
+      incomeAmount = numericValue(onboardingState.avgIncome) || baseMoney;
+    }
+
+    const savingTarget =
+      onboardingState.saveMode === "smart"
+        ? Math.round(baseMoney * smartPercent)
+        : numericValue(onboardingState.saveAmount);
+    const freeToSpend = Math.max(baseMoney - fixedExpenses - savingTarget, 0);
+    const dailyLimit = Math.round(freeToSpend / cycleLength);
+    const cycleStart = new Date();
+    const cycleEnd = new Date(cycleStart);
+    cycleEnd.setDate(cycleStart.getDate() + cycleLength - 1);
+
+    return {
+      mode,
+      cycleLength,
+      baseMoney,
+      incomeAmount,
+      fixedExpenses,
+      savingTarget,
+      freeToSpend,
+      dailyLimit,
+      cycleStart: localDateString(cycleStart),
+      cycleEnd: localDateString(cycleEnd),
+    };
+  }
+
+  function buildBudgetPayload(userId, onboardingState) {
+    const snapshot = computeSetupSnapshot(onboardingState);
+
+    return {
+      payload: {
+        user_id: userId,
+        money_mode: snapshot.mode,
+        currency: "INR",
+        cycle_start: snapshot.cycleStart,
+        cycle_end: snapshot.cycleEnd,
+        starting_balance: snapshot.baseMoney,
+        income_amount: snapshot.incomeAmount,
+        fixed_expenses_amount: snapshot.fixedExpenses,
+        saving_target_amount: snapshot.savingTarget,
+        free_to_spend_amount: snapshot.freeToSpend,
+        daily_limit_amount: snapshot.dailyLimit,
+        is_active: true,
+        settings: {
+          saveMode: onboardingState.saveMode || "",
+          payDay: numericValue(onboardingState.payDay) || 1,
+          cycleLength: snapshot.cycleLength,
+          allowanceFrequency: onboardingState.allowanceFrequency || "monthly",
+          onboardingState,
+        },
+      },
+      snapshot,
+    };
+  }
+
+  function buildGoalPayload(userId, onboardingState, snapshot) {
+    const isSpecific = onboardingState.goalType === "specific";
+    const goalType = isSpecific ? "specific" : onboardingState.goalType === "safety" ? "safety" : "custom";
+    const fallbackTarget = Math.max(snapshot.savingTarget * 3, 5000);
+    const targetAmount = isSpecific ? numericValue(onboardingState.goalPrice) || fallbackTarget : fallbackTarget;
+
+    return {
+      user_id: userId,
+      goal_type: goalType,
+      title: isSpecific ? onboardingState.goalItem || "Saving goal" : "Safety Buffer",
+      target_amount: targetAmount,
+      saved_amount: snapshot.savingTarget,
+      is_active: true,
+      metadata: {
+        saveMode: onboardingState.saveMode || "",
+        cycleSavingAmount: snapshot.savingTarget,
+      },
+    };
+  }
+
+  function stateFromAppRows(budgetCycle, savingsGoal) {
+    const appState = {};
+
+    if (budgetCycle?.id) {
+      appState.activeBudgetCycleId = budgetCycle.id;
+      appState.dailyBudget = numericValue(budgetCycle.daily_limit_amount);
+      appState.freeToSpendAmount = numericValue(budgetCycle.free_to_spend_amount);
+    }
+
+    if (savingsGoal?.id) {
+      appState.activeSavingsGoalId = savingsGoal.id;
+    }
+
+    return appState;
+  }
+
+  function rowToTransaction(row) {
+    const occurredAt = row?.occurred_at ? new Date(row.occurred_at).getTime() : Date.now();
+    const category = row?.kind === "income" ? "income" : row?.category || "other";
+
+    return {
+      remoteId: row.id,
+      id: row.id,
+      budgetCycleId: row.budget_cycle_id || null,
+      amount: numericValue(row.amount),
+      desc: row.description || "",
+      category,
+      source: row.payment_source || "savings",
+      ts: Number.isFinite(occurredAt) ? occurredAt : Date.now(),
+    };
+  }
+
+  function transactionToRow(userId, transaction, budgetCycleId) {
+    const category = transaction.category || "other";
+    const kind = category === "income" ? "income" : "expense";
+
+    return {
+      user_id: userId,
+      budget_cycle_id: budgetCycleId || transaction.budgetCycleId || null,
+      kind,
+      amount: numericValue(transaction.amount),
+      category,
+      description: transaction.desc || "",
+      payment_source: transaction.source || "savings",
+      occurred_at: new Date(transaction.ts || Date.now()).toISOString(),
+      metadata: {
+        source: "saver_dashboard",
+      },
+    };
+  }
+
   const api = {
     client: null,
     isConfigured,
@@ -69,6 +223,11 @@
     loadOnboarding: async () => null,
     saveOnboarding: async () => null,
     resetOnboarding: async () => null,
+    loadAppData: async () => null,
+    saveAppSetup: async () => null,
+    loadTransactions: async () => [],
+    addTransaction: async () => null,
+    resetAppData: async () => null,
   };
 
   if (!isConfigured || !window.supabase?.createClient) {
@@ -142,6 +301,42 @@
     return data;
   };
 
+  async function getActiveBudgetCycle(userId) {
+    const { data, error } = await api.client
+      .from("budget_cycles")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingProfilesTable(error)) return null;
+      throw error;
+    }
+
+    return data || null;
+  }
+
+  async function getActiveSavingsGoal(userId) {
+    const { data, error } = await api.client
+      .from("savings_goals")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingProfilesTable(error)) return null;
+      throw error;
+    }
+
+    return data || null;
+  }
+
   api.loadOnboarding = async function (session) {
     const activeSession = session || (await api.getSession());
     const user = activeSession?.user;
@@ -169,6 +364,165 @@
     };
   };
 
+  api.loadTransactions = async function (session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return [];
+
+    persistUserProfile(user);
+
+    const { data, error } = await api.client
+      .from("transactions")
+      .select("id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at")
+      .eq("user_id", user.id)
+      .order("occurred_at", { ascending: true })
+      .limit(500);
+
+    if (error) {
+      if (isMissingProfilesTable(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(rowToTransaction);
+  };
+
+  api.loadAppData = async function (session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return null;
+
+    persistUserProfile(user);
+
+    const profileState = await api.loadOnboarding(activeSession);
+    const [budgetCycle, savingsGoal, transactions] = await Promise.all([
+      getActiveBudgetCycle(user.id),
+      getActiveSavingsGoal(user.id),
+      api.loadTransactions(activeSession),
+    ]);
+
+    return {
+      state: {
+        ...(profileState || {}),
+        ...stateFromAppRows(budgetCycle, savingsGoal),
+        onboardingComplete: Boolean(profileState?.onboardingComplete || budgetCycle),
+      },
+      budgetCycle,
+      savingsGoal,
+      transactions,
+    };
+  };
+
+  api.saveAppSetup = async function (onboardingState, session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return null;
+
+    persistUserProfile(user);
+
+    const { payload, snapshot } = buildBudgetPayload(user.id, onboardingState || {});
+    const existingBudgetCycle = await getActiveBudgetCycle(user.id);
+    const budgetBuilder = existingBudgetCycle?.id
+      ? api.client.from("budget_cycles").update(payload).eq("id", existingBudgetCycle.id)
+      : api.client.from("budget_cycles").insert(payload);
+
+    const { data: budgetCycle, error: budgetError } = await budgetBuilder
+      .select("id, daily_limit_amount, free_to_spend_amount")
+      .maybeSingle();
+
+    if (budgetError) {
+      if (isMissingProfilesTable(budgetError)) return null;
+      throw budgetError;
+    }
+
+    const savedBudgetCycle = budgetCycle || existingBudgetCycle;
+    const goalPayload = buildGoalPayload(user.id, onboardingState || {}, snapshot);
+    const existingSavingsGoal = await getActiveSavingsGoal(user.id);
+    const goalBuilder = existingSavingsGoal?.id
+      ? api.client.from("savings_goals").update(goalPayload).eq("id", existingSavingsGoal.id)
+      : api.client.from("savings_goals").insert(goalPayload);
+
+    const { data: savingsGoal, error: goalError } = await goalBuilder
+      .select("id, target_amount, saved_amount")
+      .maybeSingle();
+
+    if (goalError) {
+      if (isMissingProfilesTable(goalError)) return null;
+      throw goalError;
+    }
+
+    return {
+      budgetCycle: savedBudgetCycle,
+      savingsGoal: savingsGoal || existingSavingsGoal,
+      state: {
+        ...stateFromAppRows(savedBudgetCycle, savingsGoal || existingSavingsGoal),
+        dailyBudget: snapshot.dailyLimit,
+        freeToSpendAmount: snapshot.freeToSpend,
+      },
+    };
+  };
+
+  api.addTransaction = async function (transaction, session, budgetCycleId) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return null;
+
+    persistUserProfile(user);
+
+    const activeBudgetCycleId = budgetCycleId || (await getActiveBudgetCycle(user.id))?.id || null;
+    const payload = transactionToRow(user.id, transaction || {}, activeBudgetCycleId);
+
+    const { data, error } = await api.client
+      .from("transactions")
+      .insert(payload)
+      .select("id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at")
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingProfilesTable(error)) return null;
+      throw error;
+    }
+
+    return data ? rowToTransaction(data) : null;
+  };
+
+  api.resetAppData = async function (session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return null;
+
+    persistUserProfile(user);
+
+    const transactionResult = await api.client.from("transactions").delete().eq("user_id", user.id);
+    if (transactionResult.error && !isMissingProfilesTable(transactionResult.error)) {
+      throw transactionResult.error;
+    }
+
+    const budgetResult = await api.client
+      .from("budget_cycles")
+      .update({ is_active: false })
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+    if (budgetResult.error && !isMissingProfilesTable(budgetResult.error)) {
+      throw budgetResult.error;
+    }
+
+    const goalResult = await api.client
+      .from("savings_goals")
+      .update({ is_active: false })
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+    if (goalResult.error && !isMissingProfilesTable(goalResult.error)) {
+      throw goalResult.error;
+    }
+
+    return true;
+  };
+
   api.saveOnboarding = async function (onboardingState, session) {
     const activeSession = session || (await api.getSession());
     const user = activeSession?.user;
@@ -194,7 +548,12 @@
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+
+    const appData = onboardingState?.onboardingComplete
+      ? await api.saveAppSetup(onboardingState, activeSession)
+      : null;
+
+    return { ...(data || {}), appData };
   };
 
   api.resetOnboarding = async function (session) {
@@ -214,6 +573,7 @@
       .maybeSingle();
 
     if (error) throw error;
+    await api.resetAppData(activeSession);
     return data;
   };
 

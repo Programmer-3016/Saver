@@ -59,7 +59,7 @@ grant select, insert, update, delete on table public.your_table to service_role;
 alter table public.your_table enable row level security;
 ```
 
-Point 2 adds the database model. The dashboard still reads and writes the local transaction cache until the next implementation step wires these tables into `scripts/onboarding.js`, `scripts/dashboard.js`, and `scripts/supabase-client.js`.
+Onboarding and the dashboard now use these tables through `scripts/supabase-client.js`. Local storage remains a per-user cache/fallback, but Supabase is the source of truth for active setup rows and transaction history after login.
 
 ## Email Delivery Notes
 
