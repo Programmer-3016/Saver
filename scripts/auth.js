@@ -195,6 +195,10 @@
     return message;
   }
 
+  function isExistingSignupResult(data) {
+    return Array.isArray(data?.user?.identities) && data.user.identities.length === 0;
+  }
+
   function persistUserProfile(user) {
     const email = user?.email || value("email");
     const fullName =
@@ -308,6 +312,12 @@
 
         persistUserProfile(data.user);
 
+        if (isExistingSignupResult(data)) {
+          setStatus("This email already has a Saver account. Log in or reset your password.");
+          showEmailConfirmationState();
+          return;
+        }
+
         if (data.session) {
           await supabaseAuth.client.auth.signOut();
           setStatus("Account created. Redirecting to login...");
@@ -315,7 +325,7 @@
           return;
         }
 
-        setStatus("Account created. Check your email, then log in.");
+        setStatus("Signup request received. Check your email, then log in.");
         showEmailConfirmationState();
         return;
       }
