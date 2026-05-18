@@ -102,6 +102,9 @@ Supabase is the source of truth for account and onboarding profile state:
 
 - `auth.users` stores authenticated users.
 - `public.profiles` stores display name, onboarding data, and `onboarding_completed`.
+- `public.budget_cycles` stores the user's active money mode, cycle amounts, free-to-spend amount, and daily limit.
+- `public.transactions` stores expense and income history.
+- `public.savings_goals` stores goal type, target amount, saved amount, and active state.
 
 Browser storage is a cache/fallback only:
 
@@ -109,7 +112,13 @@ Browser storage is a cache/fallback only:
 - `saver_transactions:<user-key>` stores the current user's prototype transaction list.
 - `saverUserEmail` and `saverUserName` support UI fallback text.
 
-Transactions are still local-only prototype data. Moving them to Supabase should be a separate schema migration.
+Point 2 has the Supabase data model in `supabase/schema.sql`. The dashboard still uses the local transaction cache until the next step wires `scripts/onboarding.js`, `scripts/dashboard.js`, and `scripts/supabase-client.js` to these tables.
+
+Every public app data table must keep three database rules together:
+
+- Explicit Data API grants for `authenticated` and `service_role`.
+- RLS enabled before client access.
+- Owner-only policies using `(select auth.uid()) = user_id`.
 
 ## Implemented Flow
 

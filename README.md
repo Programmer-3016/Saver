@@ -10,7 +10,7 @@ Saver is a static money clarity app that helps users understand what they can sp
 - Supabase-powered login, registration, Google OAuth, and password reset flows.
 - Three-step onboarding for money mode, available money, and saving goal.
 - Authenticated dashboard with overview, transactions, goals, profile, and mobile bottom navigation.
-- Supabase `profiles` table for onboarding state, with local storage only as a browser cache/fallback.
+- Supabase schema for profiles, budget cycles, transactions, and savings goals, with local storage still used as the current dashboard cache.
 
 ## Tech Stack
 
@@ -32,7 +32,7 @@ Saver/
 |
 |-- supabase/
 |   |-- config.js               # Public Supabase browser config
-|   |-- schema.sql              # profiles table, RLS, and auth trigger
+|   |-- schema.sql              # profiles and app data tables with grants/RLS
 |   `-- README.md               # Supabase dashboard setup notes
 |
 |-- pages/
@@ -90,6 +90,14 @@ Legacy `/pages/*.html` URLs are redirected in `vercel.json` so old links and ema
 Real authentication requires valid Supabase values in `supabase/config.js`.
 
 Run `supabase/schema.sql` in the Supabase SQL Editor before testing production auth. The dashboard gate uses `profiles.onboarding_completed`; local storage is only a cache so one account cannot inherit another account's onboarding state on the same device.
+
+The schema also includes point-2 app data tables:
+
+- `budget_cycles` stores each user's active money setup.
+- `transactions` stores expense and income rows.
+- `savings_goals` stores goal progress.
+
+Each public app table has explicit Data API grants for `authenticated` and `service_role`, RLS enabled, and owner-only policies based on `auth.uid()`. Dashboard read/write wiring for those tables is the next implementation step.
 
 ## Deployment
 
