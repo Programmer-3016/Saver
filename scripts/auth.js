@@ -8,11 +8,14 @@
   const submitButton = form.querySelector("button[type='submit']");
   const googleButton = document.querySelector("[data-google-auth]");
   const passwordResetButton = document.querySelector("[data-password-reset]");
+  const resendConfirmationButton = document.querySelector("[data-resend-confirmation]");
   const supabaseAuth = window.saverSupabase;
   let submitButtonState = null;
   let googleButtonState = null;
   let passwordResetButtonState = null;
+  let resendConfirmationButtonState = null;
   let awaitingEmailConfirmation = false;
+  let pendingConfirmationEmail = "";
 
   const rules = {
     login: [
@@ -47,7 +50,7 @@
 
   function validateEmail() {
     const email = value("email");
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "" : "Please enter a valid email address.";
+    return isValidEmail(email) ? "" : "Please enter a valid email address.";
   }
 
   function validatePassword() {
@@ -62,6 +65,10 @@
   function validateTerms() {
     const terms = field("terms");
     return terms && terms.checked ? "" : "Please accept the terms to continue.";
+  }
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
   function setError(input, message) {
@@ -129,25 +136,32 @@
     restoreButton(submitButton, submitButtonState);
     restoreButton(googleButton, googleButtonState);
     restoreButton(passwordResetButton, passwordResetButtonState);
+    restoreButton(resendConfirmationButton, resendConfirmationButtonState);
     submitButtonState = null;
     googleButtonState = null;
     passwordResetButtonState = null;
+    resendConfirmationButtonState = null;
   }
 
   function resetEmailConfirmationState() {
     if (!awaitingEmailConfirmation || formType !== "register") return;
 
     awaitingEmailConfirmation = false;
+    pendingConfirmationEmail = "";
     submitButton.disabled = false;
     submitButton.textContent = "Create account";
+    resendConfirmationButton?.classList.add("hidden");
+    restoreButton(resendConfirmationButton, resendConfirmationButtonState);
+    resendConfirmationButtonState = null;
   }
 
-  function showEmailConfirmationState() {
+  function showEmailConfirmationState({ canResend = true } = {}) {
     awaitingEmailConfirmation = true;
     restoreButton(submitButton, submitButtonState);
     submitButtonState = null;
     submitButton.disabled = false;
     submitButton.textContent = "Go to login";
+    resendConfirmationButton?.classList.toggle("hidden", !canResend);
   }
 
   function initPasswordToggles() {
@@ -310,11 +324,13 @@
 
         if (error) throw error;
 
+        pendingConfirmationEmail = value("email");
         persistUserProfile(data.user);
 
         if (isExistingSignupResult(data)) {
+          pendingConfirmationEmail = "";
           setStatus("This email already has a Saver account. Log in or reset your password.");
-          showEmailConfirmationState();
+          showEmailConfirmationState({ canResend: false });
           return;
         }
 
@@ -325,7 +341,7 @@
           return;
         }
 
-        setStatus("Signup request received. Check your email, then log in.");
+        setStatus("Signup request received. Check your email, or resend the confirmation below.");
         showEmailConfirmationState();
         return;
       }
@@ -382,6 +398,46 @@
     } finally {
       restoreButton(passwordResetButton, passwordResetButtonState);
       passwordResetButtonState = null;
+    }
+  }
+
+  async function resendSignupConfirmation() {
+    setStatus("");
+    clearFormErrors();
+
+    if (!hasSupabaseAuth()) {
+      showSupabaseConfigMessage();
+      return;
+    }
+
+    const email = pendingConfirmationEmail || value("email");
+    const emailInput = field("email");
+
+    if (!isValidEmail(email)) {
+      setError(emailInput, "Enter the email you used to create the account.");
+      emailInput?.focus();
+      return;
+    }
+
+    resendConfirmationButtonState = setButtonLoading(resendConfirmationButton, "Sending...");
+
+    try {
+      const { error } = await supabaseAuth.client.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: supabaseAuth.pageUrl("login.html"),
+        },
+      });
+
+      if (error) throw error;
+
+      setStatus("Confirmation email requested again. Check Inbox and Spam, then log in.");
+    } catch (error) {
+      setStatus(friendlyAuthError(error), true);
+    } finally {
+      restoreButton(resendConfirmationButton, resendConfirmationButtonState);
+      resendConfirmationButtonState = null;
     }
   }
 
@@ -515,6 +571,10 @@
     passwordResetButton.addEventListener("click", requestPasswordReset);
   }
 
+  if (resendConfirmationButton) {
+    resendConfirmationButton.addEventListener("click", resendSignupConfirmation);
+  }
+
   initPasswordToggles();
   handleLoginConfirmationRedirect();
 
@@ -523,7 +583,8 @@
       event.persisted ||
       submitButton?.disabled ||
       googleButton?.disabled ||
-      passwordResetButton?.disabled
+      passwordResetButton?.disabled ||
+      resendConfirmationButton?.disabled
     ) {
       restoreTransientState();
     }

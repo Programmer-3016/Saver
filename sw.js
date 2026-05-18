@@ -1,14 +1,11 @@
 /**
- * Saver — Service Worker
+ * Saver - Service Worker
  *
- * Cache-first strategy for static assets (CSS, JS, fonts, icons).
- * Network-first for HTML pages so users always get the latest version.
- * Offline fallback serves cached pages when network is unavailable.
+ * Network-first strategy for HTML, app code, and styles so production fixes are
+ * not held by old browser caches. Stable assets stay cache-first for speed.
  */
 
-const CACHE_NAME = "saver-v3";
-
-// Static assets to pre-cache on install
+const CACHE_NAME = "saver-v4";
 
 const PRECACHE_ASSETS = [
   "/",
@@ -35,7 +32,22 @@ const PRECACHE_ASSETS = [
   "/manifest.json",
 ];
 
-// Install — pre-cache core assets
+function cacheFreshResponse(request) {
+  return fetch(request).then((response) => {
+    const clone = response.clone();
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+    return response;
+  });
+}
+
+function shouldFetchFresh(url) {
+  return (
+    url.pathname.startsWith("/scripts/") ||
+    url.pathname.startsWith("/styles/") ||
+    url.pathname === "/manifest.json" ||
+    url.pathname === "/sw.js"
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -44,12 +56,8 @@ self.addEventListener("install", (event) => {
     }),
   );
 
-  // Activate immediately without waiting for old SW to finish
-
   self.skipWaiting();
 });
-
-// Activate — clean up old caches
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -62,57 +70,36 @@ self.addEventListener("activate", (event) => {
     }),
   );
 
-  // Take control of all open tabs immediately
-
   self.clients.claim();
 });
 
-// Fetch — network-first for HTML, cache-first for assets
-
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-
-  // Skip non-GET requests and external URLs
 
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
 
-  // Skip external resources (CDN scripts, Google Fonts, Supabase API)
-
   if (url.origin !== self.location.origin) return;
 
-  // HTML pages: network-first (try fresh, fall back to cache)
-
   if (request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request)),
-    );
+    event.respondWith(cacheFreshResponse(request).catch(() => caches.match(request)));
     return;
   }
 
-  // Static assets: cache-first (fast loads, fall back to network)
+  if (shouldFetchFresh(url)) {
+    event.respondWith(cacheFreshResponse(request).catch(() => caches.match(request)));
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
 
-      return fetch(request).then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        return response;
-      });
+      return cacheFreshResponse(request);
     }),
   );
 });
-
-// Notification click — open or focus the dashboard
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
@@ -121,24 +108,18 @@ self.addEventListener("notificationclick", (event) => {
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        // If the dashboard is already open, focus it
-
         for (const client of clientList) {
           if (client.url.includes("/dashboard") && "focus" in client) {
             return client.focus();
           }
         }
 
-        // Otherwise open a new window
-
         if (clients.openWindow) {
-          return clients.openWindow("/pages/dashboard.html");
+          return clients.openWindow("/dashboard");
         }
       }),
   );
 });
-
-// Message handler — show notification from main thread (fallback)
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SHOW_NOTIFICATION") {
