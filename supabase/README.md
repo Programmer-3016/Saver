@@ -61,6 +61,8 @@ alter table public.your_table enable row level security;
 
 Onboarding and the dashboard now use these tables through `scripts/supabase-client.js`. Local storage remains a per-user cache/fallback, but Supabase is the source of truth for active setup rows and transaction history after login.
 
+If users completed onboarding before `budget_cycles` and `savings_goals` existed, they do not need to create a fresh account. The dashboard repairs missing active setup rows from `profiles.onboarding_data` on the next login. For a manual bulk repair, run `supabase/backfill-existing-users.sql`; it is idempotent and only inserts rows where a completed profile has no active budget cycle or saving goal.
+
 ## Email Delivery Notes
 
 Production auth email is configured through custom SMTP on the `savers.dev` domain. Keep the SMTP sender aligned with the verified domain, for example:

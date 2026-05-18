@@ -114,6 +114,8 @@ Browser storage is a cache/fallback only:
 
 The Supabase data model lives in `supabase/schema.sql`. Onboarding writes the active setup into `budget_cycles` and `savings_goals`; the dashboard loads remote app state, syncs transactions from `transactions`, and writes new expense or income rows back to Supabase.
 
+Old users are protected by an idempotent repair path. If a completed profile has onboarding data but is missing an active budget cycle or saving goal, `scripts/supabase-client.js` recreates the missing rows during dashboard load. It also repairs a missing budget cycle before a transaction write, so older accounts do not stay broken after schema updates.
+
 Every public app data table must keep three database rules together:
 
 - Explicit Data API grants for `authenticated` and `service_role`.

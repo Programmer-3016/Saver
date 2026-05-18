@@ -19,6 +19,7 @@
     "dashboard.html": "/dashboard",
     "reset-password.html": "/reset-password",
   };
+  const allowedMoneyModes = new Set(["fixed", "irregular", "allowance"]);
 
   function shouldUseCleanRoutes() {
     return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
@@ -62,6 +63,28 @@
   function numericValue(value) {
     const num = Number(value);
     return Number.isFinite(num) ? Math.max(num, 0) : 0;
+  }
+
+  function hasCompleteSetup(onboardingState = {}) {
+    if (!onboardingState?.onboardingComplete) return false;
+    if (!allowedMoneyModes.has(onboardingState.mode)) return false;
+
+    const availableMoney = Math.max(
+      numericValue(onboardingState.totalMoney),
+      numericValue(onboardingState.salary),
+      numericValue(onboardingState.allowanceAmount),
+      numericValue(onboardingState.avgIncome)
+    );
+
+    return availableMoney > 0;
+  }
+
+  function setupSource(options = {}) {
+    return options.source || "onboarding";
+  }
+
+  function needsAppSetupBackfill(onboardingState, budgetCycle, savingsGoal) {
+    return hasCompleteSetup(onboardingState) && (!budgetCycle?.id || !savingsGoal?.id);
   }
 
   function localDateString(date) {
@@ -113,7 +136,7 @@
     };
   }
 
-  function buildBudgetPayload(userId, onboardingState) {
+  function buildBudgetPayload(userId, onboardingState, options = {}) {
     const snapshot = computeSetupSnapshot(onboardingState);
 
     return {
@@ -135,6 +158,7 @@
           payDay: numericValue(onboardingState.payDay) || 1,
           cycleLength: snapshot.cycleLength,
           allowanceFrequency: onboardingState.allowanceFrequency || "monthly",
+          setupSource: setupSource(options),
           onboardingState,
         },
       },
@@ -142,7 +166,7 @@
     };
   }
 
-  function buildGoalPayload(userId, onboardingState, snapshot) {
+  function buildGoalPayload(userId, onboardingState, snapshot, options = {}) {
     const isSpecific = onboardingState.goalType === "specific";
     const goalType = isSpecific ? "specific" : onboardingState.goalType === "safety" ? "safety" : "custom";
     const fallbackTarget = Math.max(snapshot.savingTarget * 3, 5000);
@@ -158,6 +182,7 @@
       metadata: {
         saveMode: onboardingState.saveMode || "",
         cycleSavingAmount: snapshot.savingTarget,
+        setupSource: setupSource(options),
       },
     };
   }
@@ -396,11 +421,19 @@
     persistUserProfile(user);
 
     const profileState = await api.loadOnboarding(activeSession);
-    const [budgetCycle, savingsGoal, transactions] = await Promise.all([
+    let [budgetCycle, savingsGoal, transactions] = await Promise.all([
       getActiveBudgetCycle(user.id),
       getActiveSavingsGoal(user.id),
       api.loadTransactions(activeSession),
     ]);
+    let backfilled = false;
+
+    if (needsAppSetupBackfill(profileState, budgetCycle, savingsGoal)) {
+      const appSetup = await api.saveAppSetup(profileState, activeSession, { source: "profile_backfill" });
+      budgetCycle = appSetup?.budgetCycle || budgetCycle;
+      savingsGoal = appSetup?.savingsGoal || savingsGoal;
+      backfilled = Boolean(appSetup?.state);
+    }
 
     return {
       state: {
@@ -410,19 +443,21 @@
       },
       budgetCycle,
       savingsGoal,
+      backfilled,
       transactions,
     };
   };
 
-  api.saveAppSetup = async function (onboardingState, session) {
+  api.saveAppSetup = async function (onboardingState, session, options = {}) {
     const activeSession = session || (await api.getSession());
     const user = activeSession?.user;
 
     if (!user?.id) return null;
 
     persistUserProfile(user);
+    if (!hasCompleteSetup(onboardingState)) return null;
 
-    const { payload, snapshot } = buildBudgetPayload(user.id, onboardingState || {});
+    const { payload, snapshot } = buildBudgetPayload(user.id, onboardingState || {}, options);
     const existingBudgetCycle = await getActiveBudgetCycle(user.id);
     const budgetBuilder = existingBudgetCycle?.id
       ? api.client.from("budget_cycles").update(payload).eq("id", existingBudgetCycle.id)
@@ -438,7 +473,7 @@
     }
 
     const savedBudgetCycle = budgetCycle || existingBudgetCycle;
-    const goalPayload = buildGoalPayload(user.id, onboardingState || {}, snapshot);
+    const goalPayload = buildGoalPayload(user.id, onboardingState || {}, snapshot, options);
     const existingSavingsGoal = await getActiveSavingsGoal(user.id);
     const goalBuilder = existingSavingsGoal?.id
       ? api.client.from("savings_goals").update(goalPayload).eq("id", existingSavingsGoal.id)
@@ -472,7 +507,17 @@
 
     persistUserProfile(user);
 
-    const activeBudgetCycleId = budgetCycleId || (await getActiveBudgetCycle(user.id))?.id || null;
+    let activeBudgetCycleId = budgetCycleId || (await getActiveBudgetCycle(user.id))?.id || null;
+
+    if (!activeBudgetCycleId) {
+      const profileState = await api.loadOnboarding(activeSession);
+
+      if (hasCompleteSetup(profileState)) {
+        const appSetup = await api.saveAppSetup(profileState, activeSession, { source: "transaction_backfill" });
+        activeBudgetCycleId = appSetup?.budgetCycle?.id || null;
+      }
+    }
+
     const payload = transactionToRow(user.id, transaction || {}, activeBudgetCycleId);
 
     const { data, error } = await api.client

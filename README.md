@@ -32,6 +32,7 @@ Saver/
 |
 |-- supabase/
 |   |-- config.js               # Public Supabase browser config
+|   |-- backfill-existing-users.sql # Optional old-user setup row repair
 |   |-- schema.sql              # profiles and app data tables with grants/RLS
 |   `-- README.md               # Supabase dashboard setup notes
 |
@@ -98,6 +99,8 @@ The schema also includes app data tables used by onboarding and the dashboard:
 - `savings_goals` stores goal progress.
 
 Each public app table has explicit Data API grants for `authenticated` and `service_role`, RLS enabled, and owner-only policies based on `auth.uid()`. Onboarding creates or updates the active budget cycle and savings goal, while the dashboard loads and writes transactions through Supabase before caching them locally.
+
+For users who completed onboarding before the app data tables existed, the dashboard self-heals missing active budget and goal rows from `profiles.onboarding_data`. `supabase/backfill-existing-users.sql` is available as a safe one-time admin repair when existing users should be fixed in bulk.
 
 ## Deployment
 
