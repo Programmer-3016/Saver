@@ -56,8 +56,8 @@
     if (window.setSaverStorageOwner) window.setSaverStorageOwner(user.id);
   }
 
-  function isMissingProfilesTable(error) {
-    return error?.code === "42P01" || error?.code === "PGRST205" || error?.code === "PGRST204";
+  function isMissingAppSchema(error) {
+    return error?.code === "42P01" || error?.code === "PGRST205";
   }
 
   function numericValue(value) {
@@ -238,6 +238,34 @@
     };
   }
 
+  function transactionIdentity(transaction) {
+    if (!transaction) return "";
+    if (transaction.remoteId) return `remote:${transaction.remoteId}`;
+    if (transaction.id) return `local:${transaction.id}`;
+    return [
+      "draft",
+      transaction.ts || "",
+      transaction.amount || "",
+      transaction.category || "",
+      transaction.source || "",
+      transaction.desc || "",
+    ].join(":");
+  }
+
+  function mergeTransactions(primary = [], secondary = []) {
+    const merged = [];
+    const seen = new Set();
+
+    [...primary, ...secondary].forEach((transaction) => {
+      const key = transactionIdentity(transaction);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push(transaction);
+    });
+
+    return merged.sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
+  }
+
   const api = {
     client: null,
     isConfigured,
@@ -252,6 +280,8 @@
     saveAppSetup: async () => null,
     loadTransactions: async () => [],
     addTransaction: async () => null,
+    syncLocalTransactions: async (transactions = []) => ({ transactions, synced: false, failed: 0 }),
+    mergeTransactions,
     resetAppData: async () => null,
   };
 
@@ -319,7 +349,7 @@
       .maybeSingle();
 
     if (error) {
-      if (isMissingProfilesTable(error)) return null;
+      if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
@@ -337,7 +367,7 @@
       .maybeSingle();
 
     if (error) {
-      if (isMissingProfilesTable(error)) return null;
+      if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
@@ -355,7 +385,7 @@
       .maybeSingle();
 
     if (error) {
-      if (isMissingProfilesTable(error)) return null;
+      if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
@@ -377,7 +407,7 @@
       .maybeSingle();
 
     if (error) {
-      if (isMissingProfilesTable(error)) return null;
+      if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
@@ -405,7 +435,7 @@
       .limit(500);
 
     if (error) {
-      if (isMissingProfilesTable(error)) return [];
+      if (isMissingAppSchema(error)) return [];
       throw error;
     }
 
@@ -468,7 +498,7 @@
       .maybeSingle();
 
     if (budgetError) {
-      if (isMissingProfilesTable(budgetError)) return null;
+      if (isMissingAppSchema(budgetError)) return null;
       throw budgetError;
     }
 
@@ -484,7 +514,7 @@
       .maybeSingle();
 
     if (goalError) {
-      if (isMissingProfilesTable(goalError)) return null;
+      if (isMissingAppSchema(goalError)) return null;
       throw goalError;
     }
 
@@ -527,11 +557,52 @@
       .maybeSingle();
 
     if (error) {
-      if (isMissingProfilesTable(error)) return null;
+      if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
     return data ? rowToTransaction(data) : null;
+  };
+
+  api.syncLocalTransactions = async function (transactions = [], session, budgetCycleId) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id || !Array.isArray(transactions) || transactions.length === 0) {
+      return { transactions: Array.isArray(transactions) ? transactions : [], synced: false };
+    }
+
+    persistUserProfile(user);
+
+    const syncedTransactions = [];
+    let changed = false;
+    let failed = 0;
+
+    for (const transaction of transactions) {
+      if (!transaction || transaction.remoteId) {
+        syncedTransactions.push(transaction);
+        continue;
+      }
+
+      try {
+        const remoteTransaction = await api.addTransaction(transaction, activeSession, budgetCycleId);
+
+        if (remoteTransaction) {
+          syncedTransactions.push({ ...transaction, ...remoteTransaction });
+          changed = true;
+        } else {
+          syncedTransactions.push(transaction);
+        }
+      } catch (error) {
+        if (isMissingAppSchema(error)) return { transactions, synced: false };
+
+        failed += 1;
+        console.error("Could not sync local transaction", error);
+        syncedTransactions.push(transaction);
+      }
+    }
+
+    return { transactions: syncedTransactions, synced: changed, failed };
   };
 
   api.resetAppData = async function (session) {
@@ -543,7 +614,7 @@
     persistUserProfile(user);
 
     const transactionResult = await api.client.from("transactions").delete().eq("user_id", user.id);
-    if (transactionResult.error && !isMissingProfilesTable(transactionResult.error)) {
+    if (transactionResult.error && !isMissingAppSchema(transactionResult.error)) {
       throw transactionResult.error;
     }
 
@@ -552,7 +623,7 @@
       .update({ is_active: false })
       .eq("user_id", user.id)
       .eq("is_active", true);
-    if (budgetResult.error && !isMissingProfilesTable(budgetResult.error)) {
+    if (budgetResult.error && !isMissingAppSchema(budgetResult.error)) {
       throw budgetResult.error;
     }
 
@@ -561,7 +632,7 @@
       .update({ is_active: false })
       .eq("user_id", user.id)
       .eq("is_active", true);
-    if (goalResult.error && !isMissingProfilesTable(goalResult.error)) {
+    if (goalResult.error && !isMissingAppSchema(goalResult.error)) {
       throw goalResult.error;
     }
 

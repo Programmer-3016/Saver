@@ -1228,6 +1228,11 @@ async function submitExpense() {
       if (remoteTxn) savedTxn = { ...localTxn, ...remoteTxn };
     }
 
+    if (savedTxn.budgetCycleId && savedTxn.budgetCycleId !== state.activeBudgetCycleId) {
+      state.activeBudgetCycleId = savedTxn.budgetCycleId;
+      saveState();
+    }
+
     const txns = loadTransactions();
     txns.push(savedTxn);
 
@@ -1325,18 +1330,55 @@ function showExpenseFormView() {
   formView.classList.remove("hidden");
 }
 
+function mergeTransactionLists(remoteTransactions = [], localTransactions = []) {
+  if (window.saverSupabase?.mergeTransactions) {
+    return window.saverSupabase.mergeTransactions(remoteTransactions, localTransactions);
+  }
+
+  const merged = [];
+  const seen = new Set();
+
+  [...remoteTransactions, ...localTransactions].forEach((transaction) => {
+    if (!transaction) return;
+
+    const key =
+      transaction.remoteId ||
+      transaction.id ||
+      [transaction.ts, transaction.amount, transaction.category, transaction.source, transaction.desc].join(":");
+
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push(transaction);
+  });
+
+  return merged.sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
+}
+
 async function loadDashboardState(session) {
   if (window.saverSupabase?.isConfigured && window.saverSupabase?.loadAppData) {
     try {
       const appData = await window.saverSupabase.loadAppData(session);
       if (appData?.state) {
+        const localTransactions = loadTransactions();
+
         applyStateSnapshot(appData.state);
         saveState();
 
-        if (Array.isArray(appData.transactions)) {
-          saveTransactions(appData.transactions);
+        let dashboardTransactions = Array.isArray(appData.transactions) ? appData.transactions : [];
+        const hasUnsyncedLocalTransactions = localTransactions.some((transaction) => transaction && !transaction.remoteId);
+
+        if (hasUnsyncedLocalTransactions && window.saverSupabase?.syncLocalTransactions) {
+          const syncResult = await window.saverSupabase.syncLocalTransactions(
+            localTransactions,
+            session,
+            state.activeBudgetCycleId || appData.budgetCycle?.id || null,
+          );
+          dashboardTransactions = mergeTransactionLists(dashboardTransactions, syncResult.transactions || []);
+        } else {
+          dashboardTransactions = mergeTransactionLists(dashboardTransactions, localTransactions);
         }
 
+        saveTransactions(dashboardTransactions);
         return true;
       }
     } catch (error) {

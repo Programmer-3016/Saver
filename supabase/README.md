@@ -59,7 +59,7 @@ grant select, insert, update, delete on table public.your_table to service_role;
 alter table public.your_table enable row level security;
 ```
 
-Onboarding and the dashboard now use these tables through `scripts/supabase-client.js`. Local storage remains a per-user cache/fallback, but Supabase is the source of truth for active setup rows and transaction history after login.
+Onboarding and the dashboard now use these tables through `scripts/supabase-client.js`. Local storage remains a per-user cache/fallback, but Supabase is the source of truth for active setup rows and transaction history after login. When an older browser has valid user-scoped local transactions without `remoteId`, the dashboard syncs those rows into Supabase on the next authenticated load and keeps the local cache aligned with the returned remote IDs.
 
 If users completed onboarding before `budget_cycles` and `savings_goals` existed, they do not need to create a fresh account. The dashboard repairs missing active setup rows from `profiles.onboarding_data` on the next login. For a manual bulk repair, run `supabase/backfill-existing-users.sql`; it is idempotent and only inserts rows where a completed profile has no active budget cycle or saving goal.
 
