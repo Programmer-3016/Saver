@@ -40,6 +40,39 @@ function appRoute(pageName) {
   return window.saverSupabase?.pageUrl?.(pageName) || pageName;
 }
 
+function cleanProfileText(value) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function storedProfileValue(key) {
+  try {
+    return cleanProfileText(localStorage.getItem(key));
+  } catch (_) {
+    return "";
+  }
+}
+
+function emailDisplayName(email) {
+  const prefix = cleanProfileText(email).split("@")[0] || "";
+  return prefix.replace(/[._-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function profileDisplayName() {
+  const email = cleanProfileText(state.profileEmail) || storedProfileValue("saverUserEmail");
+
+  return (
+    cleanProfileText(state.profileName) ||
+    storedProfileValue("saverUserName") ||
+    emailDisplayName(email) ||
+    "Saver User"
+  );
+}
+
+function profileInitial(name, email) {
+  const source = cleanProfileText(name) || emailDisplayName(email) || "Saver";
+  return source.charAt(0).toUpperCase() || "S";
+}
+
 function isIncomeTransaction(transaction) {
   return transaction?.kind === "income" || transaction?.category === "income";
 }
@@ -170,9 +203,11 @@ function populateDashboard() {
   // Avatar
   const avatar = $("#dash-avatar");
 
-  if (avatar && state.mode) {
-    const initials = { fixed: "F", irregular: "I", allowance: "A" };
-    avatar.textContent = initials[state.mode] || "S";
+  if (avatar) {
+    avatar.textContent = profileInitial(
+      profileDisplayName(),
+      cleanProfileText(state.profileEmail) || storedProfileValue("saverUserEmail"),
+    );
   }
 
   // Profile tab
@@ -827,14 +862,15 @@ function renderAllTransactions(txns) {
 // Profile tab
 
 function populateProfileTab(txns, effectiveSave) {
-  // Avatar initial
+  // Profile identity
 
+  const displayName = profileDisplayName();
+  const displayEmail = cleanProfileText(state.profileEmail) || storedProfileValue("saverUserEmail");
+  const profileName = $("#profile-name");
   const profileAvatar = $("#profile-avatar");
 
-  if (profileAvatar && state.mode) {
-    const initials = { fixed: "F", irregular: "I", allowance: "A" };
-    profileAvatar.textContent = initials[state.mode] || "S";
-  }
+  if (profileName) profileName.textContent = displayName;
+  if (profileAvatar) profileAvatar.textContent = profileInitial(displayName, displayEmail);
 
   // Mode badge
 
@@ -848,6 +884,8 @@ function populateProfileTab(txns, effectiveSave) {
     };
     const m = modes[state.mode] || modes.fixed;
     modeBadge.innerHTML = `<span class="material-symbols-outlined text-sm">${m.icon}</span>${m.label}`;
+  } else if (modeBadge) {
+    modeBadge.innerHTML = '<span class="material-symbols-outlined text-sm">account_circle</span>Setup Pending';
   }
 
   // Stats
@@ -888,16 +926,7 @@ function initDashboardEvents() {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
 
-  // Profile — Edit Profile (re-run onboarding)
-
-  const editBtn = $("#profile-edit-btn");
-
-  if (editBtn)
-    editBtn.addEventListener("click", () => {
-      window.location.href = appRoute("onboarding.html");
-    });
-
-  // Profile — Reset All Data
+  // Profile - Reset All Data
 
   const resetBtn = $("#profile-reset-btn");
 

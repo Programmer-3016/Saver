@@ -36,13 +36,61 @@
     return new URL(normalizedPath, window.location.origin).href;
   }
 
+  function cleanProfileText(value) {
+    return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+  }
+
+  function storedProfileValue(key) {
+    try {
+      return cleanProfileText(localStorage.getItem(key));
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function emailDisplayName(email) {
+    const prefix = cleanProfileText(email).split("@")[0] || "";
+    return prefix.replace(/[._-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
   function fullNameFromUser(user) {
-    return (
+    return cleanProfileText(
       user?.user_metadata?.full_name ||
-      user?.user_metadata?.name ||
-      user?.user_metadata?.display_name ||
-      ""
+        user?.user_metadata?.name ||
+        user?.user_metadata?.display_name ||
+        "",
     );
+  }
+
+  function profileEmailFromRow(profile, user) {
+    return cleanProfileText(profile?.email || user?.email || storedProfileValue("saverUserEmail"));
+  }
+
+  function profileNameFromRow(profile, user) {
+    const email = profileEmailFromRow(profile, user);
+
+    return (
+      cleanProfileText(profile?.full_name) ||
+      fullNameFromUser(user) ||
+      storedProfileValue("saverUserName") ||
+      emailDisplayName(email) ||
+      "Saver User"
+    );
+  }
+
+  function profileStateFromRow(profile, user) {
+    const profileEmail = profileEmailFromRow(profile, user);
+    const profileName = profileNameFromRow(profile, user);
+
+    if (profileEmail) localStorage.setItem("saverUserEmail", profileEmail);
+    if (profileName && profileName !== "Saver User") {
+      localStorage.setItem("saverUserName", profileName);
+    }
+
+    return {
+      profileName,
+      profileEmail,
+    };
   }
 
   function persistUserProfile(user) {
@@ -402,24 +450,14 @@
 
     if (!user?.id) return null;
 
-    await api.ensureProfile(activeSession);
+    const profile = await api.ensureProfile(activeSession);
 
-    const { data, error } = await api.client
-      .from("profiles")
-      .select("onboarding_completed, onboarding_data")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      if (isMissingAppSchema(error)) return null;
-      throw error;
-    }
-
-    if (!data) return null;
+    if (!profile) return null;
 
     return {
-      ...(data.onboarding_data || {}),
-      onboardingComplete: Boolean(data.onboarding_completed),
+      ...(profile.onboarding_data || {}),
+      ...profileStateFromRow(profile, user),
+      onboardingComplete: Boolean(profile.onboarding_completed),
     };
   };
 
@@ -664,7 +702,7 @@
     const { data, error } = await api.client
       .from("profiles")
       .upsert(payload, { onConflict: "id" })
-      .select("id, onboarding_completed, onboarding_data")
+      .select("id, email, full_name, onboarding_completed, onboarding_data")
       .maybeSingle();
 
     if (error) throw error;
@@ -673,7 +711,7 @@
       ? await api.saveAppSetup(onboardingState, activeSession)
       : null;
 
-    return { ...(data || {}), appData };
+    return { ...(data || {}), ...profileStateFromRow(data, user), appData };
   };
 
   api.resetOnboarding = async function (session) {
