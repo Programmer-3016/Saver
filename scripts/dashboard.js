@@ -21,6 +21,12 @@ const categoryConfig = {
   income: { label: "Income", icon: "payments", color: "#059669" },
 };
 
+const transactionFilters = {
+  query: "",
+  type: "all",
+  category: "all",
+};
+
 function escapeHTML(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -32,6 +38,18 @@ function escapeHTML(value) {
 
 function appRoute(pageName) {
   return window.saverSupabase?.pageUrl?.(pageName) || pageName;
+}
+
+function isIncomeTransaction(transaction) {
+  return transaction?.kind === "income" || transaction?.category === "income";
+}
+
+function isExpenseTransaction(transaction) {
+  return transaction && !isIncomeTransaction(transaction);
+}
+
+function transactionKind(transaction) {
+  return isIncomeTransaction(transaction) ? "income" : "expense";
 }
 
 // Relative date label
@@ -72,6 +90,9 @@ function populateDashboard() {
   if (state.mode === "fixed") baseMoney = state.salary || state.totalMoney;
   else if (state.mode === "allowance") baseMoney = state.allowanceAmount || state.totalMoney;
 
+  const cycleIncome = txns.filter(isIncomeTransaction).reduce((sum, t) => sum + t.amount, 0);
+  const currentMoney = baseMoney + cycleIncome;
+
   const effectiveSave =
     state.saveMode === "smart" ? Math.round(baseMoney * smartPercent) : state.saveAmount;
 
@@ -79,9 +100,9 @@ function populateDashboard() {
 
   let freeToSpend;
   if (state.mode === "fixed") {
-    freeToSpend = baseMoney - (state.fixedExpenses || 0) - effectiveSave;
+    freeToSpend = currentMoney - (state.fixedExpenses || 0) - effectiveSave;
   } else {
-    freeToSpend = baseMoney - effectiveSave;
+    freeToSpend = currentMoney - effectiveSave;
   }
   freeToSpend = Math.max(freeToSpend, 0);
 
@@ -102,7 +123,7 @@ function populateDashboard() {
   // Total spent in entire cycle (for health ring + rollover)
 
   const totalSpentInCycle = txns
-    .filter((t) => t.category !== "income")
+    .filter(isExpenseTransaction)
     .reduce((sum, t) => sum + t.amount, 0);
   const remainingBudget = Math.max(freeToSpend - totalSpentInCycle, 0);
   const daysRemaining = Math.max(cycleLength - daysElapsed, 1);
@@ -118,7 +139,7 @@ function populateDashboard() {
   // Today's spending
 
   const todaySpent = txns
-    .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === today.getTime())
+    .filter((t) => isExpenseTransaction(t) && startOfDay(t.ts).getTime() === today.getTime())
     .reduce((sum, t) => sum + t.amount, 0);
   const todayLeft = Math.max(rolloverDailyLimit - todaySpent, 0);
 
@@ -234,7 +255,7 @@ function populateSpendingChart(txns, dailyLimit) {
     const dayStart = startOfDay(d).getTime();
 
     const daySpent = txns
-      .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === dayStart)
+      .filter((t) => isExpenseTransaction(t) && startOfDay(t.ts).getTime() === dayStart)
       .reduce((sum, t) => sum + t.amount, 0);
 
     days.push({ date: d, spent: daySpent, name: getDayName(d) });
@@ -365,7 +386,7 @@ function populateBudgetPulse(txns, dailyLimit, todaySpent) {
     const dayStart = startOfDay(d).getTime();
 
     const daySpent = txns
-      .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === dayStart)
+      .filter((t) => isExpenseTransaction(t) && startOfDay(t.ts).getTime() === dayStart)
       .reduce((sum, t) => sum + t.amount, 0);
 
     if (daySpent > dailyLimit) break;
@@ -425,7 +446,7 @@ function populateCategoryBreakdown(txns) {
   let grandTotal = 0;
 
   txns.forEach((t) => {
-    if (t.category === "income") return;
+    if (!isExpenseTransaction(t)) return;
     totals[t.category] = (totals[t.category] || 0) + t.amount;
     grandTotal += t.amount;
   });
@@ -494,7 +515,7 @@ function populateWeeklyReport(txns, dailyLimit) {
     const dayStart = startOfDay(d).getTime();
 
     const daySpent = txns
-      .filter((t) => t.category !== "income" && startOfDay(t.ts).getTime() === dayStart)
+      .filter((t) => isExpenseTransaction(t) && startOfDay(t.ts).getTime() === dayStart)
       .reduce((sum, t) => sum + t.amount, 0);
 
     weeklySpend += daySpent;
@@ -667,7 +688,7 @@ function populateMonthlySummary(effectiveSave) {
   // Filter this month's transactions
 
   const monthTxns = txns.filter((t) => t.ts >= monthStart);
-  const expenses = monthTxns.filter((t) => t.category !== "income");
+  const expenses = monthTxns.filter(isExpenseTransaction);
 
   const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
 
@@ -697,7 +718,7 @@ function populateMonthlySummary(effectiveSave) {
 
 function buildTransactionHTML(t, index) {
   const cat = categoryConfig[t.category] || categoryConfig.other;
-  const isIncome = t.category === "income";
+  const isIncome = isIncomeTransaction(t);
   const description = escapeHTML(t.desc || cat.label);
   const categoryLabel = escapeHTML(cat.label);
   const categoryIcon = escapeHTML(cat.icon);
@@ -736,9 +757,43 @@ function buildTransactionHTML(t, index) {
     </div>`;
 }
 
+function filterTransactions(txns) {
+  const query = transactionFilters.query.toLowerCase();
+
+  return txns.filter((txn) => {
+    const kind = transactionKind(txn);
+    const category = isIncomeTransaction(txn) ? "income" : txn.category || "other";
+
+    if (transactionFilters.type !== "all" && transactionFilters.type !== kind) return false;
+    if (transactionFilters.category !== "all" && transactionFilters.category !== category) return false;
+
+    if (!query) return true;
+
+    const cat = categoryConfig[category] || categoryConfig.other;
+    const searchable = [txn.desc, cat.label, txn.source, kind].join(" ").toLowerCase();
+    return searchable.includes(query);
+  });
+}
+
+function updateTransactionSummary(visibleTxns) {
+  const spentEl = $("#txn-summary-spent");
+  const incomeEl = $("#txn-summary-income");
+  const countEl = $("#txn-summary-count");
+
+  const spent = visibleTxns.filter(isExpenseTransaction).reduce((sum, txn) => sum + txn.amount, 0);
+  const income = visibleTxns.filter(isIncomeTransaction).reduce((sum, txn) => sum + txn.amount, 0);
+
+  if (spentEl) spentEl.textContent = formatCurrency(spent);
+  if (incomeEl) incomeEl.textContent = formatCurrency(income);
+  if (countEl) countEl.textContent = String(visibleTxns.length);
+}
+
 function renderAllTransactions(txns) {
   const container = $("#all-transactions-list");
   if (!container) return;
+
+  const visibleTxns = filterTransactions(txns);
+  updateTransactionSummary(visibleTxns);
 
   if (txns.length === 0) {
     container.innerHTML = `
@@ -751,7 +806,18 @@ function renderAllTransactions(txns) {
     return;
   }
 
-  container.innerHTML = `<div class="space-y-6">${txns
+  if (visibleTxns.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-16">
+        <div class="w-16 h-16 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-4">
+          <span class="material-symbols-outlined text-stone-300" style="font-size:32px">search_off</span>
+        </div>
+        <p class="text-stone-400 font-body-md text-[15px] mb-2">No matching transactions</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="space-y-6">${visibleTxns
     .slice()
     .reverse()
     .map((t, i) => buildTransactionHTML(t, i))
@@ -787,7 +853,7 @@ function populateProfileTab(txns, effectiveSave) {
   // Stats
 
   const totalSpent = txns
-    .filter((t) => t.category !== "income")
+    .filter(isExpenseTransaction)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const savedEl = $("#profile-total-saved");
@@ -796,7 +862,7 @@ function populateProfileTab(txns, effectiveSave) {
 
   if (savedEl) savedEl.textContent = formatCurrency(effectiveSave);
   if (spentEl) spentEl.textContent = formatCurrency(totalSpent);
-  if (countEl) countEl.textContent = txns.filter((t) => t.category !== "income").length;
+  if (countEl) countEl.textContent = txns.filter(isExpenseTransaction).length;
 }
 
 // Dashboard events
@@ -865,7 +931,7 @@ function initDashboardEvents() {
         return;
       }
 
-      const header = "Date,Amount,Category,Source,Note";
+      const header = "Date,Type,Amount,Category,Source,Note";
 
       const rows = txns.map((t) => {
         const date = new Date(t.ts).toLocaleDateString("en-IN", {
@@ -874,7 +940,7 @@ function initDashboardEvents() {
           day: "numeric",
         });
         const desc = (t.desc || "").replace(/"/g, '""');
-        return `${date},${t.amount},${t.category},${t.source},"${desc}"`;
+        return `${date},${transactionKind(t)},${t.amount},${t.category},${t.source},"${desc}"`;
       });
 
       const csv = [header, ...rows].join("\n");
@@ -934,6 +1000,31 @@ function initDashboardEvents() {
 
   if (addBtnAlt) addBtnAlt.addEventListener("click", () => openExpenseModal());
 
+  const transactionSearch = $("#transaction-search-input");
+  const transactionTypeFilter = $("#transaction-type-filter");
+  const transactionCategoryFilter = $("#transaction-category-filter");
+
+  if (transactionSearch) {
+    transactionSearch.addEventListener("input", () => {
+      transactionFilters.query = transactionSearch.value.trim();
+      renderAllTransactions(loadTransactions());
+    });
+  }
+
+  if (transactionTypeFilter) {
+    transactionTypeFilter.addEventListener("change", () => {
+      transactionFilters.type = transactionTypeFilter.value;
+      renderAllTransactions(loadTransactions());
+    });
+  }
+
+  if (transactionCategoryFilter) {
+    transactionCategoryFilter.addEventListener("change", () => {
+      transactionFilters.category = transactionCategoryFilter.value;
+      renderAllTransactions(loadTransactions());
+    });
+  }
+
   // Share Achievement button
 
   const shareBtn = $("#share-achievement-btn");
@@ -969,6 +1060,12 @@ function initDashboardEvents() {
 
   if (closeBtn) closeBtn.addEventListener("click", closeExpenseModal);
   if (backdrop) backdrop.addEventListener("click", closeExpenseModal);
+
+  $("[data-transaction-kind='expense']")?.classList.add("is-active");
+
+  $$("[data-transaction-kind]").forEach((btn) => {
+    btn.addEventListener("click", () => setTransactionKind(btn.dataset.transactionKind));
+  });
 
   // Modal category chips
 
@@ -1069,7 +1166,14 @@ function switchTab(tabName) {
 }
 
 // Expense modal
-const modalState = { amount: 0, desc: "", category: "", source: "savings", dailyLimit: 0 };
+const modalState = {
+  amount: 0,
+  desc: "",
+  kind: "expense",
+  category: "",
+  source: "savings",
+  dailyLimit: 0,
+};
 
 // Saved scroll position — used to restore after closing the modal
 
@@ -1107,6 +1211,37 @@ function unlockBodyScroll() {
   window.scrollTo(0, savedScrollY);
 }
 
+function setTransactionKind(kind) {
+  modalState.kind = kind === "income" ? "income" : "expense";
+
+  const isIncome = modalState.kind === "income";
+  if (isIncome) {
+    modalState.category = "income";
+    $$("[data-modal-cat]").forEach((c) => c.classList.remove("is-active"));
+  } else if (modalState.category === "income") {
+    modalState.category = "";
+  }
+
+  $$("[data-transaction-kind]").forEach((btn) => {
+    const isActive = btn.dataset.transactionKind === modalState.kind;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  });
+
+  const title = $("#expense-modal-title");
+  const submitBtn = $("#expense-submit-btn");
+  const categorySection = $("#expense-category-section");
+  const descInput = $("#expense-desc-input");
+
+  if (title) title.textContent = isIncome ? "Log Income" : "Log Expense";
+  if (submitBtn) submitBtn.textContent = isIncome ? "Add Income" : "Add Expense";
+  if (categorySection) categorySection.classList.toggle("hidden", isIncome);
+  if (descInput) descInput.placeholder = isIncome ? "Where did this come from?" : "What was this for?";
+
+  checkImpulseGuard();
+  validateExpenseForm();
+}
+
 function openExpenseModal(preCategory) {
   const modal = $("#expense-modal");
   if (!modal) return;
@@ -1115,7 +1250,8 @@ function openExpenseModal(preCategory) {
 
   modalState.amount = 0;
   modalState.desc = "";
-  modalState.category = preCategory || "";
+  modalState.kind = preCategory === "income" ? "income" : "expense";
+  modalState.category = modalState.kind === "income" ? "income" : preCategory || "";
   modalState.source = "savings";
 
   // Cache current rollover daily limit for impulse guard
@@ -1132,7 +1268,10 @@ function openExpenseModal(preCategory) {
   // Pre-select category if provided
 
   $$("[data-modal-cat]").forEach((c) => {
-    c.classList.toggle("is-active", c.dataset.modalCat === preCategory);
+    c.classList.toggle(
+      "is-active",
+      modalState.kind === "expense" && c.dataset.modalCat === preCategory,
+    );
   });
 
   // Reset payment source selection
@@ -1147,7 +1286,7 @@ function openExpenseModal(preCategory) {
     btn.querySelector(".source-check")?.classList.toggle("hidden", !isDefault);
   });
 
-  validateExpenseForm();
+  setTransactionKind(modalState.kind);
   lockBodyScroll();
   requestAnimationFrame(() => modal.classList.remove("hidden"));
 
@@ -1175,7 +1314,9 @@ function checkImpulseGuard() {
 
   // Show or hide warning
 
-  if (modalState.amount > currentDailyLimit && currentDailyLimit > 0) {
+  if (modalState.kind === "income") {
+    guardEl.classList.add("hidden");
+  } else if (modalState.amount > currentDailyLimit && currentDailyLimit > 0) {
     const daysWorth = Math.round(modalState.amount / currentDailyLimit * 10) / 10;
     guardEl.classList.remove("hidden");
 
@@ -1193,19 +1334,25 @@ function checkImpulseGuard() {
 
 function validateExpenseForm() {
   const btn = $("#expense-submit-btn");
+  const hasCategory = modalState.kind === "income" || Boolean(modalState.category);
 
-  if (btn) btn.disabled = !(modalState.amount > 0 && modalState.category);
+  if (btn) btn.disabled = !(modalState.amount > 0 && hasCategory);
 }
 
 async function submitExpense() {
-  if (modalState.amount <= 0 || !modalState.category) return;
+  const kind = modalState.kind === "income" ? "income" : "expense";
+  const category = kind === "income" ? "income" : modalState.category;
+
+  if (modalState.amount <= 0 || !category) return;
 
   const submitBtn = $("#expense-submit-btn");
-  const originalSubmitText = submitBtn?.textContent || "Save";
+  const originalSubmitText = submitBtn?.textContent || (kind === "income" ? "Add Income" : "Add Expense");
+  const catConfig = categoryConfig[category] || categoryConfig.other;
   const localTxn = {
     amount: modalState.amount,
-    desc: modalState.desc || categoryConfig[modalState.category]?.label || "Expense",
-    category: modalState.category,
+    desc: modalState.desc || catConfig.label || (kind === "income" ? "Income" : "Expense"),
+    kind,
+    category,
     source: modalState.source,
     ts: Date.now(),
     budgetCycleId: state.activeBudgetCycleId || null,
@@ -1240,11 +1387,11 @@ async function submitExpense() {
 
     // Check for overspend alert after saving
 
-    if (modalState.category !== "income") {
+    if (isExpenseTransaction(savedTxn)) {
       const today = startOfDay(new Date());
 
       const todayTotal = txns
-        .filter((t) => t.category !== "income" && t.ts >= today.getTime())
+        .filter((t) => isExpenseTransaction(t) && t.ts >= today.getTime())
         .reduce((sum, t) => sum + t.amount, 0);
 
       const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;
@@ -1291,9 +1438,18 @@ function showExpenseSuccessView() {
   const categoryEl = $("#success-category");
   const sourceEl = $("#success-source");
   const timeEl = $("#success-time");
+  const titleEl = $("#expense-success-title");
+  const copyEl = $("#expense-success-copy");
+  const isIncome = modalState.kind === "income";
   const cat = categoryConfig[modalState.category] || categoryConfig.other;
 
-  if (amountEl) amountEl.textContent = formatCurrency(modalState.amount);
+  if (titleEl) titleEl.textContent = isIncome ? "Income Added" : "Expense Logged";
+  if (copyEl) {
+    copyEl.textContent = isIncome
+      ? "Your available money has been updated."
+      : "Your records have been updated.";
+  }
+  if (amountEl) amountEl.textContent = `${isIncome ? "+" : "-"}${formatCurrency(modalState.amount)}`;
   if (iconEl) iconEl.textContent = cat.icon;
   if (categoryEl) categoryEl.textContent = cat.label;
   if (sourceEl) sourceEl.textContent = sourceLabels[modalState.source] || modalState.source;
@@ -1344,7 +1500,14 @@ function mergeTransactionLists(remoteTransactions = [], localTransactions = []) 
     const key =
       transaction.remoteId ||
       transaction.id ||
-      [transaction.ts, transaction.amount, transaction.category, transaction.source, transaction.desc].join(":");
+      [
+        transaction.ts,
+        transaction.amount,
+        transaction.kind || "",
+        transaction.category,
+        transaction.source,
+        transaction.desc,
+      ].join(":");
 
     if (seen.has(key)) return;
     seen.add(key);
@@ -1609,7 +1772,7 @@ function triggerEveningSummary() {
   const today = startOfDay(new Date());
 
   const todaySpent = txns
-    .filter((t) => t.category !== "income" && t.ts >= today.getTime())
+    .filter((t) => isExpenseTransaction(t) && t.ts >= today.getTime())
     .reduce((sum, t) => sum + t.amount, 0);
 
   const dailyLimit = state.rolloverDailyLimit || state.dailyBudget || 0;

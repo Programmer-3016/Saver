@@ -146,10 +146,18 @@ function loadTransactions() {
         const ts = Number(txn.ts);
         if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(ts)) return null;
 
+        const kind = txn.kind === "income" || txn.category === "income" ? "income" : "expense";
+        const category = kind === "income"
+          ? "income"
+          : typeof txn.category === "string"
+            ? txn.category
+            : "other";
+
         const normalized = {
           amount,
           desc: typeof txn.desc === "string" ? txn.desc : "",
-          category: typeof txn.category === "string" ? txn.category : "other",
+          kind,
+          category,
           source: typeof txn.source === "string" ? txn.source : "savings",
           ts,
         };

@@ -245,6 +245,37 @@
 
 /* Expense chips */
 
+/* Segmented control for expense vs income entry. */
+
+.transaction-kind-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.875rem;
+  color: #71717a;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+.transaction-kind-toggle:active {
+  transform: scale(0.98);
+}
+
+.transaction-kind-toggle.is-active {
+  background: #ffffff;
+  color: #1b4332;
+  box-shadow: 0 6px 18px rgba(27, 67, 50, 0.1);
+}
+
 /* Category selection buttons. */
 
 .expense-chip {

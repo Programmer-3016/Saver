@@ -418,8 +418,55 @@
               id="add-expense-btn-alt"
             >
               <span class="material-symbols-outlined text-lg">add</span>
-              Add Expense
+              Add Transaction
             </button>
+          </div>
+          <div class="mb-5 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+            <label class="sr-only" for="transaction-search-input">Search transactions</label>
+            <input
+              autocomplete="off"
+              class="w-full rounded-2xl bg-surface-container-low px-4 py-3 text-sm text-on-background outline-none ring-1 ring-transparent transition focus:ring-primary-container placeholder:text-outline"
+              id="transaction-search-input"
+              placeholder="Search transactions"
+              type="search"
+            />
+            <label class="sr-only" for="transaction-type-filter">Transaction type</label>
+            <select
+              class="rounded-2xl bg-surface-container-low px-4 py-3 text-sm font-semibold text-on-surface outline-none ring-1 ring-transparent transition focus:ring-primary-container"
+              id="transaction-type-filter"
+            >
+              <option value="all">All types</option>
+              <option value="expense">Expenses</option>
+              <option value="income">Income</option>
+            </select>
+            <label class="sr-only" for="transaction-category-filter">Category</label>
+            <select
+              class="rounded-2xl bg-surface-container-low px-4 py-3 text-sm font-semibold text-on-surface outline-none ring-1 ring-transparent transition focus:ring-primary-container"
+              id="transaction-category-filter"
+            >
+              <option value="all">All categories</option>
+              <option value="food">Food</option>
+              <option value="transport">Transport</option>
+              <option value="entertainment">Fun</option>
+              <option value="shopping">Shopping</option>
+              <option value="bills">Bills</option>
+              <option value="other">Other</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div class="mb-6 grid grid-cols-3 gap-3">
+            <div class="rounded-2xl bg-surface-container-low p-3">
+              <span class="block text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Spent</span>
+              <span class="mt-1 block text-sm font-bold text-error" id="txn-summary-spent">₹0</span>
+            </div>
+            <div class="rounded-2xl bg-surface-container-low p-3">
+              <span class="block text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Income</span>
+              <span class="mt-1 block text-sm font-bold text-primary-container" id="txn-summary-income">₹0</span>
+            </div>
+            <div class="rounded-2xl bg-surface-container-low p-3">
+              <span class="block text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Shown</span>
+              <span class="mt-1 block text-sm font-bold text-on-background" id="txn-summary-count">0</span>
+            </div>
           </div>
           <div id="all-transactions-list"></div>
         </section>
@@ -744,13 +791,41 @@
           <!-- Modal Header -->
 
           <div class="flex justify-between items-center mb-4 md:mb-6">
-            <h2 class="font-h3 text-h3 text-on-background">Log Expense</h2>
+            <h2 class="font-h3 text-h3 text-on-background" id="expense-modal-title">Log Expense</h2>
             <button
               class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
               id="expense-modal-close"
             >
               <span class="material-symbols-outlined text-xl">close</span>
             </button>
+          </div>
+
+          <!-- Transaction Type -->
+
+          <div class="mb-4 md:mb-6">
+            <div
+              aria-label="Transaction type"
+              class="grid grid-cols-2 gap-1 rounded-2xl bg-surface-container-low p-1"
+            >
+              <button
+                aria-pressed="true"
+                class="transaction-kind-toggle is-active"
+                data-transaction-kind="expense"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-lg">remove_circle</span>
+                Expense
+              </button>
+              <button
+                aria-pressed="false"
+                class="transaction-kind-toggle"
+                data-transaction-kind="income"
+                type="button"
+              >
+                <span class="material-symbols-outlined text-lg">add_circle</span>
+                Income
+              </button>
+            </div>
           </div>
 
           <!-- Amount Input -->
@@ -790,7 +865,7 @@
 
           <!-- Category Selection -->
 
-          <div class="mb-4 md:mb-6">
+          <div class="mb-4 md:mb-6" id="expense-category-section">
             <label
               class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2 block"
               >Category</label
@@ -961,9 +1036,11 @@
 
           <!-- Title -->
 
-          <h2 class="font-h1 text-h1 text-on-surface mb-1">Expense Logged</h2>
-          <p class="font-body-md text-body-md text-outline mb-5">
-            Your records have been updated beautifully.
+          <h2 class="font-h1 text-h1 text-on-surface mb-1" id="expense-success-title">
+            Expense Logged
+          </h2>
+          <p class="font-body-md text-body-md text-outline mb-5" id="expense-success-copy">
+            Your records have been updated.
           </p>
 
           <!-- Transaction Summary Card -->

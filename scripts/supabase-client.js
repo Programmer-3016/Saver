@@ -205,7 +205,8 @@
 
   function rowToTransaction(row) {
     const occurredAt = row?.occurred_at ? new Date(row.occurred_at).getTime() : Date.now();
-    const category = row?.kind === "income" ? "income" : row?.category || "other";
+    const kind = row?.kind === "income" ? "income" : "expense";
+    const category = kind === "income" ? "income" : row?.category || "other";
 
     return {
       remoteId: row.id,
@@ -213,6 +214,7 @@
       budgetCycleId: row.budget_cycle_id || null,
       amount: numericValue(row.amount),
       desc: row.description || "",
+      kind,
       category,
       source: row.payment_source || "savings",
       ts: Number.isFinite(occurredAt) ? occurredAt : Date.now(),
@@ -220,8 +222,9 @@
   }
 
   function transactionToRow(userId, transaction, budgetCycleId) {
-    const category = transaction.category || "other";
-    const kind = category === "income" ? "income" : "expense";
+    const kind =
+      transaction.kind === "income" || transaction.category === "income" ? "income" : "expense";
+    const category = kind === "income" ? "income" : transaction.category || "other";
 
     return {
       user_id: userId,
@@ -246,6 +249,7 @@
       "draft",
       transaction.ts || "",
       transaction.amount || "",
+      transaction.kind || "",
       transaction.category || "",
       transaction.source || "",
       transaction.desc || "",
