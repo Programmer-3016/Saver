@@ -20,6 +20,10 @@
     "reset-password.html": "/reset-password",
   };
   const allowedMoneyModes = new Set(["fixed", "irregular", "allowance"]);
+  const transactionSelectColumns =
+    "id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at, client_txn_id";
+  const legacyTransactionSelectColumns =
+    "id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at";
 
   function shouldUseCleanRoutes() {
     return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
@@ -106,6 +110,31 @@
 
   function isMissingAppSchema(error) {
     return error?.code === "42P01" || error?.code === "PGRST205";
+  }
+
+  function isMissingClientTxnColumn(error) {
+    const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`;
+    return error?.code === "42703" || error?.code === "PGRST204" || message.includes("client_txn_id");
+  }
+
+  function cleanClientTxnId(value) {
+    return cleanProfileText(value).slice(0, 120);
+  }
+
+  function generatedClientTxnId() {
+    if (window.createClientTxnId) return window.createClientTxnId();
+    return `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function withClientTxnId(transaction = {}) {
+    const existingClientTxnId = cleanClientTxnId(transaction.clientTxnId || transaction.id);
+    const clientTxnId = existingClientTxnId || generatedClientTxnId();
+
+    return {
+      ...transaction,
+      id: transaction.id || clientTxnId,
+      clientTxnId,
+    };
   }
 
   function numericValue(value) {
@@ -255,8 +284,9 @@
     const occurredAt = row?.occurred_at ? new Date(row.occurred_at).getTime() : Date.now();
     const kind = row?.kind === "income" ? "income" : "expense";
     const category = kind === "income" ? "income" : row?.category || "other";
+    const clientTxnId = cleanClientTxnId(row?.client_txn_id);
 
-    return {
+    const transaction = {
       remoteId: row.id,
       id: row.id,
       budgetCycleId: row.budget_cycle_id || null,
@@ -266,15 +296,23 @@
       category,
       source: row.payment_source || "savings",
       ts: Number.isFinite(occurredAt) ? occurredAt : Date.now(),
+      syncStatus: "synced",
     };
+
+    if (clientTxnId) transaction.clientTxnId = clientTxnId;
+
+    return transaction;
   }
 
   function transactionToRow(userId, transaction, budgetCycleId) {
     const kind =
       transaction.kind === "income" || transaction.category === "income" ? "income" : "expense";
     const category = kind === "income" ? "income" : transaction.category || "other";
+    const clientTxnId = cleanClientTxnId(
+      transaction.clientTxnId || (!transaction.remoteId ? transaction.id : ""),
+    );
 
-    return {
+    const payload = {
       user_id: userId,
       budget_cycle_id: budgetCycleId || transaction.budgetCycleId || null,
       kind,
@@ -287,14 +325,18 @@
         source: "saver_dashboard",
       },
     };
+
+    if (clientTxnId) {
+      payload.client_txn_id = clientTxnId;
+      payload.metadata.clientTxnId = clientTxnId;
+    }
+
+    return payload;
   }
 
-  function transactionIdentity(transaction) {
-    if (!transaction) return "";
-    if (transaction.remoteId) return `remote:${transaction.remoteId}`;
-    if (transaction.id) return `local:${transaction.id}`;
+  function transactionContentKey(transaction) {
     return [
-      "draft",
+      "content",
       transaction.ts || "",
       transaction.amount || "",
       transaction.kind || "",
@@ -304,14 +346,26 @@
     ].join(":");
   }
 
+  function transactionKeys(transaction) {
+    if (!transaction) return [];
+
+    const keys = [];
+    if (transaction.remoteId) keys.push(`remote:${transaction.remoteId}`);
+    if (transaction.clientTxnId) keys.push(`client:${transaction.clientTxnId}`);
+    if (!transaction.remoteId && transaction.id) keys.push(`local:${transaction.id}`);
+    keys.push(transactionContentKey(transaction));
+    return keys;
+  }
+
   function mergeTransactions(primary = [], secondary = []) {
     const merged = [];
     const seen = new Set();
 
     [...primary, ...secondary].forEach((transaction) => {
-      const key = transactionIdentity(transaction);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
+      const keys = transactionKeys(transaction);
+      if (keys.length === 0 || keys.some((key) => seen.has(key))) return;
+
+      keys.forEach((key) => seen.add(key));
       merged.push(transaction);
     });
 
@@ -469,12 +523,21 @@
 
     persistUserProfile(user);
 
-    const { data, error } = await api.client
+    let { data, error } = await api.client
       .from("transactions")
-      .select("id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at")
+      .select(transactionSelectColumns)
       .eq("user_id", user.id)
       .order("occurred_at", { ascending: true })
       .limit(500);
+
+    if (error && isMissingClientTxnColumn(error)) {
+      ({ data, error } = await api.client
+        .from("transactions")
+        .select(legacyTransactionSelectColumns)
+        .eq("user_id", user.id)
+        .order("occurred_at", { ascending: true })
+        .limit(500));
+    }
 
     if (error) {
       if (isMissingAppSchema(error)) return [];
@@ -571,6 +634,24 @@
     };
   };
 
+  async function findTransactionByClientId(userId, clientTxnId) {
+    if (!clientTxnId) return null;
+
+    const { data, error } = await api.client
+      .from("transactions")
+      .select(transactionSelectColumns)
+      .eq("user_id", userId)
+      .eq("client_txn_id", clientTxnId)
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingAppSchema(error) || isMissingClientTxnColumn(error)) return null;
+      throw error;
+    }
+
+    return data ? rowToTransaction(data) : null;
+  }
+
   api.addTransaction = async function (transaction, session, budgetCycleId) {
     const activeSession = session || (await api.getSession());
     const user = activeSession?.user;
@@ -590,20 +671,45 @@
       }
     }
 
-    const payload = transactionToRow(user.id, transaction || {}, activeBudgetCycleId);
+    const transactionDraft = transaction?.remoteId ? transaction || {} : withClientTxnId(transaction || {});
+    const payload = transactionToRow(user.id, transactionDraft, activeBudgetCycleId);
+    const existingTransaction = await findTransactionByClientId(user.id, payload.client_txn_id);
 
-    const { data, error } = await api.client
+    if (existingTransaction) return existingTransaction;
+
+    let { data, error } = await api.client
       .from("transactions")
       .insert(payload)
-      .select("id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at")
+      .select(transactionSelectColumns)
       .maybeSingle();
+
+    if (error?.code === "23505" && payload.client_txn_id) {
+      const existingAfterConflict = await findTransactionByClientId(user.id, payload.client_txn_id);
+      if (existingAfterConflict) return existingAfterConflict;
+    }
+
+    if (error && isMissingClientTxnColumn(error)) {
+      const legacyPayload = { ...payload };
+      delete legacyPayload.client_txn_id;
+
+      ({ data, error } = await api.client
+        .from("transactions")
+        .insert(legacyPayload)
+        .select(legacyTransactionSelectColumns)
+        .maybeSingle());
+    }
 
     if (error) {
       if (isMissingAppSchema(error)) return null;
       throw error;
     }
 
-    return data ? rowToTransaction(data) : null;
+    const savedTransaction = data ? rowToTransaction(data) : null;
+    if (savedTransaction && payload.client_txn_id && !savedTransaction.clientTxnId) {
+      savedTransaction.clientTxnId = payload.client_txn_id;
+    }
+
+    return savedTransaction;
   };
 
   api.syncLocalTransactions = async function (transactions = [], session, budgetCycleId) {
@@ -622,25 +728,43 @@
 
     for (const transaction of transactions) {
       if (!transaction || transaction.remoteId) {
-        syncedTransactions.push(transaction);
+        syncedTransactions.push(transaction ? { ...transaction, syncStatus: "synced" } : transaction);
         continue;
       }
 
+      const syncCandidate = withClientTxnId({ ...transaction, syncStatus: "pending" });
+      if (
+        syncCandidate.id !== transaction.id ||
+        syncCandidate.clientTxnId !== transaction.clientTxnId ||
+        syncCandidate.syncStatus !== transaction.syncStatus
+      ) {
+        changed = true;
+      }
+
       try {
-        const remoteTransaction = await api.addTransaction(transaction, activeSession, budgetCycleId);
+        const remoteTransaction = await api.addTransaction(syncCandidate, activeSession, budgetCycleId);
 
         if (remoteTransaction) {
-          syncedTransactions.push({ ...transaction, ...remoteTransaction });
+          syncedTransactions.push({
+            ...syncCandidate,
+            ...remoteTransaction,
+            clientTxnId: remoteTransaction.clientTxnId || syncCandidate.clientTxnId,
+            syncStatus: "synced",
+          });
           changed = true;
         } else {
-          syncedTransactions.push(transaction);
+          syncedTransactions.push(syncCandidate);
         }
       } catch (error) {
         if (isMissingAppSchema(error)) return { transactions, synced: false };
 
         failed += 1;
         console.error("Could not sync local transaction", error);
-        syncedTransactions.push(transaction);
+        syncedTransactions.push({
+          ...syncCandidate,
+          syncStatus: "failed",
+          syncError: error?.message || "Remote sync failed",
+        });
       }
     }
 

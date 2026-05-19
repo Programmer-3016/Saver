@@ -132,6 +132,7 @@ create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   budget_cycle_id uuid references public.budget_cycles(id) on delete set null,
+  client_txn_id text,
   kind text not null default 'expense' check (kind in ('expense', 'income')),
   amount numeric(12, 2) not null check (amount > 0),
   category text not null default 'other',
@@ -142,6 +143,9 @@ create table if not exists public.transactions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.transactions
+add column if not exists client_txn_id text;
 
 create table if not exists public.savings_goals (
   id uuid primary key default gen_random_uuid(),
@@ -184,6 +188,10 @@ on public.transactions (budget_cycle_id);
 
 create index if not exists transactions_user_id_category_idx
 on public.transactions (user_id, category);
+
+create unique index if not exists transactions_user_id_client_txn_id_idx
+on public.transactions (user_id, client_txn_id)
+where client_txn_id is not null;
 
 create index if not exists savings_goals_user_id_idx
 on public.savings_goals (user_id);

@@ -132,6 +132,23 @@ function clearSaverLocalData() {
   } catch (_) {}
 }
 
+function createClientTxnId() {
+  try {
+    if (window.crypto?.randomUUID) return `txn_${window.crypto.randomUUID()}`;
+  } catch (_) {}
+
+  return `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function cleanTransactionText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizedTransactionSyncStatus(txn, hasRemoteId) {
+  if (hasRemoteId) return "synced";
+  return txn?.syncStatus === "failed" ? "failed" : "pending";
+}
+
 // Transaction storage
 // Expenses/income are stored in localStorage as an array of objects.
 
@@ -155,6 +172,10 @@ function loadTransactions() {
             ? txn.category
             : "other";
 
+        const remoteId = cleanTransactionText(txn.remoteId);
+        const id = cleanTransactionText(txn.id);
+        const clientTxnId = cleanTransactionText(txn.clientTxnId) || (!remoteId ? id : "");
+        const syncStatus = normalizedTransactionSyncStatus(txn, Boolean(remoteId));
         const normalized = {
           amount,
           desc: typeof txn.desc === "string" ? txn.desc : "",
@@ -162,12 +183,17 @@ function loadTransactions() {
           category,
           source: typeof txn.source === "string" ? txn.source : "savings",
           ts,
+          syncStatus,
         };
 
-        if (typeof txn.remoteId === "string") normalized.remoteId = txn.remoteId;
-        if (typeof txn.id === "string") normalized.id = txn.id;
+        if (remoteId) normalized.remoteId = remoteId;
+        if (id) normalized.id = id;
+        if (clientTxnId) normalized.clientTxnId = clientTxnId;
         if (typeof txn.budgetCycleId === "string") {
           normalized.budgetCycleId = txn.budgetCycleId;
+        }
+        if (syncStatus === "failed" && typeof txn.syncError === "string") {
+          normalized.syncError = txn.syncError;
         }
 
         return normalized;

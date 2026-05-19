@@ -1377,7 +1377,13 @@ async function submitExpense() {
   const submitBtn = $("#expense-submit-btn");
   const originalSubmitText = submitBtn?.textContent || (kind === "income" ? "Add Income" : "Add Expense");
   const catConfig = categoryConfig[category] || categoryConfig.other;
+  const clientTxnId =
+    typeof createClientTxnId === "function"
+      ? createClientTxnId()
+      : `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const localTxn = {
+    id: clientTxnId,
+    clientTxnId,
     amount: modalState.amount,
     desc: modalState.desc || catConfig.label || (kind === "income" ? "Income" : "Expense"),
     kind,
@@ -1385,6 +1391,7 @@ async function submitExpense() {
     source: modalState.source,
     ts: Date.now(),
     budgetCycleId: state.activeBudgetCycleId || null,
+    syncStatus: "pending",
   };
 
   if (submitBtn) {
@@ -1396,12 +1403,28 @@ async function submitExpense() {
     let savedTxn = localTxn;
 
     if (window.saverSupabase?.isConfigured && window.saverSupabase?.addTransaction) {
-      const remoteTxn = await window.saverSupabase.addTransaction(
-        localTxn,
-        window.currentSaverSession || null,
-        state.activeBudgetCycleId || null,
-      );
-      if (remoteTxn) savedTxn = { ...localTxn, ...remoteTxn };
+      try {
+        const remoteTxn = await window.saverSupabase.addTransaction(
+          localTxn,
+          window.currentSaverSession || null,
+          state.activeBudgetCycleId || null,
+        );
+        if (remoteTxn) {
+          savedTxn = {
+            ...localTxn,
+            ...remoteTxn,
+            clientTxnId: remoteTxn.clientTxnId || localTxn.clientTxnId,
+            syncStatus: "synced",
+          };
+        }
+      } catch (error) {
+        console.error("Could not sync transaction immediately", error);
+        savedTxn = {
+          ...localTxn,
+          syncStatus: "failed",
+          syncError: error?.message || "Remote sync failed",
+        };
+      }
     }
 
     if (savedTxn.budgetCycleId && savedTxn.budgetCycleId !== state.activeBudgetCycleId) {
@@ -1526,20 +1549,24 @@ function mergeTransactionLists(remoteTransactions = [], localTransactions = []) 
   [...remoteTransactions, ...localTransactions].forEach((transaction) => {
     if (!transaction) return;
 
-    const key =
-      transaction.remoteId ||
-      transaction.id ||
-      [
-        transaction.ts,
-        transaction.amount,
-        transaction.kind || "",
-        transaction.category,
-        transaction.source,
-        transaction.desc,
-      ].join(":");
+    const contentKey = [
+      "content",
+      transaction.ts || "",
+      transaction.amount || "",
+      transaction.kind || "",
+      transaction.category || "",
+      transaction.source || "",
+      transaction.desc || "",
+    ].join(":");
+    const keys = [
+      transaction.remoteId ? `remote:${transaction.remoteId}` : "",
+      transaction.clientTxnId ? `client:${transaction.clientTxnId}` : "",
+      !transaction.remoteId && transaction.id ? `local:${transaction.id}` : "",
+      contentKey,
+    ].filter(Boolean);
 
-    if (seen.has(key)) return;
-    seen.add(key);
+    if (keys.some((key) => seen.has(key))) return;
+    keys.forEach((key) => seen.add(key));
     merged.push(transaction);
   });
 

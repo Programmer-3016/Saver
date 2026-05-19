@@ -61,6 +61,8 @@ alter table public.your_table enable row level security;
 
 Onboarding and the dashboard now use these tables through `scripts/supabase-client.js`. Local storage remains a per-user cache/fallback, but Supabase is the source of truth for active setup rows and transaction history after login. When an older browser has valid user-scoped local transactions without `remoteId`, the dashboard syncs those rows into Supabase on the next authenticated load and keeps the local cache aligned with the returned remote IDs.
 
+`transactions.client_txn_id` is the idempotency key for dashboard writes. It lets the browser retry a failed add-expense request without creating duplicate rows. If these tables already exist, rerun `supabase/schema.sql` in the SQL Editor to apply the `client_txn_id` column and unique index. The frontend keeps a legacy fallback for older schemas, but database-level duplicate protection starts only after that SQL is applied.
+
 If users completed onboarding before `budget_cycles` and `savings_goals` existed, they do not need to create a fresh account. The dashboard repairs missing active setup rows from `profiles.onboarding_data` on the next login. For a manual bulk repair, run `supabase/backfill-existing-users.sql`; it is idempotent and only inserts rows where a completed profile has no active budget cycle or saving goal.
 
 ## Email Delivery Notes
