@@ -386,6 +386,8 @@
     saveAppSetup: async () => null,
     loadTransactions: async () => [],
     addTransaction: async () => null,
+    updateTransaction: async () => null,
+    deleteTransaction: async () => false,
     syncLocalTransactions: async (transactions = []) => ({ transactions, synced: false, failed: 0 }),
     mergeTransactions,
     resetAppData: async () => null,
@@ -710,6 +712,95 @@
     }
 
     return savedTransaction;
+  };
+
+  function filterTransactionMutation(query, userId, transaction) {
+    if (transaction?.remoteId) {
+      return query.eq("user_id", userId).eq("id", transaction.remoteId);
+    }
+
+    if (transaction?.clientTxnId) {
+      return query.eq("user_id", userId).eq("client_txn_id", transaction.clientTxnId);
+    }
+
+    return null;
+  }
+
+  api.updateTransaction = async function (transaction, session, budgetCycleId) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id || !transaction) return null;
+
+    persistUserProfile(user);
+
+    const activeBudgetCycleId =
+      budgetCycleId || transaction.budgetCycleId || (await getActiveBudgetCycle(user.id))?.id || null;
+    const payload = transactionToRow(user.id, transaction, activeBudgetCycleId);
+    const canMutate = Boolean(transaction.remoteId || transaction.clientTxnId);
+
+    if (!canMutate) return null;
+
+    delete payload.id;
+    delete payload.user_id;
+
+    let { data, error } = await filterTransactionMutation(
+      api.client.from("transactions").update(payload),
+      user.id,
+      transaction,
+    )
+      .select(transactionSelectColumns)
+      .maybeSingle();
+
+    if (error && isMissingClientTxnColumn(error)) {
+      const legacyPayload = { ...payload };
+      delete legacyPayload.client_txn_id;
+
+      ({ data, error } = await filterTransactionMutation(
+        api.client.from("transactions").update(legacyPayload),
+        user.id,
+        transaction,
+      )
+        .select(legacyTransactionSelectColumns)
+        .maybeSingle());
+    }
+
+    if (error) {
+      if (isMissingAppSchema(error)) return null;
+      throw error;
+    }
+
+    const savedTransaction = data ? rowToTransaction(data) : null;
+    if (savedTransaction && transaction.clientTxnId && !savedTransaction.clientTxnId) {
+      savedTransaction.clientTxnId = transaction.clientTxnId;
+    }
+
+    return savedTransaction;
+  };
+
+  api.deleteTransaction = async function (transaction, session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id || !transaction) return false;
+
+    persistUserProfile(user);
+
+    const canMutate = Boolean(transaction.remoteId || transaction.clientTxnId);
+    if (!canMutate) return false;
+
+    const { error } = await filterTransactionMutation(
+      api.client.from("transactions").delete(),
+      user.id,
+      transaction,
+    );
+
+    if (error) {
+      if (isMissingAppSchema(error)) return false;
+      throw error;
+    }
+
+    return true;
   };
 
   api.syncLocalTransactions = async function (transactions = [], session, budgetCycleId) {

@@ -757,6 +757,10 @@ function buildTransactionHTML(t, index) {
   const description = escapeHTML(t.desc || cat.label);
   const categoryLabel = escapeHTML(cat.label);
   const categoryIcon = escapeHTML(cat.icon);
+  const transactionId = escapeHTML(transactionLookupKey(t));
+  const syncBadge = t.syncStatus === "failed"
+    ? '<span class="text-[10px] font-semibold uppercase tracking-wider text-red-600">Sync pending</span>'
+    : "";
 
   // Alternating icon background for visual rhythm
 
@@ -775,7 +779,7 @@ function buildTransactionHTML(t, index) {
     : "text-slate-500 uppercase tracking-wider";
 
   return `
-    <div class="flex items-center justify-between group hover:bg-surface-container-low p-2 -m-2 rounded-xl transition-colors">
+    <div class="flex items-center justify-between gap-3 group hover:bg-surface-container-low p-2 -m-2 rounded-xl transition-colors">
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 ${iconBg} rounded-full flex items-center justify-center ${iconColor}">
           <span class="material-symbols-outlined">${categoryIcon}</span>
@@ -783,13 +787,58 @@ function buildTransactionHTML(t, index) {
         <div>
           <p class="font-bold text-primary-container">${description}</p>
           <p class="text-xs ${categoryColor}">${categoryLabel}</p>
+          ${syncBadge}
         </div>
       </div>
-      <div class="text-right">
-        <p class="font-bold ${amountColor}">${amountPrefix}${formatCurrency(t.amount)}</p>
-        <p class="text-xs text-slate-400">${relativeDate(t.ts)}</p>
+      <div class="flex items-center gap-2">
+        <div class="text-right">
+          <p class="font-bold ${amountColor}">${amountPrefix}${formatCurrency(t.amount)}</p>
+          <p class="text-xs text-slate-400">${relativeDate(t.ts)}</p>
+        </div>
+        <div class="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+          <button
+            class="w-9 h-9 rounded-full border border-outline-variant/40 text-primary-container hover:bg-primary-fixed flex items-center justify-center"
+            type="button"
+            aria-label="Edit transaction"
+            data-transaction-action="edit"
+            data-transaction-id="${transactionId}"
+          >
+            <span class="material-symbols-outlined text-[18px]">edit</span>
+          </button>
+          <button
+            class="w-9 h-9 rounded-full border border-red-100 text-red-600 hover:bg-red-50 flex items-center justify-center"
+            type="button"
+            aria-label="Delete transaction"
+            data-transaction-action="delete"
+            data-transaction-id="${transactionId}"
+          >
+            <span class="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
       </div>
     </div>`;
+}
+
+function transactionLookupKey(transaction) {
+  if (!transaction) return "";
+  return transaction.remoteId || transaction.clientTxnId || transaction.id || transactionContentKey(transaction);
+}
+
+function transactionContentKey(transaction) {
+  return [
+    "content",
+    transaction.ts || "",
+    transaction.amount || "",
+    transaction.kind || "",
+    transaction.category || "",
+    transaction.source || "",
+    transaction.desc || "",
+  ].join(":");
+}
+
+function findTransactionIndex(txns, lookupKey) {
+  if (!lookupKey) return -1;
+  return txns.findIndex((txn) => transactionLookupKey(txn) === lookupKey);
 }
 
 function filterTransactions(txns) {
@@ -857,6 +906,79 @@ function renderAllTransactions(txns) {
     .reverse()
     .map((t, i) => buildTransactionHTML(t, i))
     .join("")}</div>`;
+}
+
+function findTransactionByKey(lookupKey) {
+  const txns = loadTransactions();
+  const index = findTransactionIndex(txns, lookupKey);
+
+  if (index < 0) return { txns, index, transaction: null };
+
+  return { txns, index, transaction: txns[index] };
+}
+
+function editTransactionByKey(lookupKey) {
+  const { transaction } = findTransactionByKey(lookupKey);
+
+  if (!transaction) {
+    alert("This transaction could not be found. Please refresh and try again.");
+    return;
+  }
+
+  openExpenseModal(null, { transaction });
+}
+
+async function deleteTransactionByKey(lookupKey) {
+  const { txns, index, transaction } = findTransactionByKey(lookupKey);
+
+  if (!transaction || index < 0) {
+    alert("This transaction could not be found. Please refresh and try again.");
+    return;
+  }
+
+  if (!confirm("Delete this transaction? This cannot be undone.")) return;
+
+  const canDeleteRemote = Boolean(transaction.remoteId || transaction.clientTxnId);
+
+  if (canDeleteRemote && window.saverSupabase?.isConfigured && window.saverSupabase?.deleteTransaction) {
+    try {
+      const deleted = await window.saverSupabase.deleteTransaction(
+        transaction,
+        window.currentSaverSession || null,
+      );
+
+      if (!deleted) {
+        alert("We could not delete this transaction online. Please try again.");
+        return;
+      }
+    } catch (error) {
+      console.error("Could not delete transaction remotely", error);
+      alert("We could not delete this transaction online. Please try again.");
+      return;
+    }
+  }
+
+  txns.splice(index, 1);
+  saveTransactions(txns);
+  populateDashboard();
+}
+
+function handleTransactionAction(event) {
+  const actionBtn = event.target.closest("[data-transaction-action]");
+
+  if (!actionBtn) return;
+
+  const action = actionBtn.dataset.transactionAction;
+  const transactionId = actionBtn.dataset.transactionId || "";
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (action === "edit") {
+    editTransactionByKey(transactionId);
+  } else if (action === "delete") {
+    deleteTransactionByKey(transactionId);
+  }
 }
 
 // Profile tab
@@ -1054,6 +1176,8 @@ function initDashboardEvents() {
     });
   }
 
+  $("#all-transactions-list")?.addEventListener("click", handleTransactionAction);
+
   // Share Achievement button
 
   const shareBtn = $("#share-achievement-btn");
@@ -1202,6 +1326,9 @@ const modalState = {
   category: "",
   source: "savings",
   dailyLimit: 0,
+  mode: "create",
+  editingKey: "",
+  originalTransaction: null,
 };
 
 // Saved scroll position — used to restore after closing the modal
@@ -1262,8 +1389,14 @@ function setTransactionKind(kind) {
   const categorySection = $("#expense-category-section");
   const descInput = $("#expense-desc-input");
 
-  if (title) title.textContent = isIncome ? "Log Income" : "Log Expense";
-  if (submitBtn) submitBtn.textContent = isIncome ? "Add Income" : "Add Expense";
+  const actionLabel = modalState.mode === "edit" ? "Save" : "Add";
+
+  if (title) {
+    title.textContent = modalState.mode === "edit"
+      ? `Edit ${isIncome ? "Income" : "Expense"}`
+      : `Log ${isIncome ? "Income" : "Expense"}`;
+  }
+  if (submitBtn) submitBtn.textContent = `${actionLabel} ${isIncome ? "Income" : "Expense"}`;
   if (categorySection) categorySection.classList.toggle("hidden", isIncome);
   if (descInput) descInput.placeholder = isIncome ? "Where did this come from?" : "What was this for?";
 
@@ -1271,17 +1404,28 @@ function setTransactionKind(kind) {
   validateExpenseForm();
 }
 
-function openExpenseModal(preCategory) {
+function openExpenseModal(preCategory, options = {}) {
   const modal = $("#expense-modal");
   if (!modal) return;
 
-  // Reset form
+  const editingTransaction = options.transaction || null;
 
-  modalState.amount = 0;
-  modalState.desc = "";
-  modalState.kind = preCategory === "income" ? "income" : "expense";
-  modalState.category = modalState.kind === "income" ? "income" : preCategory || "";
-  modalState.source = "savings";
+  modalState.mode = editingTransaction ? "edit" : "create";
+  modalState.editingKey = editingTransaction ? transactionLookupKey(editingTransaction) : "";
+  modalState.originalTransaction = editingTransaction ? { ...editingTransaction } : null;
+  modalState.amount = editingTransaction ? Number(editingTransaction.amount) || 0 : 0;
+  modalState.desc = editingTransaction?.desc || "";
+  modalState.kind = editingTransaction
+    ? transactionKind(editingTransaction)
+    : preCategory === "income"
+      ? "income"
+      : "expense";
+  modalState.category = editingTransaction
+    ? editingTransaction.category || (modalState.kind === "income" ? "income" : "")
+    : modalState.kind === "income"
+      ? "income"
+      : preCategory || "";
+  modalState.source = editingTransaction?.source || "savings";
 
   // Cache current rollover daily limit for impulse guard
 
@@ -1291,22 +1435,22 @@ function openExpenseModal(preCategory) {
   const amtInput = $("#expense-amount-input");
   const descInput = $("#expense-desc-input");
 
-  if (amtInput) amtInput.value = "";
-  if (descInput) descInput.value = "";
+  if (amtInput) amtInput.value = modalState.amount ? String(Math.round(modalState.amount)) : "";
+  if (descInput) descInput.value = modalState.desc;
 
   // Pre-select category if provided
 
   $$("[data-modal-cat]").forEach((c) => {
     c.classList.toggle(
       "is-active",
-      modalState.kind === "expense" && c.dataset.modalCat === preCategory,
+      modalState.kind === "expense" && c.dataset.modalCat === modalState.category,
     );
   });
 
   // Reset payment source selection
 
   $$(".payment-source").forEach((btn) => {
-    const isDefault = btn.dataset.source === "savings";
+    const isDefault = btn.dataset.source === modalState.source;
     btn.classList.toggle("is-active", isDefault);
     btn.classList.toggle("bg-surface-container-high", isDefault);
     btn.classList.toggle("border-outline-variant/30", isDefault);
@@ -1330,6 +1474,9 @@ function closeExpenseModal() {
   if (modal) modal.classList.add("hidden");
   unlockBodyScroll();
   showExpenseFormView();
+  modalState.mode = "create";
+  modalState.editingKey = "";
+  modalState.originalTransaction = null;
   populateDashboard();
 }
 
@@ -1375,24 +1522,30 @@ async function submitExpense() {
   if (modalState.amount <= 0 || !category) return;
 
   const submitBtn = $("#expense-submit-btn");
-  const originalSubmitText = submitBtn?.textContent || (kind === "income" ? "Add Income" : "Add Expense");
+  const actionLabel = modalState.mode === "edit" ? "Save" : "Add";
+  const originalSubmitText = submitBtn?.textContent || `${actionLabel} ${kind === "income" ? "Income" : "Expense"}`;
   const catConfig = categoryConfig[category] || categoryConfig.other;
-  const clientTxnId =
+  const originalTxn = modalState.originalTransaction || {};
+  const generatedClientTxnId =
     typeof createClientTxnId === "function"
       ? createClientTxnId()
       : `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const clientTxnId = originalTxn.clientTxnId || originalTxn.id || generatedClientTxnId;
   const localTxn = {
-    id: clientTxnId,
+    id: originalTxn.id || clientTxnId,
     clientTxnId,
+    remoteId: originalTxn.remoteId,
     amount: modalState.amount,
     desc: modalState.desc || catConfig.label || (kind === "income" ? "Income" : "Expense"),
     kind,
     category,
     source: modalState.source,
-    ts: Date.now(),
-    budgetCycleId: state.activeBudgetCycleId || null,
-    syncStatus: "pending",
+    ts: originalTxn.ts || Date.now(),
+    budgetCycleId: originalTxn.budgetCycleId || state.activeBudgetCycleId || null,
+    syncStatus: originalTxn.remoteId ? "synced" : "pending",
   };
+
+  if (!localTxn.remoteId) delete localTxn.remoteId;
 
   if (submitBtn) {
     submitBtn.disabled = true;
@@ -1402,7 +1555,41 @@ async function submitExpense() {
   try {
     let savedTxn = localTxn;
 
-    if (window.saverSupabase?.isConfigured && window.saverSupabase?.addTransaction) {
+    if (
+      modalState.mode === "edit" &&
+      window.saverSupabase?.isConfigured &&
+      window.saverSupabase?.updateTransaction
+    ) {
+      try {
+        const remoteTxn = await window.saverSupabase.updateTransaction(
+          localTxn,
+          window.currentSaverSession || null,
+          state.activeBudgetCycleId || null,
+        );
+
+        if (remoteTxn) {
+          savedTxn = {
+            ...localTxn,
+            ...remoteTxn,
+            clientTxnId: remoteTxn.clientTxnId || localTxn.clientTxnId,
+            syncStatus: "synced",
+          };
+        } else {
+          savedTxn = {
+            ...localTxn,
+            syncStatus: "failed",
+            syncError: "Remote update did not return a transaction",
+          };
+        }
+      } catch (error) {
+        console.error("Could not update transaction immediately", error);
+        savedTxn = {
+          ...localTxn,
+          syncStatus: "failed",
+          syncError: error?.message || "Remote update failed",
+        };
+      }
+    } else if (window.saverSupabase?.isConfigured && window.saverSupabase?.addTransaction) {
       try {
         const remoteTxn = await window.saverSupabase.addTransaction(
           localTxn,
@@ -1433,13 +1620,23 @@ async function submitExpense() {
     }
 
     const txns = loadTransactions();
-    txns.push(savedTxn);
+    if (modalState.mode === "edit") {
+      const editIndex = findTransactionIndex(txns, modalState.editingKey);
+
+      if (editIndex >= 0) {
+        txns[editIndex] = savedTxn;
+      } else {
+        txns.push(savedTxn);
+      }
+    } else {
+      txns.push(savedTxn);
+    }
 
     saveTransactions(txns);
 
     // Check for overspend alert after saving
 
-    if (isExpenseTransaction(savedTxn)) {
+    if (modalState.mode !== "edit" && isExpenseTransaction(savedTxn)) {
       const today = startOfDay(new Date());
 
       const todayTotal = txns
@@ -1453,7 +1650,12 @@ async function submitExpense() {
 
     // Show success screen instead of closing
 
-    showExpenseSuccessView();
+    if (modalState.mode === "edit") {
+      closeExpenseModal();
+      populateDashboard();
+    } else {
+      showExpenseSuccessView();
+    }
   } catch (error) {
     console.error("Could not save transaction", error);
     alert("We could not save this transaction. Please try again.");
