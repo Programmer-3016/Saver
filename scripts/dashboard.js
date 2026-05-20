@@ -811,24 +811,29 @@ function renderGoalsList(goals, activeGoal) {
             : "";
 
       return `
-        <div class="rounded-2xl border ${isActive ? "border-primary-container/30 bg-primary-container/5" : "border-outline-variant/30 bg-surface-container-low"} p-3" data-goal-row="${escapeHTML(key)}">
+        <div class="bg-white border ${isActive ? "border-emerald-700/30 shadow-soft-green bg-emerald-50/10" : "border-outline-variant/20 bg-white"} rounded-3xl p-5 flex flex-col gap-4" data-goal-row="${escapeHTML(key)}">
           <div class="flex items-start justify-between gap-3">
-            <button type="button" class="min-w-0 flex-1 text-left" data-goal-action="activate" data-goal-key="${escapeHTML(key)}">
-              <span class="block truncate text-sm font-bold text-on-background">${escapeHTML(goal.title)}</span>
-              <span class="mt-1 block text-xs text-on-surface-variant">${formatCurrency(progressData.saved)} of ${formatCurrency(progressData.target)} saved</span>
+            <button type="button" class="min-w-0 flex-1 text-left flex items-center gap-3.5" data-goal-action="activate" data-goal-key="${escapeHTML(key)}">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? 'bg-primary-container/10 text-primary-container' : 'bg-surface-container-high text-on-surface-variant'}">
+                <span class="material-symbols-outlined text-[20px]">${goalTypeConfig[goal.type]?.icon || 'savings'}</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-bold text-primary-container">${escapeHTML(goal.title)}</span>
+                <span class="mt-0.5 block text-xs text-on-surface-variant font-medium">${formatCurrency(progressData.saved)} of ${formatCurrency(progressData.target)} saved</span>
+              </div>
             </button>
-            <div class="flex shrink-0 items-center gap-1">
+            <div class="flex shrink-0 items-center gap-1.5">
               ${syncBadge}
-              <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container-high" data-goal-action="edit" data-goal-key="${escapeHTML(key)}" aria-label="Edit ${escapeHTML(goal.title)}">
-                <span class="material-symbols-outlined text-[18px]">edit</span>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-full bg-surface-container-low text-primary-container transition hover:bg-surface-container-high" data-goal-action="edit" data-goal-key="${escapeHTML(key)}" aria-label="Edit ${escapeHTML(goal.title)}">
+                <span class="material-symbols-outlined text-[16px]">edit</span>
               </button>
-              <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-error transition hover:bg-red-50" data-goal-action="delete" data-goal-key="${escapeHTML(key)}" aria-label="Delete ${escapeHTML(goal.title)}">
-                <span class="material-symbols-outlined text-[18px]">delete</span>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-full bg-surface-container-low text-error transition hover:bg-red-50" data-goal-action="delete" data-goal-key="${escapeHTML(key)}" aria-label="Delete ${escapeHTML(goal.title)}">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
               </button>
             </div>
           </div>
-          <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-container-high">
-            <div class="h-full rounded-full bg-primary-container" style="width: ${progressData.percent}%"></div>
+          <div class="h-2 overflow-hidden rounded-full bg-surface-container-high">
+            <div class="h-full rounded-full transition-all duration-500" style="width: ${progressData.percent}%; background-color: #0a4d3c;"></div>
           </div>
         </div>`;
     })
@@ -854,16 +859,30 @@ function populateGoalCard(effectiveSave) {
   const config = goalTypeConfig[activeGoal.type] || goalTypeConfig.custom;
   const cyclesNeeded = goalCyclesNeeded(activeGoal, effectiveSave);
 
-  // Goals tab elements
+  // Update total saved in quick stats header
+  const totalSavedEl = $("#goals-total-saved");
+  if (totalSavedEl) {
+    const totalSaved = storedGoals.filter(g => !g.isFallback).reduce((sum, g) => sum + (Number(g.savedAmount) || 0), 0) || progressData.saved;
+    totalSavedEl.textContent = formatCurrency(totalSaved);
+  }
 
+  // Update savings rate in quick stats header
+  const savingsRateEl = $("#goals-savings-rate");
+  if (savingsRateEl) {
+    let incomeForRate = Number(state.salary) || Number(state.avgIncome) || Number(state.allowanceAmount) || Number(state.totalMoney) || 1;
+    if (incomeForRate <= 0) incomeForRate = 1;
+    const savingsRate = Math.min(Math.round((effectiveSave / incomeForRate) * 100), 100);
+    savingsRateEl.textContent = `${savingsRate}%`;
+  }
+
+  // Goals tab elements
   const gIds = [
     "goals-tab-icon",
     "goals-tab-name",
     "goals-tab-type",
     "goals-tab-progress",
     "goals-tab-percent",
-    "goals-tab-bar",
-    "goals-tab-meta",
+    "goals-tab-meta"
   ];
   const gEls = gIds.map((id) => $(`#${id}`));
 
@@ -871,29 +890,109 @@ function populateGoalCard(effectiveSave) {
   if (gEls[1]) gEls[1].textContent = activeGoal.title;
   if (gEls[2]) gEls[2].textContent = config.label;
   if (gEls[3]) {
-    gEls[3].textContent =
-      progressData.target > 0
-        ? `${formatCurrency(progressData.saved)} saved of ${formatCurrency(progressData.target)}`
-        : "Create a target amount to start tracking progress.";
+    gEls[3].innerHTML = progressData.target > 0
+      ? `${formatCurrency(progressData.saved)} <span class="text-on-surface-variant font-body-md text-base">/ ${formatCurrency(progressData.target)}</span>`
+      : "₹0 <span class=\"text-on-surface-variant font-body-md text-base\">/ ₹0</span>";
   }
   if (gEls[4]) gEls[4].textContent = `${progressData.percent}%`;
-  if (gEls[5]) gEls[5].style.width = `${progressData.percent}%`;
-  if (gEls[6]) {
+  if (gEls[5]) {
     if (progressData.remaining <= 0 && progressData.target > 0) {
-      gEls[6].textContent = "Goal reached. You can create a new target anytime.";
+      gEls[5].textContent = "Spectacular! You have fully reached your savings goal.";
     } else if (cyclesNeeded > 0) {
-      gEls[6].textContent = `~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to save ${formatCurrency(progressData.remaining)}`;
+      gEls[5].textContent = `~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to save remaining ${formatCurrency(progressData.remaining)}`;
     } else {
-      gEls[6].textContent = "Add saved amount or target to calculate progress.";
+      gEls[5].textContent = "Add funds or edit target anytime to start milestone tracking.";
+    }
+  }
+
+  // Status badge update
+  const statusBadge = $("#goals-tab-status-badge");
+  if (statusBadge) {
+    statusBadge.classList.remove("hidden");
+    if (progressData.percent >= 100) {
+      statusBadge.textContent = "ACHIEVED";
+      statusBadge.className = "mt-1 self-center sm:self-start bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider";
+    } else {
+      statusBadge.textContent = "ACTIVE";
+      statusBadge.className = "mt-1 self-center sm:self-start bg-primary-container text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider";
+    }
+  }
+
+  // Dynamic milestone timeline rendering
+  const timelineContainer = $("#goal-timeline");
+  if (timelineContainer) {
+    const percent = progressData.percent;
+    const target = progressData.target;
+    timelineContainer.innerHTML = `
+      <div class="relative flex items-center justify-between mt-8 mb-4">
+        <!-- Background Track -->
+        <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-surface-container-high rounded-full -z-10">
+          <div class="h-full bg-primary-container transition-all duration-500" style="width: ${percent}%;"></div>
+        </div>
+        
+        <!-- Node: Started -->
+        <div class="flex flex-col items-center gap-1.5 bg-white px-1 relative z-10">
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${percent >= 0 ? 'bg-primary-container border-primary-container text-white' : 'bg-white border-outline-variant text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-[16px]">${percent > 0 ? 'check' : 'circle'}</span>
+          </div>
+          <span class="text-[10px] font-bold text-primary-container">Started</span>
+          <span class="text-[9px] text-on-surface-variant">₹0</span>
+        </div>
+
+        <!-- Node: Midway -->
+        <div class="flex flex-col items-center gap-1.5 bg-white px-1 relative z-10">
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${percent >= 50 ? 'bg-primary-container border-primary-container text-white' : 'bg-white border-outline-variant text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-[16px]">${percent >= 50 ? 'check' : 'flag'}</span>
+          </div>
+          <span class="text-[10px] font-bold ${percent >= 50 ? 'text-primary-container' : 'text-on-surface-variant'}">Midway</span>
+          <span class="text-[9px] text-on-surface-variant">${formatCurrency(target * 0.5)}</span>
+        </div>
+
+        <!-- Node: Last Stretch -->
+        <div class="flex flex-col items-center gap-1.5 bg-white px-1 relative z-10">
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${percent >= 75 ? 'bg-primary-container border-primary-container text-white' : 'bg-white border-outline-variant text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-[16px]">${percent >= 75 ? 'check' : 'trending_up'}</span>
+          </div>
+          <span class="text-[10px] font-bold ${percent >= 75 ? 'text-primary-container' : 'text-on-surface-variant'}">Last Stretch</span>
+          <span class="text-[9px] text-on-surface-variant">${formatCurrency(target * 0.75)}</span>
+        </div>
+
+        <!-- Node: Target -->
+        <div class="flex flex-col items-center gap-1.5 bg-white px-1 relative z-10">
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${percent >= 100 ? 'bg-primary-container border-primary-container text-white' : 'bg-white border-outline-variant text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-[16px]">${percent >= 100 ? 'emoji_events' : 'sports_score'}</span>
+          </div>
+          <span class="text-[10px] font-bold ${percent >= 100 ? 'text-primary-container' : 'text-on-surface-variant'}">Target</span>
+          <span class="text-[9px] text-on-surface-variant">${formatCurrency(target)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+
+
+  // Dynamic bar projection graphic based on percent
+  const chartGraphic = $("#goals-chart-graphic");
+  if (chartGraphic) {
+    const bars = chartGraphic.children;
+    if (bars && bars.length >= 7) {
+      const currentPercent = progressData.percent;
+      // Scale heights based on percent, representing growing projection
+      bars[0].style.height = `${Math.max(10, Math.min(currentPercent, 30))}%`;
+      bars[1].style.height = `${Math.max(15, Math.min(currentPercent, 45))}%`;
+      bars[2].style.height = `${Math.max(20, Math.min(currentPercent, 55))}%`;
+      bars[3].style.height = `${Math.max(25, Math.min(currentPercent, 70))}%`;
+      bars[4].style.height = `${Math.max(30, Math.min(currentPercent, 65))}%`;
+      bars[5].style.height = `${Math.max(40, Math.min(currentPercent + 10, 85))}%`;
+      bars[6].style.height = `${Math.max(50, Math.min(currentPercent + 20, 95))}%`;
     }
   }
 
   // Goal progress ring
-
   const goalRingArc = $("#goal-ring-arc");
-
   if (goalRingArc) {
-    const circumference = 2 * Math.PI * 42;
+    const circumference = 2 * Math.PI * 40;
+    goalRingArc.style.strokeDasharray = `${circumference}`;
     goalRingArc.style.strokeDashoffset = circumference * (1 - progressData.percent / 100);
   }
 
@@ -901,7 +1000,6 @@ function populateGoalCard(effectiveSave) {
   setGoalActionState(Boolean(storedActiveGoal && !storedActiveGoal.isFallback));
 
   // Monthly summary
-
   populateMonthlySummary(effectiveSave);
 }
 
@@ -1370,8 +1468,6 @@ function initDashboardEvents() {
 
   $("#all-transactions-list")?.addEventListener("click", handleTransactionAction);
 
-  $("#goal-create-btn")?.addEventListener("click", () => openGoalModal());
-
   $("#goal-edit-btn")?.addEventListener("click", () => {
     const goal = activeGoalFromState();
     if (goal && !goal.isFallback) openGoalModal(goal);
@@ -1381,6 +1477,10 @@ function initDashboardEvents() {
     const goal = activeGoalFromState();
     if (goal && !goal.isFallback) deleteGoalByKey(goalLookupKey(goal));
   });
+
+
+
+
 
   $("#goals-list")?.addEventListener("click", handleGoalListAction);
   $("#goal-modal-close")?.addEventListener("click", closeGoalModal);
@@ -1547,6 +1647,7 @@ const modalState = {
   mode: "create",
   editingKey: "",
   originalTransaction: null,
+  isAddingGoalFunds: false,
 };
 
 const goalModalState = {
@@ -1821,6 +1922,7 @@ function handleGoalListAction(event) {
   if (action === "delete") deleteGoalByKey(key);
 }
 
+
 function setTransactionKind(kind) {
   modalState.kind = kind === "income" ? "income" : "expense";
 
@@ -1880,6 +1982,7 @@ function openExpenseModal(preCategory, options = {}) {
       ? "income"
       : preCategory || "";
   modalState.source = editingTransaction?.source || "savings";
+  modalState.isAddingGoalFunds = options.isAddingGoalFunds || false;
 
   // Cache current rollover daily limit for impulse guard
 
@@ -2087,6 +2190,74 @@ async function submitExpense() {
     }
 
     saveTransactions(txns);
+
+    if (modalState.isAddingGoalFunds && modalState.mode !== "edit") {
+      const storedGoals = goalsFromState();
+      const storedActiveGoal = activeGoalFromState();
+      const smartPercent = state.mode === "allowance" ? 0.2 : 0.3;
+      let baseMoney = state.totalMoney;
+      if (state.mode === "fixed") baseMoney = state.salary || state.totalMoney;
+      else if (state.mode === "allowance") baseMoney = state.allowanceAmount || state.totalMoney;
+      const effectiveSave = state.saveMode === "smart" ? Math.round(baseMoney * smartPercent) : state.saveAmount;
+      const activeGoal = storedActiveGoal || fallbackGoalFromOnboarding(effectiveSave);
+
+      if (activeGoal) {
+        const key = goalLookupKey(activeGoal);
+        const amount = modalState.amount;
+        if (activeGoal.isFallback) {
+          const target = activeGoal.targetAmount;
+          const currentSaved = Math.min(activeGoal.savedAmount + amount, target);
+          const newGoal = normalizeGoal({
+            id: createClientGoalId(),
+            type: activeGoal.type,
+            title: activeGoal.title,
+            targetAmount: target,
+            savedAmount: currentSaved,
+            isActive: true,
+            syncStatus: window.saverSupabase?.isConfigured ? "pending" : "local",
+          });
+
+          const nextGoals = [newGoal, ...storedGoals.map(g => ({ ...g, isActive: false }))];
+          setSavingsGoals(nextGoals);
+
+          if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveSavingsGoal) {
+            try {
+              const savedGoal = await window.saverSupabase.saveSavingsGoal(newGoal, window.currentSaverSession || null);
+              if (savedGoal) {
+                setSavingsGoals([normalizeGoal(savedGoal), ...storedGoals.map(g => ({ ...g, isActive: false }))]);
+              }
+            } catch (e) {
+              console.error("Could not sync added funds remote", e);
+            }
+          }
+        } else {
+          const nextGoals = storedGoals.map(g => {
+            if (goalLookupKey(g) === key) {
+              const updatedSaved = (Number(g.savedAmount) || 0) + amount;
+              return {
+                ...g,
+                savedAmount: Math.min(updatedSaved, g.targetAmount),
+                syncStatus: window.saverSupabase?.isConfigured ? "pending" : "local"
+              };
+            }
+            return g;
+          });
+          const updatedGoal = nextGoals.find(g => goalLookupKey(g) === key);
+          setSavingsGoals(nextGoals);
+
+          if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveSavingsGoal && updatedGoal) {
+            try {
+              const savedGoal = await window.saverSupabase.saveSavingsGoal(updatedGoal, window.currentSaverSession || null);
+              if (savedGoal) {
+                setSavingsGoals(nextGoals.map(g => goalLookupKey(g) === key ? normalizeGoal(savedGoal) : g));
+              }
+            } catch (e) {
+              console.error("Could not sync updated funds remote", e);
+            }
+          }
+        }
+      }
+    }
 
     // Check for overspend alert after saving
 
