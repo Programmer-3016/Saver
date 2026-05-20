@@ -20,10 +20,13 @@
     "reset-password.html": "/reset-password",
   };
   const allowedMoneyModes = new Set(["fixed", "irregular", "allowance"]);
+  const allowedGoalTypes = new Set(["specific", "safety", "custom"]);
   const transactionSelectColumns =
     "id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at, client_txn_id";
   const legacyTransactionSelectColumns =
     "id, budget_cycle_id, kind, amount, category, description, payment_source, occurred_at";
+  const goalSelectColumns =
+    "id, goal_type, title, target_amount, saved_amount, target_date, is_active, metadata, created_at, updated_at";
 
   function shouldUseCleanRoutes() {
     return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
@@ -273,11 +276,76 @@
       appState.freeToSpendAmount = numericValue(budgetCycle.free_to_spend_amount);
     }
 
-    if (savingsGoal?.id) {
-      appState.activeSavingsGoalId = savingsGoal.id;
+    if (savingsGoal?.id || savingsGoal?.remoteId) {
+      const goal = savingsGoal?.remoteId ? savingsGoal : rowToSavingsGoal(savingsGoal);
+
+      if (goal) {
+        appState.activeSavingsGoalId = goal.remoteId || goal.id;
+        appState.goalType = goal.type;
+        appState.goalItem = goal.title;
+        appState.goalPrice = goal.targetAmount;
+        appState.activeSavingsGoalSavedAmount = goal.savedAmount;
+      }
     }
 
     return appState;
+  }
+
+  function safeMetadata(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function cleanGoalType(type) {
+    return allowedGoalTypes.has(type) ? type : "custom";
+  }
+
+  function rowToSavingsGoal(row) {
+    if (!row?.id) return null;
+
+    const metadata = safeMetadata(row.metadata);
+    const clientGoalId = cleanProfileText(metadata.clientGoalId || "");
+    const type = cleanGoalType(row.goal_type);
+
+    return {
+      id: row.id,
+      remoteId: row.id,
+      clientGoalId,
+      type,
+      title: cleanProfileText(row.title) || "Saving goal",
+      targetAmount: numericValue(row.target_amount),
+      savedAmount: numericValue(row.saved_amount),
+      targetDate: row.target_date || "",
+      isActive: row.is_active !== false,
+      metadata,
+      createdAt: row.created_at || "",
+      updatedAt: row.updated_at || "",
+      syncStatus: "synced",
+    };
+  }
+
+  function goalToRow(userId, goal = {}) {
+    const metadata = safeMetadata(goal.metadata);
+    const type = cleanGoalType(goal.type || goal.goalType);
+    const title =
+      cleanProfileText(goal.title || goal.goalItem) ||
+      (type === "safety" ? "Safety Buffer" : "Saving goal");
+    const clientGoalId = cleanProfileText(goal.clientGoalId || (!goal.remoteId ? goal.id : ""));
+    const targetDate = cleanProfileText(goal.targetDate);
+
+    return {
+      user_id: userId,
+      goal_type: type,
+      title,
+      target_amount: Math.max(numericValue(goal.targetAmount ?? goal.goalPrice), 0),
+      saved_amount: Math.max(numericValue(goal.savedAmount ?? goal.saveAmount), 0),
+      target_date: targetDate || null,
+      is_active: goal.isActive !== false,
+      metadata: {
+        ...metadata,
+        clientGoalId,
+        source: metadata.source || "saver_dashboard",
+      },
+    };
   }
 
   function rowToTransaction(row) {
@@ -384,6 +452,9 @@
     resetOnboarding: async () => null,
     loadAppData: async () => null,
     saveAppSetup: async () => null,
+    loadSavingsGoals: async () => [],
+    saveSavingsGoal: async () => null,
+    deleteSavingsGoal: async () => false,
     loadTransactions: async () => [],
     addTransaction: async () => null,
     updateTransaction: async () => null,
@@ -485,7 +556,7 @@
   async function getActiveSavingsGoal(userId) {
     const { data, error } = await api.client
       .from("savings_goals")
-      .select("*")
+      .select(goalSelectColumns)
       .eq("user_id", userId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -549,6 +620,30 @@
     return (data || []).map(rowToTransaction);
   };
 
+  api.loadSavingsGoals = async function (session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id) return [];
+
+    persistUserProfile(user);
+
+    const { data, error } = await api.client
+      .from("savings_goals")
+      .select(goalSelectColumns)
+      .eq("user_id", user.id)
+      .order("is_active", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      if (isMissingAppSchema(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(rowToSavingsGoal).filter(Boolean);
+  };
+
   api.loadAppData = async function (session) {
     const activeSession = session || (await api.getSession());
     const user = activeSession?.user;
@@ -558,10 +653,11 @@
     persistUserProfile(user);
 
     const profileState = await api.loadOnboarding(activeSession);
-    let [budgetCycle, savingsGoal, transactions] = await Promise.all([
+    let [budgetCycle, savingsGoal, transactions, savingsGoals] = await Promise.all([
       getActiveBudgetCycle(user.id),
       getActiveSavingsGoal(user.id),
       api.loadTransactions(activeSession),
+      api.loadSavingsGoals(activeSession),
     ]);
     let backfilled = false;
 
@@ -570,16 +666,28 @@
       budgetCycle = appSetup?.budgetCycle || budgetCycle;
       savingsGoal = appSetup?.savingsGoal || savingsGoal;
       backfilled = Boolean(appSetup?.state);
+
+      if (backfilled) {
+        savingsGoals = await api.loadSavingsGoals(activeSession);
+      }
     }
+
+    const activeGoal = savingsGoals.find((goal) => goal.isActive) || rowToSavingsGoal(savingsGoal);
+    const normalizedGoals =
+      activeGoal && !savingsGoals.some((goal) => goal.remoteId === activeGoal.remoteId)
+        ? [activeGoal, ...savingsGoals]
+        : savingsGoals;
 
     return {
       state: {
         ...(profileState || {}),
-        ...stateFromAppRows(budgetCycle, savingsGoal),
+        ...stateFromAppRows(budgetCycle, activeGoal || savingsGoal),
+        savingsGoals: normalizedGoals,
         onboardingComplete: Boolean(profileState?.onboardingComplete || budgetCycle),
       },
       budgetCycle,
-      savingsGoal,
+      savingsGoal: activeGoal || savingsGoal,
+      savingsGoals: normalizedGoals,
       backfilled,
       transactions,
     };
@@ -597,7 +705,7 @@
     const { payload, snapshot } = buildBudgetPayload(user.id, onboardingState || {}, options);
     const existingBudgetCycle = await getActiveBudgetCycle(user.id);
     const budgetBuilder = existingBudgetCycle?.id
-      ? api.client.from("budget_cycles").update(payload).eq("id", existingBudgetCycle.id)
+      ? api.client.from("budget_cycles").update(payload).eq("user_id", user.id).eq("id", existingBudgetCycle.id)
       : api.client.from("budget_cycles").insert(payload);
 
     const { data: budgetCycle, error: budgetError } = await budgetBuilder
@@ -613,11 +721,11 @@
     const goalPayload = buildGoalPayload(user.id, onboardingState || {}, snapshot, options);
     const existingSavingsGoal = await getActiveSavingsGoal(user.id);
     const goalBuilder = existingSavingsGoal?.id
-      ? api.client.from("savings_goals").update(goalPayload).eq("id", existingSavingsGoal.id)
+      ? api.client.from("savings_goals").update(goalPayload).eq("user_id", user.id).eq("id", existingSavingsGoal.id)
       : api.client.from("savings_goals").insert(goalPayload);
 
     const { data: savingsGoal, error: goalError } = await goalBuilder
-      .select("id, target_amount, saved_amount")
+      .select(goalSelectColumns)
       .maybeSingle();
 
     if (goalError) {
@@ -634,6 +742,85 @@
         freeToSpendAmount: snapshot.freeToSpend,
       },
     };
+  };
+
+  api.saveSavingsGoal = async function (goal, session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+
+    if (!user?.id || !goal) return null;
+
+    persistUserProfile(user);
+
+    const remoteId = cleanProfileText(goal.remoteId || (goal.syncStatus === "synced" ? goal.id : ""));
+    const payload = goalToRow(user.id, goal);
+
+    if (payload.is_active) {
+      const { error: deactivateError } = await api.client
+        .from("savings_goals")
+        .update({ is_active: false })
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      if (deactivateError && !isMissingAppSchema(deactivateError)) throw deactivateError;
+    }
+
+    let data = null;
+    let error = null;
+
+    if (remoteId) {
+      ({ data, error } = await api.client
+        .from("savings_goals")
+        .update(payload)
+        .eq("user_id", user.id)
+        .eq("id", remoteId)
+        .select(goalSelectColumns)
+        .maybeSingle());
+    } else {
+      ({ data, error } = await api.client
+        .from("savings_goals")
+        .insert(payload)
+        .select(goalSelectColumns)
+        .maybeSingle());
+    }
+
+    if (!data && remoteId && !error) {
+      ({ data, error } = await api.client
+        .from("savings_goals")
+        .insert(payload)
+        .select(goalSelectColumns)
+        .maybeSingle());
+    }
+
+    if (error) {
+      if (isMissingAppSchema(error)) return null;
+      throw error;
+    }
+
+    return rowToSavingsGoal(data);
+  };
+
+  api.deleteSavingsGoal = async function (goal, session) {
+    const activeSession = session || (await api.getSession());
+    const user = activeSession?.user;
+    const remoteId = cleanProfileText(goal?.remoteId || (goal?.syncStatus === "synced" ? goal.id : ""));
+
+    if (!user?.id || !remoteId) return false;
+
+    persistUserProfile(user);
+
+    const { error } = await api.client
+      .from("savings_goals")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("id", remoteId);
+
+    if (error) {
+      if (isMissingAppSchema(error)) return false;
+      throw error;
+    }
+
+    return true;
   };
 
   async function findTransactionByClientId(userId, clientTxnId) {

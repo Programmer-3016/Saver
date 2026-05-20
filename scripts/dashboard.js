@@ -663,15 +663,196 @@ function populateEveningCheckin(todaySpent, dailyLimit) {
 
 // Goal card
 
+const goalTypeConfig = {
+  custom: { label: "CUSTOM GOAL", icon: "savings", title: "Saving goal" },
+  specific: { label: "SPECIFIC ITEM", icon: "shopping_bag", title: "Specific item" },
+  safety: { label: "SAFETY BUFFER", icon: "shield", title: "Safety Buffer" },
+};
+
+const allowedDashboardGoalTypes = new Set(Object.keys(goalTypeConfig));
+
+function createClientGoalId() {
+  try {
+    if (window.crypto?.randomUUID) return `goal_${window.crypto.randomUUID()}`;
+  } catch (_) {}
+
+  return `goal_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function cleanGoalType(type) {
+  return allowedDashboardGoalTypes.has(type) ? type : "custom";
+}
+
+function normalizeGoal(goal = {}) {
+  if (!goal || typeof goal !== "object") return null;
+
+  const remoteId = cleanProfileText(goal.remoteId);
+  const rawId = cleanProfileText(goal.id);
+  const clientGoalId = cleanProfileText(goal.clientGoalId) || (!remoteId ? rawId : "");
+  const id = rawId || remoteId || clientGoalId || createClientGoalId();
+  const type = cleanGoalType(goal.type || goal.goalType);
+  const title = cleanProfileText(goal.title || goal.goalItem) || goalTypeConfig[type].title;
+  const targetAmount = Math.max(Number(goal.targetAmount ?? goal.goalPrice) || 0, 0);
+  const savedAmount = Math.max(Number(goal.savedAmount ?? goal.saveAmount) || 0, 0);
+
+  return {
+    ...goal,
+    id,
+    remoteId,
+    clientGoalId,
+    type,
+    title,
+    targetAmount,
+    savedAmount: Math.min(savedAmount, targetAmount || savedAmount),
+    targetDate: cleanProfileText(goal.targetDate),
+    isActive: goal.isActive !== false,
+    syncStatus: remoteId ? "synced" : goal.syncStatus || "pending",
+  };
+}
+
+function goalLookupKey(goal) {
+  return cleanProfileText(goal?.remoteId || goal?.clientGoalId || goal?.id);
+}
+
+function goalsFromState() {
+  return Array.isArray(state.savingsGoals)
+    ? state.savingsGoals.map(normalizeGoal).filter(Boolean)
+    : [];
+}
+
+function activeGoalFromState() {
+  const goals = goalsFromState();
+  const activeId = cleanProfileText(state.activeSavingsGoalId);
+  const activeGoal = activeId
+    ? goals.find((goal) => [goal.remoteId, goal.clientGoalId, goal.id].includes(activeId))
+    : null;
+
+  return activeGoal || goals.find((goal) => goal.isActive) || goals[0] || null;
+}
+
+function fallbackGoalFromOnboarding(effectiveSave) {
+  const type = cleanGoalType(state.goalType || "safety");
+  const isSpecific = type === "specific";
+  const targetAmount = isSpecific
+    ? Number(state.goalPrice) || Math.max(Number(state.saveAmount) * 3, 5000)
+    : Math.max(Number(state.saveAmount) * 3, 5000);
+
+  return {
+    id: "onboarding-goal",
+    clientGoalId: "onboarding-goal",
+    type,
+    title: isSpecific ? cleanProfileText(state.goalItem) || "Your Item" : goalTypeConfig[type].title,
+    targetAmount,
+    savedAmount: Math.max(Number(state.activeSavingsGoalSavedAmount) || effectiveSave || 0, 0),
+    targetDate: "",
+    isActive: true,
+    isFallback: true,
+    syncStatus: "local",
+  };
+}
+
+function setSavingsGoals(nextGoals = []) {
+  const normalized = nextGoals.map(normalizeGoal).filter(Boolean);
+  const active = normalized.find((goal) => goal.isActive) || normalized[0] || null;
+
+  state.savingsGoals = normalized;
+  state.activeSavingsGoalId = active ? goalLookupKey(active) : null;
+  state.goalType = active?.type || "";
+  state.goalItem = active?.title || "";
+  state.goalPrice = active?.targetAmount || 0;
+  state.activeSavingsGoalSavedAmount = active?.savedAmount || 0;
+  saveState();
+}
+
+function goalProgress(goal) {
+  const target = Number(goal?.targetAmount) || 0;
+  const saved = Math.max(Number(goal?.savedAmount) || 0, 0);
+  const percent = target > 0 ? Math.min(Math.round((saved / target) * 100), 100) : 0;
+
+  return {
+    target,
+    saved,
+    remaining: Math.max(target - saved, 0),
+    percent,
+  };
+}
+
+function goalCyclesNeeded(goal, effectiveSave) {
+  const { remaining } = goalProgress(goal);
+  const cycleSaving = Math.max(Number(effectiveSave) || Number(state.saveAmount) || 0, 0);
+
+  return remaining > 0 && cycleSaving > 0 ? Math.ceil(remaining / cycleSaving) : 0;
+}
+
+function renderGoalsList(goals, activeGoal) {
+  const list = $("#goals-list");
+  if (!list) return;
+
+  const visibleGoals = goals.filter((goal) => !goal.isFallback);
+
+  if (!visibleGoals.length) {
+    list.innerHTML =
+      '<p class="rounded-2xl bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">Create a goal to track it here.</p>';
+    return;
+  }
+
+  const activeKey = goalLookupKey(activeGoal);
+
+  list.innerHTML = visibleGoals
+    .map((goal) => {
+      const key = goalLookupKey(goal);
+      const progressData = goalProgress(goal);
+      const isActive = key === activeKey;
+      const syncBadge =
+        goal.syncStatus === "failed"
+          ? '<span class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-error">Sync failed</span>'
+          : goal.syncStatus === "pending"
+            ? '<span class="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase text-on-surface-variant">Local</span>'
+            : "";
+
+      return `
+        <div class="rounded-2xl border ${isActive ? "border-primary-container/30 bg-primary-container/5" : "border-outline-variant/30 bg-surface-container-low"} p-3" data-goal-row="${escapeHTML(key)}">
+          <div class="flex items-start justify-between gap-3">
+            <button type="button" class="min-w-0 flex-1 text-left" data-goal-action="activate" data-goal-key="${escapeHTML(key)}">
+              <span class="block truncate text-sm font-bold text-on-background">${escapeHTML(goal.title)}</span>
+              <span class="mt-1 block text-xs text-on-surface-variant">${formatCurrency(progressData.saved)} of ${formatCurrency(progressData.target)} saved</span>
+            </button>
+            <div class="flex shrink-0 items-center gap-1">
+              ${syncBadge}
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container-high" data-goal-action="edit" data-goal-key="${escapeHTML(key)}" aria-label="Edit ${escapeHTML(goal.title)}">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+              </button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-error transition hover:bg-red-50" data-goal-action="delete" data-goal-key="${escapeHTML(key)}" aria-label="Delete ${escapeHTML(goal.title)}">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-container-high">
+            <div class="h-full rounded-full bg-primary-container" style="width: ${progressData.percent}%"></div>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
+function setGoalActionState(hasStoredGoal) {
+  ["goal-edit-btn", "goal-delete-btn"].forEach((id) => {
+    const btn = $(`#${id}`);
+    if (!btn) return;
+
+    btn.disabled = !hasStoredGoal;
+    btn.classList.toggle("opacity-40", !hasStoredGoal);
+    btn.classList.toggle("pointer-events-none", !hasStoredGoal);
+  });
+}
+
 function populateGoalCard(effectiveSave) {
-  const isSpecific = state.goalType === "specific";
-  const goalName = isSpecific ? state.goalItem || "Your Item" : "Safety Buffer";
-  const goalIcon = isSpecific ? "shopping_bag" : "shield";
-  const goalTypeLabel = isSpecific ? "SPECIFIC ITEM" : "SAFETY BUFFER";
-  const goalTarget = isSpecific ? state.goalPrice : 5000;
-  const progress =
-    goalTarget > 0 ? Math.min(Math.round((effectiveSave / goalTarget) * 100), 100) : 0;
-  const cyclesNeeded = effectiveSave > 0 ? Math.ceil(goalTarget / effectiveSave) : 0;
+  const storedGoals = goalsFromState();
+  const storedActiveGoal = activeGoalFromState();
+  const activeGoal = storedActiveGoal || fallbackGoalFromOnboarding(effectiveSave);
+  const progressData = goalProgress(activeGoal);
+  const config = goalTypeConfig[activeGoal.type] || goalTypeConfig.custom;
+  const cyclesNeeded = goalCyclesNeeded(activeGoal, effectiveSave);
 
   // Goals tab elements
 
@@ -686,17 +867,26 @@ function populateGoalCard(effectiveSave) {
   ];
   const gEls = gIds.map((id) => $(`#${id}`));
 
-  if (gEls[0]) gEls[0].textContent = goalIcon;
-  if (gEls[1]) gEls[1].textContent = goalName;
-  if (gEls[2]) gEls[2].textContent = goalTypeLabel;
-  if (gEls[3]) gEls[3].textContent = `${formatCurrency(effectiveSave)} saved per cycle`;
-  if (gEls[4]) gEls[4].textContent = `${progress}%`;
-  if (gEls[5]) gEls[5].style.width = `${progress}%`;
-  if (gEls[6])
-    gEls[6].textContent =
-      cyclesNeeded > 0
-        ? `~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to reach ${formatCurrency(goalTarget)} 💪`
-        : "Complete onboarding to set your saving goal.";
+  if (gEls[0]) gEls[0].textContent = config.icon;
+  if (gEls[1]) gEls[1].textContent = activeGoal.title;
+  if (gEls[2]) gEls[2].textContent = config.label;
+  if (gEls[3]) {
+    gEls[3].textContent =
+      progressData.target > 0
+        ? `${formatCurrency(progressData.saved)} saved of ${formatCurrency(progressData.target)}`
+        : "Create a target amount to start tracking progress.";
+  }
+  if (gEls[4]) gEls[4].textContent = `${progressData.percent}%`;
+  if (gEls[5]) gEls[5].style.width = `${progressData.percent}%`;
+  if (gEls[6]) {
+    if (progressData.remaining <= 0 && progressData.target > 0) {
+      gEls[6].textContent = "Goal reached. You can create a new target anytime.";
+    } else if (cyclesNeeded > 0) {
+      gEls[6].textContent = `~${cyclesNeeded} cycle${cyclesNeeded > 1 ? "s" : ""} to save ${formatCurrency(progressData.remaining)}`;
+    } else {
+      gEls[6].textContent = "Add saved amount or target to calculate progress.";
+    }
+  }
 
   // Goal progress ring
 
@@ -704,9 +894,11 @@ function populateGoalCard(effectiveSave) {
 
   if (goalRingArc) {
     const circumference = 2 * Math.PI * 42;
-    const offset = circumference * (1 - progress / 100);
-    goalRingArc.style.strokeDashoffset = offset;
+    goalRingArc.style.strokeDashoffset = circumference * (1 - progressData.percent / 100);
   }
+
+  renderGoalsList(storedGoals, activeGoal);
+  setGoalActionState(Boolean(storedActiveGoal && !storedActiveGoal.isFallback));
 
   // Monthly summary
 
@@ -1178,6 +1370,32 @@ function initDashboardEvents() {
 
   $("#all-transactions-list")?.addEventListener("click", handleTransactionAction);
 
+  $("#goal-create-btn")?.addEventListener("click", () => openGoalModal());
+
+  $("#goal-edit-btn")?.addEventListener("click", () => {
+    const goal = activeGoalFromState();
+    if (goal && !goal.isFallback) openGoalModal(goal);
+  });
+
+  $("#goal-delete-btn")?.addEventListener("click", () => {
+    const goal = activeGoalFromState();
+    if (goal && !goal.isFallback) deleteGoalByKey(goalLookupKey(goal));
+  });
+
+  $("#goals-list")?.addEventListener("click", handleGoalListAction);
+  $("#goal-modal-close")?.addEventListener("click", closeGoalModal);
+  $("#goal-modal-backdrop")?.addEventListener("click", closeGoalModal);
+  $("#goal-cancel-btn")?.addEventListener("click", closeGoalModal);
+  $("#goal-save-btn")?.addEventListener("click", submitGoal);
+
+  $$("[data-goal-type-choice]").forEach((btn) => {
+    btn.addEventListener("click", () => setGoalType(btn.dataset.goalTypeChoice));
+  });
+
+  ["goal-title-input", "goal-target-input", "goal-saved-input", "goal-date-input"].forEach((id) => {
+    $(`#${id}`)?.addEventListener("input", validateGoalForm);
+  });
+
   // Share Achievement button
 
   const shareBtn = $("#share-achievement-btn");
@@ -1331,6 +1549,13 @@ const modalState = {
   originalTransaction: null,
 };
 
+const goalModalState = {
+  mode: "create",
+  editingKey: "",
+  type: "custom",
+  originalGoal: null,
+};
+
 // Saved scroll position — used to restore after closing the modal
 
 let savedScrollY = 0;
@@ -1365,6 +1590,235 @@ function unlockBodyScroll() {
   document.body.style.paddingRight = "";
   document.body.style.top = "";
   window.scrollTo(0, savedScrollY);
+}
+
+function setGoalModalError(message) {
+  const errorEl = $("#goal-modal-error");
+  if (!errorEl) return;
+
+  errorEl.textContent = message || "";
+  errorEl.classList.toggle("hidden", !message);
+}
+
+function setGoalType(type) {
+  goalModalState.type = cleanGoalType(type);
+
+  $$("[data-goal-type-choice]").forEach((btn) => {
+    const isActive = btn.dataset.goalTypeChoice === goalModalState.type;
+    btn.classList.toggle("border-primary-container", isActive);
+    btn.classList.toggle("bg-primary-container", isActive);
+    btn.classList.toggle("text-white", isActive);
+    btn.classList.toggle("border-outline-variant/40", !isActive);
+    btn.classList.toggle("bg-surface-container-low", !isActive);
+    btn.classList.toggle("text-on-background", !isActive);
+    btn.querySelector(".material-symbols-outlined")?.classList.toggle("text-white", isActive);
+    btn.querySelector(".material-symbols-outlined")?.classList.toggle("text-primary-container", !isActive);
+  });
+
+  validateGoalForm();
+}
+
+function validateGoalForm() {
+  const title = cleanProfileText($("#goal-title-input")?.value);
+  const target = Number($("#goal-target-input")?.value) || 0;
+  const saved = Number($("#goal-saved-input")?.value) || 0;
+  const btn = $("#goal-save-btn");
+  let message = "";
+
+  if (saved > target && target > 0) message = "Saved amount cannot be higher than target.";
+
+  const isValid = Boolean(title) && target > 0 && saved >= 0 && !message;
+
+  if (btn) btn.disabled = !isValid;
+  setGoalModalError(message);
+  return isValid;
+}
+
+function openGoalModal(goal = null) {
+  const modal = $("#goal-modal");
+  if (!modal) return;
+
+  const normalizedGoal = normalizeGoal(goal);
+  const titleEl = $("#goal-modal-title");
+  const titleInput = $("#goal-title-input");
+  const targetInput = $("#goal-target-input");
+  const savedInput = $("#goal-saved-input");
+  const dateInput = $("#goal-date-input");
+
+  goalModalState.mode = normalizedGoal ? "edit" : "create";
+  goalModalState.editingKey = normalizedGoal ? goalLookupKey(normalizedGoal) : "";
+  goalModalState.originalGoal = normalizedGoal;
+  goalModalState.type = normalizedGoal?.type || "custom";
+
+  if (titleEl) titleEl.textContent = normalizedGoal ? "Edit Goal" : "Create Goal";
+  if (titleInput) titleInput.value = normalizedGoal?.title || "";
+  if (targetInput) {
+    targetInput.value = normalizedGoal?.targetAmount ? String(Math.round(normalizedGoal.targetAmount)) : "";
+  }
+  if (savedInput) savedInput.value = normalizedGoal?.savedAmount ? String(Math.round(normalizedGoal.savedAmount)) : "0";
+  if (dateInput) dateInput.value = normalizedGoal?.targetDate || "";
+
+  setGoalModalError("");
+  setGoalType(goalModalState.type);
+  lockBodyScroll();
+  requestAnimationFrame(() => modal.classList.remove("hidden"));
+  titleInput?.focus();
+}
+
+function closeGoalModal() {
+  const modal = $("#goal-modal");
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  unlockBodyScroll();
+  setGoalModalError("");
+  goalModalState.mode = "create";
+  goalModalState.editingKey = "";
+  goalModalState.originalGoal = null;
+}
+
+function readGoalDraft() {
+  return {
+    ...(goalModalState.originalGoal || {}),
+    type: cleanGoalType(goalModalState.type),
+    title: cleanProfileText($("#goal-title-input")?.value),
+    targetAmount: Math.max(Number($("#goal-target-input")?.value) || 0, 0),
+    savedAmount: Math.max(Number($("#goal-saved-input")?.value) || 0, 0),
+    targetDate: cleanProfileText($("#goal-date-input")?.value),
+    isActive: true,
+  };
+}
+
+async function submitGoal() {
+  if (!validateGoalForm()) return;
+
+  const submitBtn = $("#goal-save-btn");
+  const originalText = submitBtn?.textContent || "Save goal";
+  const existingGoals = goalsFromState();
+  const draft = readGoalDraft();
+  const generatedId = draft.id || createClientGoalId();
+  const localGoal = normalizeGoal({
+    ...draft,
+    id: generatedId,
+    clientGoalId: draft.clientGoalId || (!draft.remoteId ? generatedId : ""),
+    syncStatus: window.saverSupabase?.isConfigured ? "pending" : "local",
+  });
+
+  if (!localGoal) return;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+  }
+
+  try {
+    let savedGoal = null;
+
+    if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveSavingsGoal) {
+      savedGoal = await window.saverSupabase.saveSavingsGoal(localGoal, window.currentSaverSession || null);
+    }
+
+    const finalGoal = normalizeGoal(savedGoal ? { ...localGoal, ...savedGoal } : localGoal);
+    const editingIndex = existingGoals.findIndex((goal) => goalLookupKey(goal) === goalModalState.editingKey);
+    const nextGoals = existingGoals.map((goal) => ({ ...goal, isActive: false }));
+
+    if (editingIndex >= 0) {
+      nextGoals[editingIndex] = { ...nextGoals[editingIndex], ...finalGoal, isActive: true };
+    } else {
+      nextGoals.unshift({ ...finalGoal, isActive: true });
+    }
+
+    setSavingsGoals(nextGoals);
+    closeGoalModal();
+    populateDashboard();
+  } catch (error) {
+    console.error("Could not save savings goal", error);
+    setGoalModalError(error?.message || "Could not save this goal. Try again.");
+  } finally {
+    if (submitBtn) {
+      submitBtn.textContent = originalText;
+      validateGoalForm();
+    }
+  }
+}
+
+async function activateGoalByKey(key) {
+  const goals = goalsFromState();
+  const selectedGoal = goals.find((goal) => goalLookupKey(goal) === key);
+  if (!selectedGoal) return;
+
+  const nextGoals = goals.map((goal) => ({ ...goal, isActive: goalLookupKey(goal) === key }));
+  setSavingsGoals(nextGoals);
+  populateDashboard();
+
+  if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveSavingsGoal) {
+    try {
+      const remoteGoal = await window.saverSupabase.saveSavingsGoal(
+        { ...selectedGoal, isActive: true },
+        window.currentSaverSession || null,
+      );
+
+      if (remoteGoal) {
+        setSavingsGoals(
+          nextGoals.map((goal) =>
+            goalLookupKey(goal) === key ? { ...goal, ...remoteGoal, isActive: true } : goal,
+          ),
+        );
+        populateDashboard();
+      }
+    } catch (error) {
+      console.error("Could not activate savings goal", error);
+    }
+  }
+}
+
+async function deleteGoalByKey(key) {
+  const goals = goalsFromState();
+  const goal = goals.find((item) => goalLookupKey(item) === key);
+  if (!goal) return;
+  if (!confirm(`Delete "${goal.title}"?`)) return;
+
+  try {
+    if (window.saverSupabase?.isConfigured && window.saverSupabase?.deleteSavingsGoal) {
+      await window.saverSupabase.deleteSavingsGoal(goal, window.currentSaverSession || null);
+    }
+  } catch (error) {
+    console.error("Could not delete savings goal", error);
+    alert(error?.message || "Could not delete this goal. Try again.");
+    return;
+  }
+
+  const nextGoals = goals.filter((item) => goalLookupKey(item) !== key);
+
+  if (!nextGoals.some((item) => item.isActive) && nextGoals[0]) {
+    nextGoals[0].isActive = true;
+
+    if (window.saverSupabase?.isConfigured && window.saverSupabase?.saveSavingsGoal) {
+      try {
+        const remoteGoal = await window.saverSupabase.saveSavingsGoal(nextGoals[0], window.currentSaverSession || null);
+        if (remoteGoal) Object.assign(nextGoals[0], remoteGoal, { isActive: true });
+      } catch (error) {
+        console.error("Could not activate fallback savings goal", error);
+      }
+    }
+  }
+
+  setSavingsGoals(nextGoals);
+  populateDashboard();
+}
+
+function handleGoalListAction(event) {
+  const btn = event.target.closest("[data-goal-action]");
+  if (!btn) return;
+
+  const key = cleanProfileText(btn.dataset.goalKey);
+  const action = btn.dataset.goalAction;
+  const goal = goalsFromState().find((item) => goalLookupKey(item) === key);
+
+  if (!goal) return;
+  if (action === "activate") activateGoalByKey(key);
+  if (action === "edit") openGoalModal(goal);
+  if (action === "delete") deleteGoalByKey(key);
 }
 
 function setTransactionKind(kind) {
@@ -1783,6 +2237,9 @@ async function loadDashboardState(session) {
         const localTransactions = loadTransactions();
 
         applyStateSnapshot(appData.state);
+        if (Array.isArray(appData.savingsGoals)) {
+          state.savingsGoals = appData.savingsGoals.map(normalizeGoal).filter(Boolean);
+        }
         saveState();
 
         let dashboardTransactions = Array.isArray(appData.transactions) ? appData.transactions : [];

@@ -482,21 +482,51 @@
 
             <!-- Goal Header -->
 
-            <div class="flex items-center gap-4 mb-6">
-              <div
-                class="w-14 h-14 rounded-2xl bg-primary-container/10 flex items-center justify-center text-primary-container"
-              >
-                <span class="material-symbols-outlined text-3xl" id="goals-tab-icon">savings</span>
-              </div>
-              <div>
-                <h3 class="font-h3 text-h3 text-primary-container" id="goals-tab-name">
-                  Your Goal
-                </h3>
-                <span
-                  class="text-xs font-semibold tracking-wider text-on-surface-variant uppercase"
-                  id="goals-tab-type"
-                  >SET YOUR GOAL</span
+            <div class="mb-6 flex items-start justify-between gap-4">
+              <div class="flex min-w-0 items-center gap-4">
+                <div
+                  class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-container/10 text-primary-container"
                 >
+                <span class="material-symbols-outlined text-3xl" id="goals-tab-icon">savings</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="truncate font-h3 text-h3 text-primary-container" id="goals-tab-name">
+                    Your Goal
+                  </h3>
+                  <span
+                    class="text-xs font-semibold tracking-wider text-on-surface-variant uppercase"
+                    id="goals-tab-type"
+                    >SET YOUR GOAL</span
+                  >
+                </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <button
+                  id="goal-edit-btn"
+                  type="button"
+                  title="Edit goal"
+                  aria-label="Edit goal"
+                  class="grid h-10 w-10 place-items-center rounded-full bg-surface-container-high text-primary-container transition hover:bg-primary-fixed"
+                >
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+                <button
+                  id="goal-delete-btn"
+                  type="button"
+                  title="Delete goal"
+                  aria-label="Delete goal"
+                  class="grid h-10 w-10 place-items-center rounded-full bg-surface-container-high text-error transition hover:bg-red-50"
+                >
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+                <button
+                  id="goal-create-btn"
+                  type="button"
+                  class="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary-container px-4 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5"
+                >
+                  <span class="material-symbols-outlined text-[20px]">add</span>
+                  <span class="hidden sm:inline">New</span>
+                </button>
               </div>
             </div>
 
@@ -548,6 +578,8 @@
                 ></div>
               </div>
             </div>
+
+            <div class="mt-5 space-y-2" id="goals-list"></div>
           </div>
 
           <!-- Monthly Summary Card -->
@@ -1104,6 +1136,123 @@
               Add Another
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal modal -->
+
+    <div class="fixed inset-0 z-[70] hidden overflow-hidden" id="goal-modal">
+      <div class="absolute inset-0 bg-black/45 backdrop-blur-sm" id="goal-modal-backdrop"></div>
+      <div
+        class="absolute bottom-0 left-0 right-0 max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-8 shadow-2xl md:bottom-auto md:left-1/2 md:right-auto md:top-1/2 md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-7"
+      >
+        <div class="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Savings goal</p>
+            <h2 class="font-h3 text-h3 text-on-background" id="goal-modal-title">Create Goal</h2>
+          </div>
+          <button
+            type="button"
+            id="goal-modal-close"
+            class="grid h-10 w-10 place-items-center rounded-full bg-surface-container-high text-on-surface-variant transition hover:bg-surface-container"
+            aria-label="Close goal modal"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="mb-5 grid grid-cols-3 gap-2" aria-label="Goal type">
+          <button
+            type="button"
+            data-goal-type-choice="custom"
+            class="goal-type-choice rounded-2xl border border-outline-variant/40 bg-surface-container-low px-3 py-3 text-left text-sm font-semibold text-on-background transition"
+          >
+            <span class="material-symbols-outlined mb-2 block text-primary-container">savings</span>
+            Custom
+          </button>
+          <button
+            type="button"
+            data-goal-type-choice="specific"
+            class="goal-type-choice rounded-2xl border border-outline-variant/40 bg-surface-container-low px-3 py-3 text-left text-sm font-semibold text-on-background transition"
+          >
+            <span class="material-symbols-outlined mb-2 block text-primary-container">shopping_bag</span>
+            Item
+          </button>
+          <button
+            type="button"
+            data-goal-type-choice="safety"
+            class="goal-type-choice rounded-2xl border border-outline-variant/40 bg-surface-container-low px-3 py-3 text-left text-sm font-semibold text-on-background transition"
+          >
+            <span class="material-symbols-outlined mb-2 block text-primary-container">shield</span>
+            Safety
+          </button>
+        </div>
+
+        <div class="grid gap-4">
+          <label class="block text-sm font-semibold text-on-surface-variant">
+            Title
+            <input
+              id="goal-title-input"
+              type="text"
+              maxlength="80"
+              class="mt-2 w-full rounded-2xl bg-surface-container-low px-4 py-3 text-base text-on-background outline-none focus:ring-2 focus:ring-primary-container/40"
+              placeholder="Emergency fund"
+            />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm font-semibold text-on-surface-variant">
+              Target amount
+              <input
+                id="goal-target-input"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                class="mt-2 w-full rounded-2xl bg-surface-container-low px-4 py-3 text-base text-on-background outline-none focus:ring-2 focus:ring-primary-container/40"
+                placeholder="5000"
+              />
+            </label>
+            <label class="block text-sm font-semibold text-on-surface-variant">
+              Saved now
+              <input
+                id="goal-saved-input"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                class="mt-2 w-full rounded-2xl bg-surface-container-low px-4 py-3 text-base text-on-background outline-none focus:ring-2 focus:ring-primary-container/40"
+                placeholder="0"
+              />
+            </label>
+          </div>
+          <label class="block text-sm font-semibold text-on-surface-variant">
+            Target date
+            <input
+              id="goal-date-input"
+              type="date"
+              class="mt-2 w-full rounded-2xl bg-surface-container-low px-4 py-3 text-base text-on-background outline-none focus:ring-2 focus:ring-primary-container/40"
+            />
+          </label>
+        </div>
+
+        <p class="mt-4 hidden text-sm text-red-600" id="goal-modal-error"></p>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            id="goal-cancel-btn"
+            type="button"
+            class="h-12 flex-1 rounded-full bg-surface-container-high text-sm font-semibold text-on-background transition hover:bg-surface-container"
+          >
+            Cancel
+          </button>
+          <button
+            id="goal-save-btn"
+            type="button"
+            class="h-12 flex-1 rounded-full bg-primary-container text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Save goal
+          </button>
         </div>
       </div>
     </div>

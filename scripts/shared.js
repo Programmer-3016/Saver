@@ -69,6 +69,7 @@ const defaultState = {
   goalType: "", // "specific" | "safety"
   goalItem: "", // what they want to buy (only for "specific")
   goalPrice: 0, // target price (only for "specific")
+  savingsGoals: [], // dashboard-created saving goals
   profileName: "", // display name from auth/profile data
   profileEmail: "", // email from auth/profile data
   activeBudgetCycleId: null, // Supabase budget_cycles.id for the active setup
